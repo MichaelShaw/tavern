@@ -47,6 +47,14 @@ pub struct StandardBoard {
 }
 
 impl StandardBoard {
+    pub fn slot_for(&self, position: Position) -> Option<Slot> {
+        if position.x < 5 && position.y < 5 {
+            Some(StandardBoard::slot(position))
+        } else {
+            None
+        }
+    }
+
     pub fn new() -> StandardBoard {
         let mut slots = [Slot(0) ; 25];
         let mut adjacencies = [[NONE ; 8] ; 25];

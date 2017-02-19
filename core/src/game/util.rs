@@ -16,6 +16,19 @@ pub struct Position {
     pub y : u8,
 }
 
+impl Position {
+    pub fn from(x: f64, y: f64) -> Option<Position> {
+        if 0.0 <= x && x < 255.0 && 0.0 <= y && y < 255.0 {
+            Some(Position {
+                x: x as u8,
+                y: y as u8,
+            })    
+        } else {
+            None
+        }
+    }
+}
+
 pub trait Packed where Self: std::marker::Sized {
     fn empty() -> Self;
     fn get(&self, slot: Slot) -> u8;
