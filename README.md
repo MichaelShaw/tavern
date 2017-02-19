@@ -3,9 +3,7 @@ Board game engine
 
 # Santorini
 - Detect win state. Introduce state wrapper that contains legal moves.
-
-
-
+- Introduce sound ... play the music, use the move sounds from the game jam game.
 - Make client with random moving opponent. Notion of "opponent?" .. state machine etc.
 
 # Tic tac toe client
