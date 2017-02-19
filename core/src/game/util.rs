@@ -1,16 +1,16 @@
 use std::fmt;
 use std;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Player(pub u8);
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Slot(pub u8);
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Packed1(pub u32);
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Position {
     pub x : u8,
     pub y : u8,
@@ -59,7 +59,7 @@ pub const ALL_MASK_64 : u64 = 0xffffffffffffffff;
 pub const ALL_MASK_32 : u32 = 0xffffffff;
 
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Packed2(pub u64);
 
 impl Packed for Packed2 {

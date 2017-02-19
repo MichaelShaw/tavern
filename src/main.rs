@@ -1,15 +1,21 @@
 #![allow(dead_code)]
 
+extern crate jam;
 extern crate rand;
 extern crate tavern_core;
 extern crate time;
+extern crate tavern;
+
+
 
 use std::mem;
 use rand::Rng;
 use rand::SeedableRng;
 
-use tavern_core::game::santorini::{State, Move, Build, StandardBoard};
-use tavern_core::game::util::{Position, Packed, Packed1, Packed2, Slot};
+use tavern_core::game::santorini::{State, Move, StandardBoard};
+use tavern_core::game::util::{Position}; // , Packed, Packed1, Packed2, Slot};
+
+
 
 fn main() {
 	print!("{}[2J", 27 as char);
@@ -23,7 +29,7 @@ fn main() {
     let mut info = GameInfo::empty();
     let start = time::precise_time_ns();
 
-    let board_count = 100000;
+    let board_count = 1;
 
     for _ in 0..board_count {
         let mut mvs : Vec<Move> = Vec::new();
@@ -39,6 +45,9 @@ fn main() {
 
     println!("out of {} games, branching factor is {}", board_count, branching_factor);
     println!("moves observed {} in {} seconds ({} moves/second)", info.moves, seconds_elapsed, moves_per_second);
+
+
+    tavern::app::run_app();
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -113,8 +122,6 @@ fn print_sizes() {
     println!("state size -> {}", state_size);
     let move_size = mem::size_of::<Move>();
     println!("move size -> {}", move_size);
-    let build_size = mem::size_of::<Build>();
-    println!("build size -> {}", build_size);
     let v_size = mem::size_of::<Vec<u32>>();
     println!("v size -> {:?}", v_size);
 }

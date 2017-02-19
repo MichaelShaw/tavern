@@ -10,7 +10,7 @@ pub const UNPLACED_BUILDER : Slot = Slot(255);
 pub const DEAD_BUILDER : Slot = Slot(254);
 pub const NONE : Slot = Slot(253);
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct State {
     pub builder_locations: [[Slot; 2]; 2],
     pub buildings : Packed2, 
@@ -111,8 +111,7 @@ impl StandardBoard {
                                     break;
                                 }
                                 if state.collision.get(build_at) == 0 {
-                                    let build_dome = state.buildings.get(build_at) == 3;
-                                    move_sink.push(Move::Move { from: builder_location, to:move_to, build: Build { at: build_at, dome: build_dome }});
+                                    move_sink.push(Move::Move { from: builder_location, to:move_to, build: build_at });
                                 }
                             }
                         }
@@ -147,7 +146,7 @@ impl StandardBoard {
 
                 new_state
             },
-            Move::Move { from, to, build: Build { at, dome } } => {
+            Move::Move { from, to, build } => {
                 let player_to_move = state.to_move;
                 let mut new_state = state.clone();
                 // update builder collision
@@ -163,13 +162,16 @@ impl StandardBoard {
                     }
                 }
                 // perform build
-                if dome {
-                    new_state.domes = new_state.domes.set(at, 1);
-                    new_state.collision = new_state.collision.set(at, 1);
+
+                let height = new_state.buildings.get(build);
+                let build_dome = height == 3;
+                if build_dome{
+                    new_state.domes = new_state.domes.set(build, 1);
+                    new_state.collision = new_state.collision.set(build, 1);
                 } else {
-                    // println!("applyin gnew buildints")
-                    new_state.buildings = new_state.buildings.set(at, new_state.buildings.get(at) + 1);
+                    new_state.buildings = new_state.buildings.set(build, new_state.buildings.get(build) + 1);
                 }
+
                 // alternate player
                 new_state.to_move = new_state.next_player();
                 new_state
@@ -243,14 +245,9 @@ impl StandardBoard {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Move {
     PlaceBuilders { a: Slot, b: Slot },
-    Move { from: Slot, to:Slot, build: Build },
+    Move { from: Slot, to:Slot, build: Slot },
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct Build {
-    pub at: Slot, 
-    pub dome: bool,
-}
