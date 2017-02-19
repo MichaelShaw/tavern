@@ -10,7 +10,7 @@ pub const UNPLACED_BUILDER : Slot = Slot(255);
 pub const DEAD_BUILDER : Slot = Slot(254);
 pub const NONE : Slot = Slot(253);
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct State {
     pub builder_locations: [[Slot; 2]; 2],
     pub buildings : Packed2, 
@@ -78,20 +78,22 @@ impl StandardBoard {
         }
     }
 
-    pub fn next_moves(&self, state:State, move_sink: &mut Vec<Move>) {
+    pub fn next_moves(&self, state:&State, move_sink: &mut Vec<Move>) {
         let builders_to_move = state.builder_locations[state.to_move.0 as usize];
-        let should_place = builders_to_move.iter().any(|&pl| pl == UNPLACED_BUILDER );
-        if should_place {
-            for &builder_location in builders_to_move.iter() {
-                if builder_location == UNPLACED_BUILDER {
-                    for &slot in self.slots.iter() {
-                        if state.collision.get(slot) == 0 {
-                            move_sink.push(Move::PlaceBuilder { at: slot });
+        let builders_to_place = builders_to_move.iter().any(|&pl| pl == UNPLACED_BUILDER );
+        if builders_to_place {
+            // 25 * 25 is 625 base
+            for a in 0..25 {
+                let slot_a = Slot(a);
+                if state.collision.get(slot_a) == 0 {
+                    for b in (a+1)..25 {
+                        let slot_b = Slot(b);
+                        if state.collision.get(slot_b) == 0 {
+                            move_sink.push(Move::PlaceBuilders { a: slot_a, b:slot_b });
                         }
-                    }
-                    break; // only attempt to place the firs tone
-                } 
-            }   
+                    }    
+                }
+            }
         } else {
             // iterate both
             for &builder_location in builders_to_move.iter() {
@@ -131,29 +133,25 @@ impl StandardBoard {
         Slot(position.x + position.y * 5)
     }
 
-    pub fn apply(&self, mve:Move, state:State) -> State {
+    pub fn apply(&self, mve:Move, state:&State) -> State { // this implicitly destroys the state atm.
         match mve {
-            Move::PlaceBuilder { at } => {
-                let mut new_state = state;
+            Move::PlaceBuilders { a, b } => {
                 let player_to_move = state.to_move;
-                // assign updated builder location (could dry this)
-                for i in 0..BUILDERS {
-                    let builder_location = new_state.builder_locations[player_to_move.0 as usize][i];    
-                    if builder_location == UNPLACED_BUILDER {
-                        // place this builder
-                        new_state.builder_locations[player_to_move.0 as usize][i] = at; 
-                        new_state.collision = new_state.collision.set(at, 1);
-                        break;
-                    }
-                }
-                // alternate player
-                new_state.to_move = new_state.next_player();
+                let mut new_state = state.clone();
+
+                new_state.builder_locations[player_to_move.0 as usize][0] = a;
+                new_state.collision = new_state.collision.set(a, 1);
+                new_state.builder_locations[player_to_move.0 as usize][1] = b;
+                new_state.collision = new_state.collision.set(b, 1);
+                new_state.to_move = new_state.next_player();                
+
                 new_state
             },
             Move::Move { from, to, build: Build { at, dome } } => {
-                let mut new_state = state;
-                // update builder collision
                 let player_to_move = state.to_move;
+                let mut new_state = state.clone();
+                // update builder collision
+                
                 // assign updated builder location
                 for i in 0..BUILDERS {
                     let builder_location = new_state.builder_locations[player_to_move.0 as usize][i];    
@@ -183,7 +181,7 @@ impl StandardBoard {
         slot.0 < 25
     }
 
-    pub fn ascension_winner(&self, state:State) -> Option<Player> {
+    pub fn ascension_winner(&self, state:&State) -> Option<Player> {
         // ascension win
         for player_id in 0..PLAYERS {
             for &builder_location in state.builder_locations[player_id as usize].iter() {
@@ -196,7 +194,7 @@ impl StandardBoard {
         None
     }
 
-    pub fn print(&self, state:State) -> String {
+    pub fn print(&self, state:&State) -> String {
         let mut out = String::new();
 
         out.push_str(&format!(" === To move {:?} === \n", state.to_move));
@@ -252,7 +250,7 @@ impl StandardBoard {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Move {
-    PlaceBuilder { at: Slot },
+    PlaceBuilders { a: Slot, b: Slot },
     Move { from: Slot, to:Slot, build: Build },
 }
 
