@@ -1,0 +1,15 @@
+[package]
+name = "tavern"
+version = "0.1.0"
+authors = ["Michael Shaw <michaeljshaw@gmail.com>"]
+
+[dependencies]
+cgmath = "*"
+rand = "*"
+time = "*"
+pad = "0.1.4"
+quickersort = "2.2.0"
+tavern_core = { path = "./core" }
+tavern_service = { path = "./service" }
+jam = { path = "./ham" }
+howl = { path = "./howl" }
