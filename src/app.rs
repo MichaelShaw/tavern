@@ -146,7 +146,7 @@ impl App {
 	        		let slot = Position::from(intersects_at.x - 1.0, intersects_at.z - 1.0).and_then(|p| board.slot_for(p));
 	        		*mouse_over_slot = slot;
 
-					if cpu_players.contains(&state.next_player()) {
+					if cpu_players.contains(&state.player()) {
 						println!("waiting on a cpu");
 					} else {
 						let mut moves = Vec::new();
@@ -157,7 +157,7 @@ impl App {
 							if input_state.mouse.left_released() {
 								println!("pushing slot {:?}", sl);
 								move_builder.positions.push(sl);
-								let matching_move_count = moves.iter().filter(|m| m.to_slots().starts_with(&move_builder.positions) ).count();
+								let matching_move_count = moves.iter().filter(|m| m.to_slots().iter().any(|sls| sls.starts_with(&move_builder.positions)) ).count();
 								if matching_move_count == 0 {
 									println!("no legal moves, popping!");
 									move_builder.positions.pop();
@@ -173,7 +173,7 @@ impl App {
 						}
 
 						// if we have a completd move, apply it to the board!
-						let completed_moves : Vec<_> = moves.iter().filter(|m| m.to_slots() == move_builder.positions ).collect();
+						let completed_moves : Vec<_> = moves.iter().filter(|m| m.to_slots().iter().any(|sls| sls == &move_builder.positions)).collect();
 						if let Some(mve) = completed_moves.first() {
 							println!("we have a completed move -> {:?} applying it to state", mve);
 							*state = board.apply(**mve, &state);
@@ -189,8 +189,6 @@ impl App {
     	self.camera.at = Vec3::new(3.5, 0.0, 3.5);
     	self.camera.points_per_unit = self.points_per_unit * self.zoom;
         self.camera.viewport = dimensions;
-
-
     }
 
     fn render(&mut self) -> Vec<Pass<String>> {
@@ -208,7 +206,8 @@ impl App {
         	&Game::Santorini(SantoriniGame { ref board, ref state, ref move_builder, ref mouse_over_slot, .. }) => {
         		opaque.draw_floor_tile(&atlas.background, 0, 0.0, 0.0, 0.0, 0.0, false);
 
-        		let next_player_color = PLAYER_COLORS[state.next_player().0 as usize];
+        		let next_player_color = PLAYER_COLORS[state.player().0 as usize];
+
 
         		// DRAW MOUSE OVER
         		if let &Some(slot) = mouse_over_slot {
@@ -237,12 +236,12 @@ impl App {
 					// RENDER THE BUILDING
 					for i in 0..building_height {
 						let vert_offset = (BUILDING_PIXEL_OFFSETS[i as usize] as f64) * self.units_per_point();
-						opaque.draw_floor_tile_at(&atlas.buildings[i as usize], 0, v + Vec3::new(0.0, 0.0, -vert_offset), 0.15, false)
+						opaque.draw_floor_tile_at(&atlas.buildings[i as usize], 0, v + Vec3::new(0.0, vert_offset, 0.0), 0.10, false)
 					}
 					// RENDER THE DOME
 					if dome {
 						let vert_offset = (BUILDING_PIXEL_OFFSETS[3] as f64) * self.units_per_point();
-						opaque.draw_floor_tile_at(&atlas.dome, 0, v + Vec3::new(0.0, 0.0, -vert_offset), 0.15, false)
+						opaque.draw_floor_tile_at(&atlas.dome, 0, v + Vec3::new(0.0, vert_offset, 0.0), 0.10, false)
 					}
     			}
 
@@ -254,13 +253,17 @@ impl App {
 							let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
 							let building_height = state.buildings.get(slot);
 							let vert_offset = (BUILDING_PIXEL_OFFSETS[building_height as usize] as f64) * self.units_per_point();
-							opaque.draw_floor_tile_at(&atlas.players[player_id as usize], 0, v + Vec3::new(0.0, 0.0, -vert_offset), 0.20, false );
+							opaque.draw_floor_tile_at(&atlas.players[player_id as usize], 0, v + Vec3::new(0.0, vert_offset, 0.0), 0.12, false );
     					}
     				}
     			}
+
+
 				let mut moves = Vec::new();
 				board.next_moves(state, &mut moves);
-    			let legal_moves : Vec<_> = moves.iter().map(|m| m.to_slots()).filter(|sl| sl.starts_with(&move_builder.positions) ).collect();
+    			let legal_moves : Vec<_> = moves.iter().flat_map(|m| m.to_slots()).filter(|sl| {
+    				sl.starts_with(&move_builder.positions)
+				}).collect();
 
     			let mut valid_slots : HashSet<Slot> = HashSet::default();
     			for m in &legal_moves {
@@ -275,11 +278,6 @@ impl App {
 					trans.color = next_player_color.float_raw();
 					trans.draw_floor_tile_at(&atlas.indicator, 0, v, 0.1, false);
     			}
-
-    			
-
-
-
         	},
         }
 

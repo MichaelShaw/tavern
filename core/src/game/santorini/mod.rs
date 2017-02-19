@@ -30,6 +30,10 @@ impl State {
         }
     }
 
+    pub fn player(&self) -> Player {
+        self.to_move
+    }
+
     pub fn next_player(&self) -> Player {
         Player((self.to_move.0 + 1) % 2)
     }
@@ -260,10 +264,10 @@ pub enum Move {
 }
 
 impl Move {
-    pub fn to_slots(&self) -> Vec<Slot> {
+    pub fn to_slots(&self) -> Vec<Vec<Slot>> {
         match self {
-            &Move::PlaceBuilders { a, b } => vec![a, b],
-            &Move::Move { from, to, build } => vec![from, to, build],
+            &Move::PlaceBuilders { a, b } => vec![vec![a, b], vec![b, a]],
+            &Move::Move { from, to, build } => vec![vec![from, to, build]],
         }
     }
 }

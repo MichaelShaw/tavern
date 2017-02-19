@@ -2,10 +2,10 @@
 Board game engine
 
 # Santorini
-- Make app that displays board only (centered)
-- Build texture atlas for all pieces
-- Make app render arbitrary board state
-- Build phase based movement builder (allows generation of a random move), left click/right click
+- Detect win state. Introduce state wrapper that contains legal moves.
+
+
+
 - Make client with random moving opponent. Notion of "opponent?" .. state machine etc.
 
 # Tic tac toe client
