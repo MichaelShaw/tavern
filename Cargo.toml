@@ -11,5 +11,5 @@ pad = "0.1.4"
 quickersort = "2.2.0"
 tavern_core = { path = "./core" }
 tavern_service = { path = "./service" }
-jam = { path = "./ham" }
+jam = { path = "./jam" }
 howl = { path = "./howl" }
