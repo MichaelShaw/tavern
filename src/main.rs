@@ -81,17 +81,21 @@ fn play_board<R : Rng>(rng: &mut R, moves: &mut Vec<Move>) -> GameInfo {
         } else {
             // choose a moves
             let mve = moves[rng.gen_range(0, moves.len())];
+
+            if board.ascension_winning_move(&state, mve) {
+                println!(" :: we have an ascension winner {:?} on move {:?}", state.to_move, move_idx);
+                // println!("{}", board.print(&new_state));
+                break;
+            }
+
             // println!(" :: {:?} moves applying {:?}", moves.len(), mve);
             let new_state = board.apply(mve, &state);
+
 
             move_count += moves.len() as u64;
             turn_count += 1;
 
-            if let Some(winning_player) = board.ascension_winner(&new_state) {
-                // println!(" :: we have an ascension winner {:?}", winning_player);
-                // println!("{}", board.print(&new_state));
-                break;
-            }
+            
             state = new_state
         }
     }

@@ -181,17 +181,12 @@ impl StandardBoard {
         slot.0 < 25
     }
 
-    pub fn ascension_winner(&self, state:&State) -> Option<Player> {
-        // ascension win
-        for player_id in 0..PLAYERS {
-            for &builder_location in state.builder_locations[player_id as usize].iter() {
-                if Self::valid(builder_location) && state.buildings.get(builder_location) == 3 {
-                    return Some(Player(player_id as u8));
-                }
-            }
+    // use this to detect before applying move
+    pub fn ascension_winning_move(&self, state:&State, mve: Move) -> bool {
+          match mve {
+            Move::PlaceBuilders { .. } => false,
+            Move::Move { to, .. } => state.buildings.get(to) == 3,
         }
-
-        None
     }
 
     pub fn print(&self, state:&State) -> String {
