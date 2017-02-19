@@ -8,8 +8,7 @@ use jam::render::*;
 use jam::render::Command::*;
 
 
-use tavern_core::{Slot, Player, Position};
-// use tavern_core::game::util::Player;
+use tavern_core::{Slot, Player, Position, Packed};
 use tavern_core::game::santorini;
 use std::f64::consts::PI;
 
@@ -99,6 +98,9 @@ impl MoveBuilder {
 }
 
 const BOARD_OFFSET : Vec3 = Vector3 { x: 1.0, y: 0.0, z: 1.0 };
+const BUILDING_PIXEL_OFFSETS : [u32; 4] = [0, 5, 10, 12];
+
+const PLAYER_COLORS : [Color; 2] = [RED, YELLOW];
 
 impl App {
 	fn units_per_point(&self) -> f64 {
@@ -140,13 +142,44 @@ impl App {
     	let (mx, my) = input_state.mouse.at;
         if let Some(intersects_at) = self.camera.world_line_segment_for_mouse_position(mx, my).and_then(|ls| ls.intersects(ground_plane)) {
         	match &mut self.state {
-	        	&mut Game::Santorini(SantoriniGame { ref board, ref state, ref move_builder, ref mut mouse_over_slot, .. }) => {
+	        	&mut Game::Santorini(SantoriniGame { ref board, ref mut state, ref mut move_builder, ref mut mouse_over_slot, ref cpu_players, .. }) => {
 	        		let slot = Position::from(intersects_at.x - 1.0, intersects_at.z - 1.0).and_then(|p| board.slot_for(p));
 	        		*mouse_over_slot = slot;
-	        		
-	        		
 
+					if cpu_players.contains(&state.next_player()) {
+						println!("waiting on a cpu");
+					} else {
+						let mut moves = Vec::new();
+						board.next_moves(state, &mut moves);
 
+						// left click adds to move builder if legal
+						if let &mut Some(sl) = mouse_over_slot {
+							if input_state.mouse.left_released() {
+								println!("pushing slot {:?}", sl);
+								move_builder.positions.push(sl);
+								let matching_move_count = moves.iter().filter(|m| m.to_slots().starts_with(&move_builder.positions) ).count();
+								if matching_move_count == 0 {
+									println!("no legal moves, popping!");
+									move_builder.positions.pop();
+								} else {
+									println!("move is A-OK! matching moves -> {:?}", matching_move_count);
+								}
+							}
+						}
+
+						// right click pops move builder
+						if input_state.mouse.right_released() {
+							move_builder.positions.pop();
+						}
+
+						// if we have a completd move, apply it to the board!
+						let completed_moves : Vec<_> = moves.iter().filter(|m| m.to_slots() == move_builder.positions ).collect();
+						if let Some(mve) = completed_moves.first() {
+							println!("we have a completed move -> {:?} applying it to state", mve);
+							*state = board.apply(**mve, &state);
+							move_builder.positions.clear();
+						}
+					}
 	        	},
 	        }
 
@@ -175,12 +208,78 @@ impl App {
         	&Game::Santorini(SantoriniGame { ref board, ref state, ref move_builder, ref mouse_over_slot, .. }) => {
         		opaque.draw_floor_tile(&atlas.background, 0, 0.0, 0.0, 0.0, 0.0, false);
 
+        		let next_player_color = PLAYER_COLORS[state.next_player().0 as usize];
+
+        		// DRAW MOUSE OVER
         		if let &Some(slot) = mouse_over_slot {
         			let position = santorini::StandardBoard::position(slot);
         			let v = Vec3::new(position.x as f64, 0.0, position.y as f64) + BOARD_OFFSET;
+        			trans.color = color::WHITE.float_raw();
         			trans.draw_floor_tile_at(&atlas.indicator, 0, v, 0.1, false);
-
         		}
+
+        		// DRAW MOVE BUILDER
+        		for &slot in &move_builder.positions {
+        			let position = santorini::StandardBoard::position(slot);
+        			let v = Vec3::new(position.x as f64, 0.0, position.y as f64) + BOARD_OFFSET;
+        			trans.color = next_player_color.float_raw();
+        			trans.draw_floor_tile_at(&atlas.indicator, 0, v, 0.1, false);
+        		}
+
+        		// DRAW BOARD CONTENTS
+        		for &slot in &board.slots {
+					let pos = santorini::StandardBoard::position(slot);
+					let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
+
+					let building_height = state.buildings.get(slot);
+					let dome = state.domes.get(slot) == 1;
+
+					// RENDER THE BUILDING
+					for i in 0..building_height {
+						let vert_offset = (BUILDING_PIXEL_OFFSETS[i as usize] as f64) * self.units_per_point();
+						opaque.draw_floor_tile_at(&atlas.buildings[i as usize], 0, v + Vec3::new(0.0, 0.0, -vert_offset), 0.15, false)
+					}
+					// RENDER THE DOME
+					if dome {
+						let vert_offset = (BUILDING_PIXEL_OFFSETS[3] as f64) * self.units_per_point();
+						opaque.draw_floor_tile_at(&atlas.dome, 0, v + Vec3::new(0.0, 0.0, -vert_offset), 0.15, false)
+					}
+    			}
+
+    			// DRAW THE GUYS
+    			for (player_id, locations) in state.builder_locations.iter().enumerate() {
+    				for &slot in locations {
+    					if slot != santorini::UNPLACED_BUILDER {
+    						let pos = santorini::StandardBoard::position(slot);
+							let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
+							let building_height = state.buildings.get(slot);
+							let vert_offset = (BUILDING_PIXEL_OFFSETS[building_height as usize] as f64) * self.units_per_point();
+							opaque.draw_floor_tile_at(&atlas.players[player_id as usize], 0, v + Vec3::new(0.0, 0.0, -vert_offset), 0.20, false );
+    					}
+    				}
+    			}
+				let mut moves = Vec::new();
+				board.next_moves(state, &mut moves);
+    			let legal_moves : Vec<_> = moves.iter().map(|m| m.to_slots()).filter(|sl| sl.starts_with(&move_builder.positions) ).collect();
+
+    			let mut valid_slots : HashSet<Slot> = HashSet::default();
+    			for m in &legal_moves {
+    				let next_slot_idx = move_builder.positions.len() as usize;
+    				if next_slot_idx < m.len() {
+    					valid_slots.insert(m[next_slot_idx]);
+    				}
+    			}
+    			for slot in valid_slots {
+					let pos = santorini::StandardBoard::position(slot);
+					let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
+					trans.color = next_player_color.float_raw();
+					trans.draw_floor_tile_at(&atlas.indicator, 0, v, 0.1, false);
+    			}
+
+    			
+
+
+
         	},
         }
 
