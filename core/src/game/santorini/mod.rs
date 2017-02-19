@@ -251,3 +251,16 @@ pub enum Move {
     Move { from: Slot, to:Slot, build: Slot },
 }
 
+impl Move {
+    pub fn to_slots(&self) -> Vec<Slot> {
+        match self {
+            &Move::PlaceBuilders { a, b } => vec![a, b],
+            &Move::Move { from, to, build } => vec![from, to, build],
+        }
+    }
+}
+
+
+
+
+

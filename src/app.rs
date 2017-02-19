@@ -5,6 +5,7 @@ use jam::render::glium::renderer::Renderer;
 
 use jam::*;
 use jam::render::*;
+use jam::render::Command::*;
 
 
 use tavern_core::Slot;
@@ -36,12 +37,15 @@ pub fn run_app() {
             },
             points_per_unit: 16.0 * 1.0,
         },
-        zoom: 1.0,
+        zoom: 4.0,
         points_per_unit: 16.0,
         n: 0, // frame counter
         renderer: renderer,
         state: Game::Santorini(SantoriniGame::new()),
+        atlas: SantoriniAtlas::build(),
     };
+
+    println!("atlas -> {:?}", app.atlas);
     app.run();
 }
 
@@ -53,6 +57,7 @@ struct App {
     n : u64,
     renderer:Renderer<String>,
     state: Game,
+    atlas: SantoriniAtlas,
 }
 
 pub struct SantoriniGame {
@@ -61,6 +66,7 @@ pub struct SantoriniGame {
 	pub state: santorini::State,
 	pub cpu_players : HashSet<Slot>,
 	pub move_builder : MoveBuilder,
+	pub mouse_over_slot : Option<Slot>,
 }
 
 impl SantoriniGame {
@@ -70,6 +76,7 @@ impl SantoriniGame {
 			state: santorini::State::initial(),
 			cpu_players: HashSet::default(),
 			move_builder : MoveBuilder { positions: vec![] },
+			mouse_over_slot: None,
 		}
 	}
 }
@@ -116,12 +123,84 @@ impl App {
     }
 
     fn update(&mut self, input_state:&InputState, dimensions:Dimensions, delta_time: Seconds) {
-    	println!("update");
 
+    	self.camera.at = Vec3::new(3.5, 0.0, 3.5);
+    	self.camera.points_per_unit = self.points_per_unit * self.zoom;
+        self.camera.viewport = dimensions;
     }
 
     fn render(&mut self) -> Vec<Pass<String>> {
-    	println!("render");
-    	vec![]
+    	let mut opaque_commands : Vec<Command<String>> = Vec::new();
+        let mut translucent_commands : Vec<Command<String>> = Vec::new();
+        let mut ui_commands : Vec<Command<String>> = Vec::new();
+
+		let mut opaque = self.tesselator();
+		let mut trans = self.tesselator();
+
+        
+		let atlas = &self.atlas;
+
+        match &self.state {
+        	&Game::Santorini(SantoriniGame { ref board, ref state, ref move_builder, .. }) => {
+        		opaque.draw_floor_tile(&atlas.background, 0, 0.0, 0.0, 0.0, 0.0, false);
+
+        	},
+        }
+
+
+        opaque_commands.push(DrawNew {
+            key: None, 
+            vertices: opaque.tesselator.vertices, 
+            uniforms: Uniforms {
+                transform : down_size_m4(self.camera.view_projection().into()),
+                color: color::WHITE,
+            }
+        });
+
+        translucent_commands.push(DrawNew {
+            key: None, 
+            vertices: trans.tesselator.vertices, 
+            uniforms: Uniforms {
+                transform : down_size_m4(self.camera.view_projection().into()),
+                color: color::WHITE,
+            }
+        });
+
+    	vec![Pass {
+            blend: Blend::None,
+            commands: opaque_commands,
+            clear_depth: false,
+        }, Pass {
+            blend: Blend::Alpha,
+            commands: translucent_commands,
+            clear_depth: false,
+        }, Pass {
+            blend: Blend::Alpha,
+            commands: ui_commands,
+            clear_depth: true,
+        }]
     }
+}
+
+#[derive(Debug)]
+pub struct SantoriniAtlas {
+	pub background : TextureRegion,
+	pub buildings: [TextureRegion; 3],
+	pub dome: TextureRegion,
+	pub players : [TextureRegion; 2],
+	pub indicator : TextureRegion,
+}
+
+impl SantoriniAtlas {
+	pub fn build() -> SantoriniAtlas {
+		let grid = TextureAtlas { texture_size: 512, tiles_wide: 32, tiles_high: 32 };
+
+		SantoriniAtlas {
+			background: grid.get(0, 0, 7, 8),
+			buildings: [grid.at(7, 0), grid.at(7, 1), grid.at(7, 2)],
+			dome: grid.at(7, 3),
+			players: [grid.at(8, 0), grid.at(8, 1)],
+			indicator: grid.at(9, 1),
+		}
+	}
 }
