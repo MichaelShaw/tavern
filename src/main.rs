@@ -29,7 +29,7 @@ fn main() {
     let mut info = GameInfo::empty();
     let start = time::precise_time_ns();
 
-    let board_count = 1;
+    let board_count = 100000;
 
     for _ in 0..board_count {
         let mut mvs : Vec<Move> = Vec::new();
@@ -47,7 +47,7 @@ fn main() {
     println!("moves observed {} in {} seconds ({} moves/second)", info.moves, seconds_elapsed, moves_per_second);
 
 
-    tavern::app::run_app();
+    // tavern::app::run_app();
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -92,7 +92,7 @@ fn play_board<R : Rng>(rng: &mut R, moves: &mut Vec<Move>) -> GameInfo {
             let mve = moves[rng.gen_range(0, moves.len())];
 
             if board.ascension_winning_move(&state, mve) {
-                println!(" :: we have an ascension winner {:?} on move {:?}", state.to_move, move_idx);
+                // println!(" :: we have an ascension winner {:?} on move {:?}", state.to_move, move_idx);
                 // println!("{}", board.print(&new_state));
                 break;
             }
