@@ -58,7 +58,9 @@ impl SantoriniGame {
 	                if input_state.mouse.left_released() {
 	                    println!("pushing slot {:?}", sl);
 	                    self.move_builder.positions.push(sl);
-	                    let matching_move_count = moves.iter().filter(|m| m.to_slots().iter().any(|sls| sls.starts_with(&self.move_builder.positions)) ).count();
+
+	                    let matching_moves : Vec<_> = moves.iter().filter(|m| m.to_slots().iter().any(|sls| sls.starts_with(&self.move_builder.positions)) ).collect();
+	                    let matching_move_count = matching_moves.len();
 	                    if matching_move_count == 0 {
 	                        println!("no legal moves, popping!");
 	                        self.move_builder.positions.pop();
@@ -113,13 +115,13 @@ impl SantoriniGame {
             trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.1, false);
         }
 
-        // DRAW MOVE BUILDER
-        for &slot in &self.move_builder.positions {
-            let position = santorini::StandardBoard::position(slot);
-            let v = Vec3::new(position.x as f64, 0.0, position.y as f64) + BOARD_OFFSET;
-            trans.color = next_player_color.float_raw();
-            trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.1, false);
-        }
+        // // DRAW MOVE BUILDER
+        // for &slot in &self.move_builder.positions {
+        //     let position = santorini::StandardBoard::position(slot);
+        //     let v = Vec3::new(position.x as f64, 0.0, position.y as f64) + BOARD_OFFSET;
+        //     trans.color = next_player_color.float_raw();
+        //     trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.1, false);
+        // }
 
         // DRAW BOARD CONTENTS
         for &slot in &self.board.slots {
@@ -162,12 +164,16 @@ impl SantoriniGame {
         }).collect();
 
         let mut valid_slots : HashSet<Slot> = HashSet::default();
+
+		
+
         for m in &legal_moves {
             let next_slot_idx = self.move_builder.positions.len() as usize;
             if next_slot_idx < m.len() {
                 valid_slots.insert(m[next_slot_idx]);
             }
         }
+
         for slot in valid_slots {
             let pos = santorini::StandardBoard::position(slot);
             let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;

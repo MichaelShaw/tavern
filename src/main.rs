@@ -29,7 +29,7 @@ fn main() {
     let mut info = GameInfo::empty();
     let start = time::precise_time_ns();
 
-    let board_count = 100000;
+    let board_count = 1;
 
     for _ in 0..board_count {
         let mut mvs : Vec<Move> = Vec::new();
@@ -47,7 +47,7 @@ fn main() {
     println!("moves observed {} in {} seconds ({} moves/second)", info.moves, seconds_elapsed, moves_per_second);
 
 
-    // tavern::app::run_app();
+    tavern::app::run_app();
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

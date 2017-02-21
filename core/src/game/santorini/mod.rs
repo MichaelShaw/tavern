@@ -122,7 +122,7 @@ impl StandardBoard {
                                 if build_at == NONE {
                                     break;
                                 }
-                                if state.collision.get(build_at) == 0 {
+                                if state.collision.get(build_at) == 0 || build_at == builder_location {
                                     move_sink.push(Move::Move { from: builder_location, to:move_to, build: build_at });
                                 }
                             }
