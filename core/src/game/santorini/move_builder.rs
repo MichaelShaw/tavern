@@ -3,21 +3,59 @@ use super::*;
 
 use HashSet;
 
-pub struct MoveBuilder {
-    pub current_state: State,
-    pub board: StandardBoard,
-    pub proposed_state: State,
-    pub next_moves : Vec<Move>,
-    pub legal_slots : HashSet<Slot>,
-    pub tentative_move_count : usize,
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum MatchStatus {
+    ToMove(Player),
+    Won(Player),
 }
 
-impl MoveBuilder {
-    pub fn new(base_state: &State, board: &StandardBoard, positions : &Vec<Slot>, tentative: Option<Slot>) -> MoveBuilder {
-        let mut next_moves = Vec::new();
-        board.next_moves(base_state, &mut next_moves);
+#[derive(Debug, Clone)]
+pub struct CoreGame { 
+    pub moves: Vec<Move>,
+    pub state: State,
+    pub board: StandardBoard,
+    pub next_moves : Vec<Move>,
+}
 
-        let legal_moves_as_slots : Vec<_> = next_moves.iter().flat_map(|m| m.to_slots()).filter(|sl| {
+impl CoreGame {
+    pub fn make_move(&mut self, mve:Move) -> MatchStatus {
+        let is_winning_move = self.board.ascension_winning_move(&self.state, mve);
+
+        let is_valid = self.next_moves.iter().any(|m| *m == mve);
+        if !is_valid {
+            panic!("move wasnt valid -> {:?}", mve);
+        }
+        self.moves.push(mve);
+        self.state = self.board.apply(mve, &self.state);
+        self.next_moves.clear();
+        if !is_winning_move {
+            self.board.next_moves(&self.state, &mut self.next_moves);    
+        }
+        
+        if is_winning_move {
+            MatchStatus::Won(self.state.next_player())
+        } else if self.next_moves.is_empty() {
+            MatchStatus::Won(self.state.next_player())
+        } else {
+            MatchStatus::ToMove(self.state.to_move)
+        }
+    }
+
+    pub fn new(board : StandardBoard, state: State) -> CoreGame {
+        let mut next_moves = Vec::new();
+        board.next_moves(&state, &mut next_moves);
+
+        CoreGame { // this is the core
+            moves: Vec::new(),
+            state: state,
+            board: board,
+            next_moves : next_moves,
+        }
+    }
+
+    pub fn tentative(&self, positions : &Vec<Slot>, tentative: Option<Slot>) -> TentativeGame {
+        let legal_moves_as_slots : Vec<_> = self.next_moves.iter().flat_map(|m| m.to_slots()).filter(|sl| {
             sl.starts_with(&positions)
         }).collect();
 
@@ -31,31 +69,33 @@ impl MoveBuilder {
                 with_tentative.pop();
             }
         }
-        let new_state = modify_state(base_state, &with_tentative);
+        let new_state = modify_state(&self.state, &with_tentative);
 
-        let mut legal_slots : HashSet<Slot> = HashSet::default();
+        let mut matching_slots : HashSet<Slot> = HashSet::default();
         
         for slots in &legal_moves_as_slots {
             let next_slot_idx = positions.len() as usize;
             if next_slot_idx < slots.len() {
-                legal_slots.insert(slots[next_slot_idx]);
+                matching_slots.insert(slots[next_slot_idx]);
             }
         }
 
-         legal_moves_as_slots.iter().filter(|slots| slots.starts_with(&with_tentative)).count();
-
-        MoveBuilder {
-            current_state: base_state.clone(),
-            board: board.clone(),
+        TentativeGame {
             proposed_state: new_state,
-            next_moves: next_moves,
-            legal_slots: legal_slots,
-            tentative_move_count: tentative_move_count,
+            matching_slots: matching_slots,
+            move_count: tentative_move_count,
         }
     }
 }
 
-pub fn modify_state(base_state:&State, slots:&Vec<Slot>) -> State {
+pub struct TentativeGame {
+    pub proposed_state: State,
+    pub matching_slots : HashSet<Slot>,
+    pub move_count : usize,
+}
+
+
+fn modify_state(base_state:&State, slots:&Vec<Slot>) -> State {
     let mut new_state = base_state.clone();
     if new_state.builders_to_place() {
         for (i, slot) in slots.iter().enumerate() {

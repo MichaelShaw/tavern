@@ -14,13 +14,12 @@ use cgmath::{Zero, Vector3};
 
 pub struct SantoriniGame {
     // rest is per game, more transient
-    pub board: StandardBoard,
-    pub state: State,
+    pub game : CoreGame,
+    pub tentative : TentativeGame,
+
     pub cpu_players : HashSet<Player>,
     pub current_move_positions : Vec<Slot>,
     pub mouse_over_slot : Option<Slot>,
-
-    pub move_builder : MoveBuilder,
 
     pub atlas: SantoriniAtlas,
 }
@@ -33,39 +32,39 @@ const PLAYER_COLORS : [Color; 2] = [RED, YELLOW];
 impl SantoriniGame {
     pub fn new() -> SantoriniGame {
         let cpu_players = HashSet::default();
-        let state = State::initial();
-
-        let board = StandardBoard::new();
-
-        let move_builder = MoveBuilder::new(&state, &board, &Vec::new(), None);
+        
+        let core_game = CoreGame::new(StandardBoard::new(), State::initial());
+        let tentative = core_game.tentative(&Vec::new(), None);
 
         SantoriniGame {
-            board: board,
-            state: state,
+            game: core_game,
+            tentative: tentative,
+
             cpu_players: cpu_players,
             current_move_positions: vec![],
             mouse_over_slot: None,
-            move_builder: move_builder,
+
             atlas: SantoriniAtlas::build(),
         }
     }
 
     pub fn update(&mut self, intersection: Option<Vec3>, input_state: &InputState, sound_event_sink: &mut Vec<SoundEvent>) {
     	if let Some(intersects_at) = intersection {
-    		self.mouse_over_slot = Position::from(intersects_at.x - 1.0, intersects_at.z - 1.0).and_then(|p| self.board.slot_for(p));	
+    		self.mouse_over_slot = Position::from(intersects_at.x - 1.0, intersects_at.z - 1.0).and_then(|p| self.game.board.slot_for(p));	
         } else {
             self.mouse_over_slot = None;
         }
 
-        let mut move_builder = MoveBuilder::new(&self.state, &self.board, &self.current_move_positions, self.mouse_over_slot);
+        let mut tentative = self.game.tentative(&self.current_move_positions, self.mouse_over_slot);
 
-		if self.cpu_players.contains(&self.state.player()) {
+
+		if self.cpu_players.contains(&self.game.state.player()) {
             println!("waiting on a cpu");
         } else {
             if let Some(sl) = self.mouse_over_slot {
                 if input_state.mouse.left_released() {
                     println!("pushing slot {:?}", sl);
-                    if move_builder.tentative_move_count > 0 {
+                    if tentative.move_count > 0 {
                         self.current_move_positions.push(sl);
                         sound_event_sink.push(SoundEvent {
                             name: "place_tile".into(),
@@ -75,7 +74,7 @@ impl SantoriniGame {
                             attenuation:1.0,
                             loop_sound: false,
                         });
-                        println!("move is A-OK! matching moves -> {:?}", move_builder.tentative_move_count);
+                        println!("move is A-OK! matching moves -> {:?}", tentative.move_count);
                     } else {
                         println!("tentative move isnt valid");
                     }
@@ -95,29 +94,33 @@ impl SantoriniGame {
                 });
             }
 
-            move_builder = MoveBuilder::new(&self.state, &self.board, &self.current_move_positions, self.mouse_over_slot);
+            tentative = self.game.tentative(&self.current_move_positions, self.mouse_over_slot);
 
             // if we have a completd move, apply it to the board!
-            let completed_moves : Vec<_> = move_builder.next_moves.iter().filter(|m| {
+            let completed_moves : Vec<_> = self.game.next_moves.iter().filter(|m| {
                 m.to_slots().iter().any(|sls| sls == &self.current_move_positions)
             }).cloned().collect();
 
             if let Some(mve) = completed_moves.first() {
-                println!("we have a completed move -> {:?} applying it to state", mve);
-                self.state = self.board.apply(*mve, &self.state);
+                match self.game.make_move(*mve) {
+                    MatchStatus::Won(player) => {
+                        println!("uhh player {:?} won", player);
+                    },
+                    MatchStatus::ToMove(_) => (),
+                }
                 self.current_move_positions.clear();
             }
 
-            move_builder = MoveBuilder::new(&self.state, &self.board, &self.current_move_positions, self.mouse_over_slot)
+            tentative = self.game.tentative(&self.current_move_positions, self.mouse_over_slot);
         }
 
-        self.move_builder = move_builder;
+        self.tentative = tentative;
     }
 
     pub fn render(&self, opaque: &mut GeometryTesselator, trans: &mut GeometryTesselator, units_per_point: f64) {
     	opaque.draw_floor_tile(&self.atlas.background, 0, 0.0, 0.0, 0.0, 0.0, false);
 
-        let next_player_color = PLAYER_COLORS[self.state.player().0 as usize];
+        let next_player_color = PLAYER_COLORS[self.game.state.player().0 as usize];
 
         // DRAW MOUSE OVER
         if let Some(slot) = self.mouse_over_slot {
@@ -127,10 +130,10 @@ impl SantoriniGame {
             trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.1, false);
         }
 
-        let draw_state : &State = &self.move_builder.proposed_state;
+        let draw_state : &State = &self.tentative.proposed_state;
 
         // DRAW BOARD CONTENTS
-        for &slot in &self.board.slots {
+        for &slot in &self.game.board.slots {
             let pos = StandardBoard::position(slot);
             let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
 
@@ -162,8 +165,7 @@ impl SantoriniGame {
             }
         }
 
-
-        for slot in &self.move_builder.legal_slots {
+        for slot in &self.tentative.matching_slots {
             let pos = StandardBoard::position(*slot);
             let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
             trans.color = next_player_color.float_raw();
