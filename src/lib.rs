@@ -6,6 +6,7 @@ extern crate jam;
 extern crate howl;
 extern crate time;
 extern crate cgmath;
+extern crate rand;
 
 extern crate tavern_core;
 

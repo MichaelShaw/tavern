@@ -11,6 +11,16 @@ use jam::render::*;
 use howl::SoundEvent;
 use cgmath::{Zero, Vector3};
 
+use rand;
+use rand::{Rng, XorShiftRng, SeedableRng};
+
+pub fn unseeded_rng() -> XorShiftRng {
+    let mut threaded_rng = rand::thread_rng();
+    let random_seed = [threaded_rng.next_u32(), threaded_rng.next_u32(), threaded_rng.next_u32(), threaded_rng.next_u32()];
+    // let manual_seed = [1_u32, 2, 3, 4];
+    rand::XorShiftRng::from_seed(random_seed)
+}
+
 
 pub struct SantoriniGame {
     // rest is per game, more transient
@@ -22,6 +32,8 @@ pub struct SantoriniGame {
     pub mouse_over_slot : Option<Slot>,
 
     pub atlas: SantoriniAtlas,
+
+    pub rand: XorShiftRng,
 }
 
 const BOARD_OFFSET : Vec3 = Vector3 { x: 1.0, y: 0.0, z: 1.0 };
@@ -31,7 +43,8 @@ const PLAYER_COLORS : [Color; 2] = [RED, YELLOW];
 
 impl SantoriniGame {
     pub fn new() -> SantoriniGame {
-        let cpu_players = HashSet::default();
+        let cpu_players = hashset![Player(1)]; // HashSet::default();
+        // cpu_players.insert(Player(1));
         
         let core_game = CoreGame::new(StandardBoard::new(), State::initial());
         let tentative = core_game.tentative(&Vec::new(), None);
@@ -45,6 +58,8 @@ impl SantoriniGame {
             mouse_over_slot: None,
 
             atlas: SantoriniAtlas::build(),
+
+            rand: unseeded_rng(),
         }
     }
 
@@ -57,9 +72,14 @@ impl SantoriniGame {
 
         let mut tentative = self.game.tentative(&self.current_move_positions, self.mouse_over_slot);
 
-
 		if self.cpu_players.contains(&self.game.state.player()) {
             println!("waiting on a cpu");
+            
+            let next_move_count = self.game.next_moves.len();
+            if next_move_count > 0 {
+                let mve = self.game.next_moves[self.rand.gen_range(0, next_move_count)];
+                self.play_move(mve);
+            }
         } else {
             if let Some(sl) = self.mouse_over_slot {
                 if input_state.mouse.left_released() {
@@ -94,28 +114,30 @@ impl SantoriniGame {
                 });
             }
 
-            tentative = self.game.tentative(&self.current_move_positions, self.mouse_over_slot);
-
             // if we have a completd move, apply it to the board!
             let completed_moves : Vec<_> = self.game.next_moves.iter().filter(|m| {
                 m.to_slots().iter().any(|sls| sls == &self.current_move_positions)
             }).cloned().collect();
 
             if let Some(mve) = completed_moves.first() {
-                match self.game.make_move(*mve) {
-                    MatchStatus::Won(player) => {
-                        println!("uhh player {:?} won", player);
-                        self.reset();
-                    },
-                    MatchStatus::ToMove(_) => (),
-                }
-                self.current_move_positions.clear();
+                self.play_move(* mve);
             }
 
             tentative = self.game.tentative(&self.current_move_positions, self.mouse_over_slot);
         }
 
         self.tentative = tentative;
+    }
+
+    pub fn play_move(&mut self, mve: Move) {
+        match self.game.make_move(mve) {
+            MatchStatus::Won(player) => {
+                println!("uhh player {:?} won", player);
+                self.reset();
+            },
+            MatchStatus::ToMove(_) => (),
+        }
+        self.current_move_positions.clear();
     }
 
     pub fn reset(&mut self) {
