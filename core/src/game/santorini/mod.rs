@@ -1,6 +1,9 @@
 // use std::fmt;
 
 // extern crate pad;
+pub mod move_builder;
+
+pub use self::move_builder::*;
 
 use super::util::*;
 use pad::{PadStr, Alignment};
@@ -59,8 +62,7 @@ const PLAYERS : usize = 2;
 const BUILDERS : usize = 2;
 const BOARD_SIZE : usize = 5;
 
-
-// basically an immutable set of optimization/lookup tables
+#[derive(Debug, Clone)]
 pub struct StandardBoard {
     pub slots : [Slot; 25],
     pub adjacencies : [[Slot ; 8] ; 25],
