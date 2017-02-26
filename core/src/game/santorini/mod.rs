@@ -20,6 +20,11 @@ pub struct State {
 }
 
 impl State {
+    pub fn builders_to_place(&self) -> bool {
+        let builders_to_move = self.builder_locations[self.to_move.0 as usize];
+        builders_to_move.iter().any(|&pl| pl == UNPLACED_BUILDER )
+    }
+
     pub fn initial() -> State {
         State {
             builder_locations: [[UNPLACED_BUILDER, UNPLACED_BUILDER], [UNPLACED_BUILDER, UNPLACED_BUILDER]],
@@ -36,6 +41,17 @@ impl State {
 
     pub fn next_player(&self) -> Player {
         Player((self.to_move.0 + 1) % 2)
+    }
+
+    pub fn build_at(&mut self, slot:Slot) {
+        let height = self.buildings.get(slot);
+        let build_dome = height == 3;
+        if build_dome {
+            self.domes = self.domes.set(slot, 1);
+            self.collision = self.collision.set(slot, 1);
+        } else {
+            self.buildings = self.buildings.set(slot, self.buildings.get(slot) + 1);
+        }
     }
 }
 
@@ -93,6 +109,7 @@ impl StandardBoard {
     pub fn next_moves(&self, state:&State, move_sink: &mut Vec<Move>) {
         let builders_to_move = state.builder_locations[state.to_move.0 as usize];
         let builders_to_place = builders_to_move.iter().any(|&pl| pl == UNPLACED_BUILDER );
+
         if builders_to_place {
             // 25 * 25 is 625 base
             for a in 0..25 {
@@ -174,16 +191,8 @@ impl StandardBoard {
                     }
                 }
                 // perform build
-
-                let height = new_state.buildings.get(build);
-                let build_dome = height == 3;
-                if build_dome{
-                    new_state.domes = new_state.domes.set(build, 1);
-                    new_state.collision = new_state.collision.set(build, 1);
-                } else {
-                    new_state.buildings = new_state.buildings.set(build, new_state.buildings.get(build) + 1);
-                }
-
+                new_state.build_at(build);
+          
                 // alternate player
                 new_state.to_move = new_state.next_player();
                 new_state

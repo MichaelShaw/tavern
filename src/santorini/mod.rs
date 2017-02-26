@@ -105,6 +105,26 @@ impl SantoriniGame {
     pub fn render(&self, opaque: &mut GeometryTesselator, trans: &mut GeometryTesselator, units_per_point: f64) {
     	opaque.draw_floor_tile(&self.atlas.background, 0, 0.0, 0.0, 0.0, 0.0, false);
 
+        let mut moves = Vec::new();
+        self.board.next_moves(&self.state, &mut moves);
+        let legal_slots : Vec<_> = moves.iter().flat_map(|m| m.to_slots()).filter(|sl| {
+            sl.starts_with(&self.move_builder.positions)
+        }).collect();
+
+        let mut with_mouse_over : Vec<_> = self.move_builder.positions.clone();
+        let modified_state = if let Some(slot) = self.mouse_over_slot {
+            with_mouse_over.push(slot);
+            if !legal_slots.iter().any(|slots| slots.starts_with(&with_mouse_over)) {
+                with_mouse_over.pop();
+            }
+            modify_state(&self.state, &with_mouse_over)
+        } else {
+            modify_state(&self.state, &self.move_builder.positions)
+        };
+
+
+        let mut valid_slots : HashSet<Slot> = HashSet::default();
+
         let next_player_color = PLAYER_COLORS[self.state.player().0 as usize];
 
         // DRAW MOUSE OVER
@@ -115,21 +135,13 @@ impl SantoriniGame {
             trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.1, false);
         }
 
-        // // DRAW MOVE BUILDER
-        // for &slot in &self.move_builder.positions {
-        //     let position = santorini::StandardBoard::position(slot);
-        //     let v = Vec3::new(position.x as f64, 0.0, position.y as f64) + BOARD_OFFSET;
-        //     trans.color = next_player_color.float_raw();
-        //     trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.1, false);
-        // }
-
         // DRAW BOARD CONTENTS
         for &slot in &self.board.slots {
             let pos = santorini::StandardBoard::position(slot);
             let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
 
-            let building_height = self.state.buildings.get(slot);
-            let dome = self.state.domes.get(slot) == 1;
+            let building_height = modified_state.buildings.get(slot);
+            let dome = modified_state.domes.get(slot) == 1;
 
             // RENDER THE BUILDING
             for i in 0..building_height {
@@ -144,33 +156,22 @@ impl SantoriniGame {
         }
 
         // DRAW THE GUYS
-        for (player_id, locations) in self.state.builder_locations.iter().enumerate() {
+        for (player_id, locations) in modified_state.builder_locations.iter().enumerate() {
             for &slot in locations {
                 if slot != santorini::UNPLACED_BUILDER {
                     let pos = santorini::StandardBoard::position(slot);
                     let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
-                    let building_height = self.state.buildings.get(slot);
+                    let building_height = modified_state.buildings.get(slot);
                     let vert_offset = (BUILDING_PIXEL_OFFSETS[building_height as usize] as f64) * units_per_point;
                     opaque.draw_floor_tile_at(&self.atlas.players[player_id as usize], 0, v + Vec3::new(0.0, vert_offset, 0.0), 0.12, false );
                 }
             }
         }
 
-
-        let mut moves = Vec::new();
-        self.board.next_moves(&self.state, &mut moves);
-        let legal_moves : Vec<_> = moves.iter().flat_map(|m| m.to_slots()).filter(|sl| {
-            sl.starts_with(&self.move_builder.positions)
-        }).collect();
-
-        let mut valid_slots : HashSet<Slot> = HashSet::default();
-
-		
-
-        for m in &legal_moves {
+        for slots in &legal_slots {
             let next_slot_idx = self.move_builder.positions.len() as usize;
-            if next_slot_idx < m.len() {
-                valid_slots.insert(m[next_slot_idx]);
+            if next_slot_idx < slots.len() {
+                valid_slots.insert(slots[next_slot_idx]);
             }
         }
 
@@ -191,6 +192,34 @@ impl MoveBuilder {
     pub fn new() -> MoveBuilder {
         MoveBuilder { positions: vec![] }
     }
+}
+
+pub fn modify_state(state: &santorini::State, slots: &Vec<Slot>) -> santorini::State {
+    let mut new_state = state.clone();
+
+    if new_state.builders_to_place() {
+        for (i, slot) in slots.iter().enumerate() {
+            new_state.builder_locations[new_state.to_move.0 as usize][i] = *slot;
+        }
+    } else {
+        for i in 0..2 {
+            let builder_location = new_state.builder_locations[new_state.to_move.0 as usize][i];
+        
+            if let Some(from) = slots.get(0) {
+                if builder_location == *from {
+                    if let Some(to) = slots.get(1) {
+                        new_state.builder_locations[new_state.to_move.0 as usize][i] = *to;
+                        if let Some(build) = slots.get(2) {
+                            new_state.build_at(*build);
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    new_state
 }
 
 #[derive(Debug)]
