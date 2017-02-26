@@ -105,6 +105,7 @@ impl SantoriniGame {
                 match self.game.make_move(*mve) {
                     MatchStatus::Won(player) => {
                         println!("uhh player {:?} won", player);
+                        self.reset();
                     },
                     MatchStatus::ToMove(_) => (),
                 }
@@ -115,6 +116,11 @@ impl SantoriniGame {
         }
 
         self.tentative = tentative;
+    }
+
+    pub fn reset(&mut self) {
+        self.game = CoreGame::new(StandardBoard::new(), State::initial());
+        self.tentative = self.game.tentative(&Vec::new(), None);
     }
 
     pub fn render(&self, opaque: &mut GeometryTesselator, trans: &mut GeometryTesselator, units_per_point: f64) {
