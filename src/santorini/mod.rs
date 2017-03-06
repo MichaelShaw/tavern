@@ -21,7 +21,6 @@ pub fn unseeded_rng() -> XorShiftRng {
     rand::XorShiftRng::from_seed(random_seed)
 }
 
-
 pub struct SantoriniGame {
     // rest is per game, more transient
     pub game : CoreGame,

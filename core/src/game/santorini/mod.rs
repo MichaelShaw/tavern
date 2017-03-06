@@ -9,9 +9,9 @@ use super::util::*;
 use pad::{PadStr, Alignment};
 
 // magics
-pub const UNPLACED_BUILDER : Slot = Slot(255);
-pub const DEAD_BUILDER : Slot = Slot(254);
-pub const NONE : Slot = Slot(253);
+pub const UNPLACED_BUILDER : Slot = Slot(-100);
+pub const DEAD_BUILDER : Slot = Slot(-101);
+pub const NONE : Slot = Slot(-102);
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct State {
@@ -62,13 +62,87 @@ const PLAYERS : usize = 2;
 const BUILDERS : usize = 2;
 const BOARD_SIZE : usize = 5;
 
+const PRE_ROTATE : Position = Position { x: -2, y: -2 };
+const POST_ROTATE : Position = Position { x: 2, y: 2 };
+
+pub fn rotate_90(pos: Position) -> Position {
+    (ROTATE_90 * (pos + PRE_ROTATE)) + POST_ROTATE
+}
+
+pub fn rotate_180(pos: Position) -> Position {
+    (ROTATE_180 * (pos + PRE_ROTATE)) + POST_ROTATE
+}
+
+pub fn rotate_270(pos: Position) -> Position {
+    (ROTATE_270 * (pos + PRE_ROTATE)) + POST_ROTATE
+}
+
+pub fn reflect_x(pos: Position) -> Position {
+    let mut p = pos;
+    p.x = (p.x - 2) * -1 + 2;
+    p
+}
+
+pub fn reflect_y(pos: Position) -> Position {
+    let mut p = pos;
+    p.y = (p.y - 2) * -1 + 2;
+    p
+}
+
+pub fn reflect_diag_a(pos: Position) -> Position {
+    Position { x: pos.y, y: pos.x }
+}
+
+pub fn reflect_diag_b(pos: Position) -> Position {
+    reflect_diag_a(rotate_180(pos))
+}
+
 #[derive(Debug, Clone)]
 pub struct StandardBoard {
     pub slots : [Slot; 25],
     pub adjacencies : [[Slot ; 8] ; 25],
+    pub transforms : [SlotTransform; 7],
 }
 
 impl StandardBoard {
+    pub fn transform<F>(&self, f: F) -> SlotTransform where F: Fn(Position) -> Position {
+        let mut transform = SlotTransform { slots: [Slot(0); 25] };
+        for x in 0..5 {
+            for y in 0..5 {
+                let position = Position{ x: x, y: y };
+                let sl = StandardBoard::slot(position);
+                let t_position = f(position);
+
+                transform.slots[sl.0 as usize] = StandardBoard::slot(t_position);
+            }
+        }
+        transform
+    }
+
+    pub fn transform_state(&self, state: &State, slot_transform: &SlotTransform) -> State {
+        let mut new_state = state.clone();
+
+        for i in 0..25 {
+            let from = Slot(i);
+            let to = slot_transform.slots[i as usize];
+
+            new_state.buildings.set(to, state.buildings.get(from));
+            new_state.domes.set(to, state.domes.get(from));
+            new_state.collision.set(to, state.collision.get(from));
+        }
+
+        for player_id in 0..2 {
+            for builder_id in 0..2 {
+                let builder_location = state.builder_locations[player_id][builder_id];
+                if Self::valid(builder_location) {
+                    new_state.builder_locations[player_id][builder_id] = slot_transform.slots[builder_location.0 as usize];
+                }
+            }
+        }
+      
+        new_state
+    }
+
     pub fn slot_for(&self, position: Position) -> Option<Slot> {
         if position.x < 5 && position.y < 5 {
             Some(StandardBoard::slot(position))
@@ -77,23 +151,29 @@ impl StandardBoard {
         }
     }
 
+    pub fn permute(&self, state: &State, sink: &mut Vec<State>) {
+        for trans in &self.transforms {
+            sink.push(self.transform_state(state, trans));
+        }
+    }
+
     pub fn new() -> StandardBoard {
         let mut slots = [Slot(0) ; 25];
         let mut adjacencies = [[NONE ; 8] ; 25];
 
         for i in 0..25 {
-            let slot = Slot(i as u8 );
+            let slot = Slot(i as i8);
             slots[i] = slot;
             let pos = StandardBoard::position(slot);
             // produce adjacencies based on position
-            let x = pos.x as i8;
-            let y = pos.y as i8;
+            let x = pos.x;
+            let y = pos.y;
 
             let mut j = 0;
 
             for nx in (x-1)..(x+2) {
                 for ny in (y-1)..(y+2) {
-                    let adjacent_position = Position { x: nx as u8, y : ny as u8 };
+                    let adjacent_position = Position { x: nx, y : ny };
                     if !(nx == x && ny == y) && nx >= 0 && nx < (BOARD_SIZE as i8) && ny >= 0 && ny < (BOARD_SIZE as i8) {
                         adjacencies[i][j] = StandardBoard::slot(adjacent_position);
                         j += 1;
@@ -102,10 +182,23 @@ impl StandardBoard {
             }
         }
 
-        StandardBoard {
+        let mut board = StandardBoard {
             slots: slots,
             adjacencies: adjacencies,
-        }
+            transforms: [EMPTY_SLOT_TRANSFORM; 7],
+        };
+
+        board.transforms = [
+            board.transform(rotate_90),
+            board.transform(rotate_180),
+            board.transform(rotate_270),
+            board.transform(reflect_x),
+            board.transform(reflect_y),
+            board.transform(reflect_diag_a),
+            board.transform(reflect_diag_b)
+        ];
+
+        board
     }
 
     pub fn next_moves(&self, state:&State, move_sink: &mut Vec<Move>) {
@@ -203,7 +296,7 @@ impl StandardBoard {
     }
 
     pub fn valid(slot:Slot) -> bool {
-        slot.0 < 25
+        slot.0 >= 0
     }
 
     // use this to detect before applying move
@@ -221,13 +314,13 @@ impl StandardBoard {
         let divider = "+---+---+---+---+---+\n";
         let empty =   "|   |   |   |   |   |\n";
 
-        for x in 0..BOARD_SIZE {
+        for y in 0..BOARD_SIZE {
             out.push_str(divider);
             let mut terrain : Vec<String> = Vec::new();
             let mut players : Vec<String> = Vec::new();
 
-            for y in 0..BOARD_SIZE {
-                let slot = Self::slot(Position { x: x as u8, y: y as u8});
+            for x in 0..BOARD_SIZE {
+                let slot = Self::slot(Position { x: x as i8 , y: y as i8 });
                 // terrain
                 if state.domes.get(slot) > 0 {
                     terrain.push("D".into());

@@ -12,8 +12,9 @@ use std::mem;
 use rand::Rng;
 use rand::SeedableRng;
 
-use tavern_core::game::santorini::{State, Move, StandardBoard};
-use tavern_core::game::util::{Position}; // , Packed, Packed1, Packed2, Slot};
+use tavern_core::game::santorini::*;
+use tavern_core::game::util::*; // , Packed, Packed1, Packed2, Slot};
+
 
 
 
@@ -25,6 +26,32 @@ fn main() {
 
     println!("Santorini!");
     print_sizes();
+
+    let board = StandardBoard::new();
+
+
+    for trans in &board.transforms {
+        let ok = trans.check();
+
+        println!("is transform {:?} ok -> {:?}", trans, ok);
+    }
+
+    let state = State::initial();
+    let new_state = board.apply(Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, &state);
+
+    println!("{}", board.print(&new_state));
+
+    let mut out = Vec::new();
+
+    board.permute(&new_state, &mut out);
+
+    for p_state in &out {
+        println!("== permuted ==");
+        println!("{}", board.print(&p_state));
+    }
+
+
+    return;
     
     let mut info = GameInfo::empty();
     let start = time::precise_time_ns();
