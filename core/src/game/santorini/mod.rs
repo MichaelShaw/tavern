@@ -2,6 +2,9 @@
 
 // extern crate pad;
 pub mod move_builder;
+pub mod perft;
+pub mod depth_first;
+pub mod heuristic;
 
 pub use self::move_builder::*;
 
@@ -98,16 +101,6 @@ pub fn reflect_diag_b(pos: Position) -> Position {
     reflect_diag_a(rotate_180(pos))
 }
 
-pub type MoveAid = Vec<Vec<Move>>;
-
-pub fn sink_aid(depth: usize, capacity: usize) -> Vec<Vec<Move>> {
-    let mut sink = Vec::new();
-    for _ in 0..depth {
-        sink.push(Vec::with_capacity(capacity));
-    }
-    sink
-}
-
 #[derive(Debug, Clone)]
 pub struct StandardBoard {
     pub slots : [Slot; 25],
@@ -115,28 +108,6 @@ pub struct StandardBoard {
     pub transforms : [SlotTransform; 7],
 }
 
-impl StandardBoard {
-    pub fn perft(&self, state: &State, depth: usize, aid: &mut MoveAid) -> u64 {
-        if depth == 0 {
-            return 1;
-        }
-
-        let mut n = 0;
-
-        let mut moves = Vec::new();
-        self.next_moves(state, &mut moves);
-        for mve in &moves {
-            if self.ascension_winning_move(state, *mve) {
-                n += 1;
-            } else {
-                let new_state = self.apply(*mve, state);
-                n += self.perft(&new_state, depth - 1, aid);
-            }
-        }
-        
-        n
-    }
-}
 
 impl StandardBoard {
     pub fn transform<F>(&self, f: F) -> SlotTransform where F: Fn(Position) -> Position {

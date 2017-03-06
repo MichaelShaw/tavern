@@ -18,8 +18,6 @@ use tavern_core::game::util::*; // , Packed, Packed1, Packed2, Slot};
 fn main() {
     let board = StandardBoard::new();
 
-
-
     let init = State::initial();
     let new_state = board.apply(Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, &init);
     let new_state_b = board.apply(Move::PlaceBuilders { a: Slot(3), b: Slot(4) }, &new_state);
@@ -39,10 +37,6 @@ fn main() {
 
         println!("depth {:?} moves -> {:?} in {:.3}s branch {:.1}", depth, moves, as_seconds, branch_factor);
     }
-
-
-
-   
 }
 
 fn do_stuff() {
