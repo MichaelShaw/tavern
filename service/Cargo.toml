@@ -5,3 +5,4 @@ authors = ["Michael Shaw <michaeljshaw@gmail.com>"]
 
 [dependencies]
 tavern_core = { path = "../core" }
+time = "*"

@@ -13,8 +13,8 @@ pub struct SimpleHeightHeuristic {}
 
 impl Heuristic for SimpleHeightHeuristic {
     fn evaluate(board: &StandardBoard, state: &State) -> HeuristicValue {
-
         let mut n : i8 = 0;
+
         for &bl in &state.builder_locations[0] {
             if StandardBoard::valid(bl) {
                 let h = state.buildings.get(bl) as i8;

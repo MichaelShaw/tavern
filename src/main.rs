@@ -17,6 +17,14 @@ fn main() {
     tavern::app::run_app();
 }
 
+fn execute_playout() {
+    let board = StandardBoard::new();
+    let init = State::initial();
+
+    
+
+}
+
 fn count_moves() {
     let board = StandardBoard::new();
 

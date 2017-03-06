@@ -71,7 +71,9 @@ impl SantoriniGame {
             ai_service: AIService::new(),
         };
 
-        game.ai_service.request_analysis(&game.game.state);
+        if game.cpu_players.contains(&game.game.state.player()) {
+            game.ai_service.request_analysis(&game.game.state);    
+        }
 
         game
     }
@@ -86,12 +88,15 @@ impl SantoriniGame {
         let mut tentative = self.game.tentative(&self.current_move_positions, self.mouse_over_slot);
 
 		if self.cpu_players.contains(&self.game.state.player()) {
-            println!("waiting on a cpu");
-            
-            let next_move_count = self.game.next_moves.len();
-            if next_move_count > 0 {
-                let mve = self.game.next_moves[self.rand.gen_range(0, next_move_count)];
-                self.play_move(mve);
+            if let Some(ref analysis) = self.analysis.clone() {
+                if analysis.terminal {
+                    if let Some(&(mve, h)) = analysis.moves.first() {
+                        if self.game.next_moves.iter().any(|&m| m == mve) {
+                            println!("playin move with heuristic {:?}", h);
+                            self.play_move(mve);
+                        }
+                    }
+                }
             }
         } else {
             if let Some(sl) = self.mouse_over_slot {
@@ -144,7 +149,7 @@ impl SantoriniGame {
         'ai_loop: loop {
             match self.ai_service.receive.try_recv() {
                 Ok(analysis) => {
-                    println!("front end received analysis -> {:?}", analysis);
+                    println!("front end received analysis -> {:?}", analysis.depth);
                     if analysis.state == self.game.state {
                         self.analysis = Some(analysis);
                     } else {
@@ -168,7 +173,9 @@ impl SantoriniGame {
         }
         self.current_move_positions.clear();
         self.analysis = None;
-        self.ai_service.request_analysis(&self.game.state);
+        if self.cpu_players.contains(&self.game.state.player()) {
+            self.ai_service.request_analysis(&self.game.state);    
+        }
     }
 
     pub fn reset(&mut self) {

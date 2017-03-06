@@ -8,6 +8,8 @@ use std::sync::mpsc::SendError;
 use std::thread;
 use std::thread::JoinHandle;
 
+use time;
+
 pub struct AIService {
 	send: Sender<Request>,
 	pub receive: Receiver<StateAnalysis>,
@@ -73,9 +75,14 @@ impl AIService {
 		let score = SimpleHeightHeuristic::evaluate(board, state);
 		println!("we score it as -> {:?}", score);
 
-		let max_depth = 4;
+		let max_depth = if state.builders_to_place() {
+			3
+		}  else {
+			5
+		};
 		for depth in 1..(max_depth+1) {
-			let mut moves = Negamax::evaluate(board, state, depth); 	
+			let start = time::precise_time_ns();
+	        let mut moves = Negamax::evaluate::<SimpleHeightHeuristic>(board, state, depth); 	
 			moves.sort_by_key(|&(_, hv)| -hv);
 			send.send(StateAnalysis {
 				state: state.clone(),
@@ -83,6 +90,9 @@ impl AIService {
 				moves: moves,
 				terminal: depth == max_depth, 
 			}).unwrap();	
+			let duration = time::precise_time_ns() - start;
+			let as_seconds = (duration as f64) / 1_000_000_000f64;
+			println!("depth {:?} evaluated -> {:.3}", depth, as_seconds);
 		}
 
 		println!("Evaluation has concluded");
