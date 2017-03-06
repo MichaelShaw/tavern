@@ -9,6 +9,7 @@ extern crate cgmath;
 extern crate rand;
 
 extern crate tavern_core;
+extern crate tavern_service;
 
 pub mod app;
 pub mod santorini;

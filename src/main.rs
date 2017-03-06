@@ -9,13 +9,15 @@ extern crate tavern;
 
 
 use std::mem;
-use rand::Rng;
-use rand::SeedableRng;
 
 use tavern_core::game::santorini::*;
 use tavern_core::game::util::*; // , Packed, Packed1, Packed2, Slot};
 
 fn main() {
+    tavern::app::run_app();
+}
+
+fn count_moves() {
     let board = StandardBoard::new();
 
     let init = State::initial();
@@ -72,7 +74,7 @@ fn do_stuff() {
     return;
     
  
-    tavern::app::run_app();
+    
 }
 
 fn print_sizes() {

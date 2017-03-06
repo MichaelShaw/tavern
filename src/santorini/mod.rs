@@ -2,6 +2,8 @@
 use tavern_core::{Slot, Player, Position, Packed};
 use tavern_core::game::santorini::*;
 
+use tavern_service::ai::*;
+
 
 use jam::{Vec3, Vec3f, HashSet, InputState, Color};
 use jam::color::*;
@@ -33,6 +35,8 @@ pub struct SantoriniGame {
     pub atlas: SantoriniAtlas,
 
     pub rand: XorShiftRng,
+
+    pub ai_service : AIService,
 }
 
 const BOARD_OFFSET : Vec3 = Vector3 { x: 1.0, y: 0.0, z: 1.0 };
@@ -48,7 +52,7 @@ impl SantoriniGame {
         let core_game = CoreGame::new(StandardBoard::new(), State::initial());
         let tentative = core_game.tentative(&Vec::new(), None);
 
-        SantoriniGame {
+        let game = SantoriniGame {
             game: core_game,
             tentative: tentative,
 
@@ -59,7 +63,13 @@ impl SantoriniGame {
             atlas: SantoriniAtlas::build(),
 
             rand: unseeded_rng(),
-        }
+
+            ai_service: AIService::new(),
+        };
+
+        game.ai_service.request_analysis(&game.game.state);
+
+        game
     }
 
     pub fn update(&mut self, intersection: Option<Vec3>, input_state: &InputState, sound_event_sink: &mut Vec<SoundEvent>) {
@@ -137,6 +147,7 @@ impl SantoriniGame {
             MatchStatus::ToMove(_) => (),
         }
         self.current_move_positions.clear();
+        self.ai_service.request_analysis(&self.game.state);
     }
 
     pub fn reset(&mut self) {

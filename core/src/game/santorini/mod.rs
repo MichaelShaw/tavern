@@ -7,6 +7,8 @@ pub mod negamax;
 pub mod heuristic;
 
 pub use self::move_builder::*;
+pub use self::heuristic::*;
+pub use self::negamax::*;
 
 use HashSet;
 use super::util::*;
