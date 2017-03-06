@@ -303,6 +303,50 @@ impl StandardBoard {
         }
     }
 
+    pub fn next_moves_for_player(&self, state:&State, move_sink: &mut Vec<Move>) {
+        let builders_to_move = state.builder_locations[state.to_move.0 as usize];
+        let builders_to_place = builders_to_move.iter().any(|&pl| pl == UNPLACED_BUILDER );
+
+        if builders_to_place {
+            // 25 * 25 is 625 base
+            for a in 0..25 {
+                let slot_a = Slot(a);
+                if state.collision.get(slot_a) == 0 {
+                    for b in 0..25 {
+                        let slot_b = Slot(b);
+                        if a != b && state.collision.get(slot_b) == 0 {
+                             move_sink.push(Move::PlaceBuilders { a: slot_a, b:slot_b });    
+                        }
+                    }    
+                }
+            }
+        } else {
+            // iterate both
+            for &builder_location in builders_to_move.iter() {
+                if Self::valid(builder_location) {
+                    // attempt all moves with this guy
+                    let current_height = state.buildings.get(builder_location);
+                    for &move_to in self.adjacencies[builder_location.0 as usize].iter() {
+                        if move_to == NONE { // we've reached end of adjacencies
+                            break;
+                        }
+                        // no dome/person there, and height is at most 1 up
+                        if state.collision.get(move_to) == 0 && state.buildings.get(move_to) <= current_height + 1 {
+                            for &build_at in self.adjacencies[move_to.0 as usize].iter() {
+                                if build_at == NONE {
+                                    break;
+                                }
+                                if state.collision.get(build_at) == 0 || build_at == builder_location {
+                                    move_sink.push(Move::Move { from: builder_location, to:move_to, build: build_at });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     pub fn position(slot: Slot) -> Position {
         // slot is 0 -> 24
         let x = slot.0 % 5;
@@ -432,10 +476,10 @@ pub enum Move {
 }
 
 impl Move {
-    pub fn to_slots(&self) -> Vec<Vec<Slot>> {
+    pub fn to_slots(&self) -> Vec<Slot> {
         match self {
-            &Move::PlaceBuilders { a, b } => vec![vec![a, b], vec![b, a]],
-            &Move::Move { from, to, build } => vec![vec![from, to, build]],
+            &Move::PlaceBuilders { a, b } => vec![a, b],
+            &Move::Move { from, to, build } => vec![from, to, build],
         }
     }
 }

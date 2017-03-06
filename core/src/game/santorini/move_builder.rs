@@ -18,6 +18,7 @@ pub struct CoreGame {
     pub next_moves : Vec<Move>,
 }
 
+
 impl CoreGame {
     pub fn make_move(&mut self, mve:Move) -> MatchStatus {
         let is_winning_move = self.board.ascension_winning_move(&self.state, mve);
@@ -30,7 +31,7 @@ impl CoreGame {
         self.state = self.board.apply(mve, &self.state);
         self.next_moves.clear();
         if !is_winning_move {
-            self.board.next_moves(&self.state, &mut self.next_moves);    
+            self.board.next_moves_for_player(&self.state, &mut self.next_moves);    
         }
         
         if is_winning_move {
@@ -44,7 +45,7 @@ impl CoreGame {
 
     pub fn new(board : StandardBoard, state: State) -> CoreGame {
         let mut next_moves = Vec::new();
-        board.next_moves(&state, &mut next_moves);
+        board.next_moves_for_player(&state, &mut next_moves);
 
         CoreGame { // this is the core
             moves: Vec::new(),
@@ -55,7 +56,7 @@ impl CoreGame {
     }
 
     pub fn tentative(&self, positions : &Vec<Slot>, tentative: Option<Slot>) -> TentativeGame {
-        let legal_moves_as_slots : Vec<_> = self.next_moves.iter().flat_map(|m| m.to_slots()).filter(|sl| {
+        let legal_moves_as_slots : Vec<_> = self.next_moves.iter().map(|m| m.to_slots()).filter(|sl| {
             sl.starts_with(&positions)
         }).collect();
 

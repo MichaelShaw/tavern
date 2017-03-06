@@ -125,7 +125,7 @@ impl SantoriniGame {
 
             // if we have a completd move, apply it to the board!
             let completed_moves : Vec<_> = self.game.next_moves.iter().filter(|m| {
-                m.to_slots().iter().any(|sls| sls == &self.current_move_positions)
+                &m.to_slots() == &self.current_move_positions
             }).cloned().collect();
 
             if let Some(mve) = completed_moves.first() {

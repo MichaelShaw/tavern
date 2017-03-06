@@ -129,7 +129,8 @@ impl App {
         self.camera.points_per_unit = self.points_per_unit * self.zoom;
         self.camera.viewport = dimensions;
 
-        self.sound_worker.send(Render { master_gain: 1.0, sounds:sound_events, persistent_sounds: hashmap!["song".into() => song()], listener: Listener::default() }).unwrap();
+        // "song".into() => song()
+        self.sound_worker.send(Render { master_gain: 1.0, sounds:sound_events, persistent_sounds: hashmap![], listener: Listener::default() }).unwrap();
     }
 
     fn render(&mut self) -> Vec<Pass<String>> {

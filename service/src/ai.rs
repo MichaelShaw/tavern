@@ -23,6 +23,7 @@ pub struct StateAnalysis {
 	pub state: State,
 	pub depth: u8,
 	pub moves: Vec<(Move, HeuristicValue)>,
+	pub terminal: bool, 
 }
 
 impl AIService {
@@ -42,8 +43,9 @@ impl AIService {
                     Ok(event) => {
                     	match event {
                     		Analysis(state) => {
-                    			println!("AI Worker has been asked for analysis");
-                    			println!("{}", board.print(&state));
+                    			AIService::evaluate(&board, &state);
+
+                    			
                     		},
 							Shutdown => {
 								println!("Ai shutdown requested");
@@ -64,6 +66,14 @@ impl AIService {
 			receive: main_rx,
 			join_handle: join_handle,
 		}
+	}
+
+	pub fn evaluate(board: &StandardBoard, state:&State) {
+		println!("AI Worker has been asked for analysis");
+		println!("{}", board.print(&state));
+
+
+
 	}
 
 	pub fn request_analysis(&self, state: &State) {
