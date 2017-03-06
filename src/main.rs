@@ -40,9 +40,9 @@ fn do_stuff() {
     let board = StandardBoard::new();
 
 	print!("{}[2J", 27 as char);
-    let mut threaded_rng = rand::thread_rng();
-    let random_seed = [threaded_rng.next_u32(), threaded_rng.next_u32(), threaded_rng.next_u32(), threaded_rng.next_u32()];
-    let mut rng = rand::XorShiftRng::from_seed(random_seed);
+    // let mut threaded_rng = rand::thread_rng();
+    // let random_seed = [threaded_rng.next_u32(), threaded_rng.next_u32(), threaded_rng.next_u32(), threaded_rng.next_u32()];
+    // let mut rng = rand::XorShiftRng::from_seed(random_seed);
 
     println!("Santorini!");
     print_sizes();
@@ -73,28 +73,6 @@ fn do_stuff() {
     
  
     tavern::app::run_app();
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-struct GameInfo {
-    pub moves: u64,
-    pub turns: u64,
-}
-
-impl GameInfo {
-    pub fn empty() -> GameInfo {
-        GameInfo {
-            moves: 0,
-            turns: 0,
-        }
-    }
-}
-
-fn combine(l:GameInfo, r:GameInfo) -> GameInfo {
-    GameInfo {
-        moves: l.moves + r.moves,
-        turns: l.turns + r.turns,
-    }
 }
 
 fn print_sizes() {

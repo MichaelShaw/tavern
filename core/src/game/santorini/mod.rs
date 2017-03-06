@@ -245,8 +245,7 @@ impl StandardBoard {
 
         if builders_to_place {
             // 25 * 25 is 625 base
-            // let mut seen : HashSet<BuilderLocations> = HashSet::default();
-            // let mut sink = Vec::new();
+            let mut seen : HashSet<BuilderLocations> = HashSet::default();
 
             for a in 0..25 {
                 let slot_a = Slot(a);
@@ -254,23 +253,23 @@ impl StandardBoard {
                     for b in (a+1)..25 {
                         let slot_b = Slot(b);
                         if state.collision.get(slot_b) == 0 {
-                            // let mut slots = state.builder_locations;
-                            // slots[state.to_move.0 as usize] = [slot_a, slot_b];
+                            let mut slots = state.builder_locations;
+                            slots[state.to_move.0 as usize] = [slot_a, slot_b];
 
-                            // let mut dupe = false;
+                            let mut dupe = false;
 
-                            // for slot_transform in &self.transforms {
-                            //     let new_slots = StandardBoard::transform_slots(slot_transform, slots);
-                            //     if seen.contains(&new_slots) {
-                            //         dupe = true;
-                            //         break;
-                            //     }
-                            // }
+                            for slot_transform in &self.transforms {
+                                let new_slots = StandardBoard::transform_slots(slot_transform, slots);
+                                if seen.contains(&new_slots) {
+                                    dupe = true;
+                                    break;
+                                }
+                            }
 
-                            // if !dupe {
+                            if !dupe {
                                 move_sink.push(Move::PlaceBuilders { a: slot_a, b:slot_b });    
-                                // seen.insert(slots);
-                            // }
+                                seen.insert(slots);
+                            }
                         }
                     }    
                 }
