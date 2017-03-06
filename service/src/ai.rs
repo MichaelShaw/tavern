@@ -71,6 +71,8 @@ impl AIService {
 	pub fn evaluate(board: &StandardBoard, state:&State) {
 		println!("AI Worker has been asked for analysis");
 		println!("{}", board.print(&state));
+		let score = SimpleHeightHeuristic::evaluate(board, state);
+		println!("we score it as -> {:?}", score);
 
 
 
