@@ -3,10 +3,10 @@ use std;
 
 use HashSet;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Player(pub i8);
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Slot(pub i8);
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]

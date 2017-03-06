@@ -3,11 +3,12 @@
 // extern crate pad;
 pub mod move_builder;
 pub mod perft;
-pub mod depth_first;
+pub mod negamax;
 pub mod heuristic;
 
 pub use self::move_builder::*;
 
+use HashSet;
 use super::util::*;
 use pad::{PadStr, Alignment};
 
@@ -16,17 +17,29 @@ pub const UNPLACED_BUILDER : Slot = Slot(-100);
 pub const DEAD_BUILDER : Slot = Slot(-101);
 pub const NONE : Slot = Slot(-102);
 
+pub type BuilderLocations = [[Slot; 2]; 2];
+
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub struct State {
-    pub builder_locations: [[Slot; 2]; 2],
+    pub builder_locations: BuilderLocations,
     pub buildings : Packed2, 
     pub domes : Packed1,
     pub collision : Packed1,
     pub to_move : Player,
 }
 
-
 impl State {
+    pub fn is_ordered(&self) -> bool {
+        self.builder_locations[0][0] <= self.builder_locations[0][1] && self.builder_locations[1][0] <= self.builder_locations[1][1]
+    }
+
+    pub fn ensure_ordered(&mut self, player:Player) {
+        let builder_locations = &mut self.builder_locations[player.0 as usize];
+        if builder_locations[1] < builder_locations[0] {
+            builder_locations.swap(0, 1);
+        }
+     }       
+
     pub fn builders_to_place(&self) -> bool {
         let builders_to_move = self.builder_locations[self.to_move.0 as usize];
         builders_to_move.iter().any(|&pl| pl == UNPLACED_BUILDER )
@@ -144,6 +157,9 @@ impl StandardBoard {
                 }
             }
         }
+
+        new_state.ensure_ordered(Player(0));
+        new_state.ensure_ordered(Player(1));
       
         new_state
     }
@@ -206,19 +222,55 @@ impl StandardBoard {
         board
     }
 
+    pub fn transform_slots(transform: &SlotTransform, slots: BuilderLocations) -> BuilderLocations {
+        let mut out : BuilderLocations = [[Slot(0); 2]; 2];
+
+        for player_id in 0..2 {
+            for i in 0..2 {
+                let sl = slots[player_id][i];
+                if Self::valid(sl) {
+                    out[player_id][i] = transform.slots[sl.0 as usize];
+                } else {
+                    out[player_id][i] = sl;
+                }
+            }
+        }
+
+        out
+    }
+
     pub fn next_moves(&self, state:&State, move_sink: &mut Vec<Move>) {
         let builders_to_move = state.builder_locations[state.to_move.0 as usize];
         let builders_to_place = builders_to_move.iter().any(|&pl| pl == UNPLACED_BUILDER );
 
         if builders_to_place {
             // 25 * 25 is 625 base
+            // let mut seen : HashSet<BuilderLocations> = HashSet::default();
+            // let mut sink = Vec::new();
+
             for a in 0..25 {
                 let slot_a = Slot(a);
                 if state.collision.get(slot_a) == 0 {
                     for b in (a+1)..25 {
                         let slot_b = Slot(b);
                         if state.collision.get(slot_b) == 0 {
-                            move_sink.push(Move::PlaceBuilders { a: slot_a, b:slot_b });
+                            // let mut slots = state.builder_locations;
+                            // slots[state.to_move.0 as usize] = [slot_a, slot_b];
+
+                            // let mut dupe = false;
+
+                            // for slot_transform in &self.transforms {
+                            //     let new_slots = StandardBoard::transform_slots(slot_transform, slots);
+                            //     if seen.contains(&new_slots) {
+                            //         dupe = true;
+                            //         break;
+                            //     }
+                            // }
+
+                            // if !dupe {
+                                move_sink.push(Move::PlaceBuilders { a: slot_a, b:slot_b });    
+                                // seen.insert(slots);
+                            // }
                         }
                     }    
                 }
@@ -271,6 +323,9 @@ impl StandardBoard {
                 new_state.collision = new_state.collision.set(a, 1);
                 new_state.builder_locations[player_to_move.0 as usize][1] = b;
                 new_state.collision = new_state.collision.set(b, 1);
+
+                new_state.ensure_ordered(player_to_move);
+
                 new_state.to_move = new_state.next_player();                
 
                 new_state
@@ -290,6 +345,9 @@ impl StandardBoard {
                         break;
                     }
                 }
+
+                // new_state.ensure_ordered(player_to_move);
+               
                 // perform build
                 new_state.build_at(build);
           

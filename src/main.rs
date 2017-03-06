@@ -25,11 +25,8 @@ fn main() {
     println!("start {}", board.print(&new_state_b));
 
     for depth in 0..20 {
-        let mut aid = sink_aid(depth + 1, 40);
-
-
         let start = time::precise_time_ns();
-        let moves = board.perft(&new_state_b, depth, &mut aid);
+        let moves = board.perft(&init, depth);
         let duration = time::precise_time_ns() - start;
         let as_seconds = (duration as f64) / 1_000_000_000f64;
 
