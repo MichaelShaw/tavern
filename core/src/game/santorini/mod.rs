@@ -13,7 +13,7 @@ pub const UNPLACED_BUILDER : Slot = Slot(-100);
 pub const DEAD_BUILDER : Slot = Slot(-101);
 pub const NONE : Slot = Slot(-102);
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub struct State {
     pub builder_locations: [[Slot; 2]; 2],
     pub buildings : Packed2, 
@@ -21,6 +21,7 @@ pub struct State {
     pub collision : Packed1,
     pub to_move : Player,
 }
+
 
 impl State {
     pub fn builders_to_place(&self) -> bool {
@@ -97,11 +98,44 @@ pub fn reflect_diag_b(pos: Position) -> Position {
     reflect_diag_a(rotate_180(pos))
 }
 
+pub type MoveAid = Vec<Vec<Move>>;
+
+pub fn sink_aid(depth: usize, capacity: usize) -> Vec<Vec<Move>> {
+    let mut sink = Vec::new();
+    for _ in 0..depth {
+        sink.push(Vec::with_capacity(capacity));
+    }
+    sink
+}
+
 #[derive(Debug, Clone)]
 pub struct StandardBoard {
     pub slots : [Slot; 25],
     pub adjacencies : [[Slot ; 8] ; 25],
     pub transforms : [SlotTransform; 7],
+}
+
+impl StandardBoard {
+    pub fn perft(&self, state: &State, depth: usize, aid: &mut MoveAid) -> u64 {
+        if depth == 0 {
+            return 1;
+        }
+
+        let mut n = 0;
+
+        let mut moves = Vec::new();
+        self.next_moves(state, &mut moves);
+        for mve in &moves {
+            if self.ascension_winning_move(state, *mve) {
+                n += 1;
+            } else {
+                let new_state = self.apply(*mve, state);
+                n += self.perft(&new_state, depth - 1, aid);
+            }
+        }
+        
+        n
+    }
 }
 
 impl StandardBoard {

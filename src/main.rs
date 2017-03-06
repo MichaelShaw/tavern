@@ -15,10 +15,39 @@ use rand::SeedableRng;
 use tavern_core::game::santorini::*;
 use tavern_core::game::util::*; // , Packed, Packed1, Packed2, Slot};
 
-
-
-
 fn main() {
+    let board = StandardBoard::new();
+
+
+
+    let init = State::initial();
+    let new_state = board.apply(Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, &init);
+    let new_state_b = board.apply(Move::PlaceBuilders { a: Slot(3), b: Slot(4) }, &new_state);
+
+    println!("start {}", board.print(&new_state_b));
+
+    for depth in 0..20 {
+        let mut aid = sink_aid(depth + 1, 40);
+
+
+        let start = time::precise_time_ns();
+        let moves = board.perft(&new_state_b, depth, &mut aid);
+        let duration = time::precise_time_ns() - start;
+        let as_seconds = (duration as f64) / 1_000_000_000f64;
+
+        let branch_factor = (moves as f64).powf(1.0 / (depth as f64));
+
+        println!("depth {:?} moves -> {:?} in {:.3}s branch {:.1}", depth, moves, as_seconds, branch_factor);
+    }
+
+
+
+   
+}
+
+fn do_stuff() {
+    let board = StandardBoard::new();
+
 	print!("{}[2J", 27 as char);
     let mut threaded_rng = rand::thread_rng();
     let random_seed = [threaded_rng.next_u32(), threaded_rng.next_u32(), threaded_rng.next_u32(), threaded_rng.next_u32()];
@@ -26,8 +55,6 @@ fn main() {
 
     println!("Santorini!");
     print_sizes();
-
-    let board = StandardBoard::new();
 
 
     for trans in &board.transforms {
@@ -53,27 +80,7 @@ fn main() {
 
     return;
     
-    let mut info = GameInfo::empty();
-    let start = time::precise_time_ns();
-
-    let board_count = 1;
-
-    for _ in 0..board_count {
-        let mut mvs : Vec<Move> = Vec::new();
-        let game_info = play_board(&mut rng, &mut mvs);
-        info = combine(game_info, info);
-    }
-
-    let elapsed = time::precise_time_ns() - start;
-    let seconds_elapsed = (elapsed as f64) / (1_000_000_000 as f64);
-    let moves_per_second = (info.moves as f64) / seconds_elapsed;
-
-    let branching_factor = info.moves / info.turns;
-
-    println!("out of {} games, branching factor is {}", board_count, branching_factor);
-    println!("moves observed {} in {} seconds ({} moves/second)", info.moves, seconds_elapsed, moves_per_second);
-
-
+ 
     tavern::app::run_app();
 }
 
@@ -96,49 +103,6 @@ fn combine(l:GameInfo, r:GameInfo) -> GameInfo {
     GameInfo {
         moves: l.moves + r.moves,
         turns: l.turns + r.turns,
-    }
-}
-
-fn play_board<R : Rng>(rng: &mut R, moves: &mut Vec<Move>) -> GameInfo {
-    let board = StandardBoard::new();
-    let mut state = State::initial();
-    
-    let mut turn_count = 0;
-    let mut move_count = 0;
-
-    for move_idx in 0..1000 {
-        moves.clear();
-        // println!(" :: board at move {} ", move_idx);
-        // println!("{}", board.print(&state));
-        board.next_moves(&state, moves);
-        if moves.is_empty() {
-            // println!(" :: we have a winner, no more legal moves {:?}", state.next_player());
-            break;
-        } else {
-            // choose a moves
-            let mve = moves[rng.gen_range(0, moves.len())];
-
-            if board.ascension_winning_move(&state, mve) {
-                // println!(" :: we have an ascension winner {:?} on move {:?}", state.to_move, move_idx);
-                // println!("{}", board.print(&new_state));
-                break;
-            }
-
-            // println!(" :: {:?} moves applying {:?}", moves.len(), mve);
-            let new_state = board.apply(mve, &state);
-
-
-            move_count += moves.len() as u64;
-            turn_count += 1;
-
-            
-            state = new_state
-        }
-    }
-
-    GameInfo {
-        moves: move_count,
-        turns: turn_count,
     }
 }
 
