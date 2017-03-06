@@ -10,7 +10,7 @@ use std::thread::JoinHandle;
 
 pub struct AIService {
 	send: Sender<Request>,
-	receive: Receiver<StateAnalysis>,
+	pub receive: Receiver<StateAnalysis>,
 	join_handle: JoinHandle<()>,
 }
 
@@ -19,6 +19,7 @@ pub enum Request {
 	Shutdown,
 }
 
+#[derive(Debug, Clone)]
 pub struct StateAnalysis {
 	pub state: State,
 	pub depth: u8,
@@ -43,9 +44,7 @@ impl AIService {
                     Ok(event) => {
                     	match event {
                     		Analysis(state) => {
-                    			AIService::evaluate(&board, &state);
-
-                    			
+                    			AIService::evaluate(&board, &state, &ai_tx);
                     		},
 							Shutdown => {
 								println!("Ai shutdown requested");
@@ -68,14 +67,25 @@ impl AIService {
 		}
 	}
 
-	pub fn evaluate(board: &StandardBoard, state:&State) {
+	pub fn evaluate(board: &StandardBoard, state:&State, send: &Sender<StateAnalysis>) {
 		println!("AI Worker has been asked for analysis");
 		println!("{}", board.print(&state));
 		let score = SimpleHeightHeuristic::evaluate(board, state);
 		println!("we score it as -> {:?}", score);
 
+		let max_depth = 4;
+		for depth in 1..(max_depth+1) {
+			let mut moves = Negamax::evaluate(board, state, depth); 	
+			moves.sort_by_key(|&(_, hv)| -hv);
+			send.send(StateAnalysis {
+				state: state.clone(),
+				depth: depth,
+				moves: moves,
+				terminal: depth == max_depth, 
+			}).unwrap();	
+		}
 
-
+		println!("Evaluation has concluded");
 	}
 
 	pub fn request_analysis(&self, state: &State) {

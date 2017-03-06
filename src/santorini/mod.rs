@@ -28,6 +28,8 @@ pub struct SantoriniGame {
     pub game : CoreGame,
     pub tentative : TentativeGame,
 
+    pub analysis: Option<StateAnalysis>,
+
     pub cpu_players : HashSet<Player>,
     pub current_move_positions : Vec<Slot>,
     pub mouse_over_slot : Option<Slot>,
@@ -55,6 +57,8 @@ impl SantoriniGame {
         let game = SantoriniGame {
             game: core_game,
             tentative: tentative,
+
+            analysis: None,
 
             cpu_players: cpu_players,
             current_move_positions: vec![],
@@ -136,6 +140,22 @@ impl SantoriniGame {
         }
 
         self.tentative = tentative;
+
+        'ai_loop: loop {
+            match self.ai_service.receive.try_recv() {
+                Ok(analysis) => {
+                    println!("front end received analysis -> {:?}", analysis);
+                    if analysis.state == self.game.state {
+                        self.analysis = Some(analysis);
+                    } else {
+                        println!("wrong state :-/")
+                    }
+                }
+                Err(_) => {
+                    break 'ai_loop;
+                }
+            }
+        }
     }
 
     pub fn play_move(&mut self, mve: Move) {
@@ -147,6 +167,7 @@ impl SantoriniGame {
             MatchStatus::ToMove(_) => (),
         }
         self.current_move_positions.clear();
+        self.analysis = None;
         self.ai_service.request_analysis(&self.game.state);
     }
 
