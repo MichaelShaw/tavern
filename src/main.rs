@@ -14,6 +14,7 @@ use tavern_core::game::santorini::*;
 use tavern_core::game::util::*; // , Packed, Packed1, Packed2, Slot};
 
 fn main() {
+    // count_moves();
     tavern::app::run_app();
 }
 
@@ -36,7 +37,7 @@ fn count_moves() {
 
     for depth in 0..20 {
         let start = time::precise_time_ns();
-        let moves = board.perft(&init, depth);
+        let moves = board.perft(&new_state_b, depth);
         let duration = time::precise_time_ns() - start;
         let as_seconds = (duration as f64) / 1_000_000_000f64;
 

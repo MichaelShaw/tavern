@@ -24,7 +24,7 @@ https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F
 ### Naive Move Counting
 
 #### From Start
-    depth 0 moves -> 1 in 0.000s branch 1.0
+	depth 0 moves -> 1 in 0.000s branch 1.0
 	depth 1 moves -> 300 in 0.000s branch 300.0
 	depth 2 moves -> 75900 in 0.002s branch 275.5
 	depth 3 moves -> 4313232 in 0.109s branch 162.8

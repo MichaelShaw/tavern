@@ -23,9 +23,9 @@ use howl::engine::SoundEngineUpdate::*;
 use santorini;
 
 #[cfg(target_os = "windows")] 
-const OPENAL_PATH: &'static str = "./howl/native/windows/OpenAL64.dll";
+const OPENAL_PATH: &'static str = "./native/OpenAL64.dll";
 #[cfg(target_os = "macos")]
-const OPENAL_PATH: &'static str = "./howl/native/mac/openal.dylib";
+const OPENAL_PATH: &'static str = "./native/openal.dylib";
 
 pub fn run_app() {
     let sound_worker = SoundWorker::create(OPENAL_PATH.into(), "./resources/sound".into(), "ogg".into(), 1_000_000, 5.0);
