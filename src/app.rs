@@ -30,11 +30,6 @@ use std::thread;
 use std;
 
 pub fn run_app() {
-
-    // println!("PRE");
-    // thread::sleep(std::time::Duration::from_millis(2000));
-    // println!("POST");
-
     let (resources_path, openal_path) : (String, String) = if cfg!(all(target_os = "macos")) { // -- mac release
         if cfg!(debug_assertions) { //
             ("./resources".into(), "./native/openal.dylib".into())
@@ -44,10 +39,7 @@ pub fn run_app() {
             resources_path.pop();
             resources_path.pop();
             resources_path.push("Resources");
-
-
-
-            let mut f = File::create(resources_path.with_file_name("my_paths.txt")).unwrap();  
+            // let mut f = File::create(resources_path.with_file_name("my_paths.txt")).unwrap();  
 
             let r_path = resources_path.to_str().unwrap().into();
 
@@ -55,9 +47,8 @@ pub fn run_app() {
             alpth.push("openal.dylib");
 
             let al_path = alpth.to_str().unwrap().into();
-            let directories = format!("resources -> {:?} openal -> {:?}", r_path, al_path);
-            f.write_all(directories.as_bytes()).unwrap();
-
+            // let directories = format!("resources -> {:?} openal -> {:?}", r_path, al_path);
+            // f.write_all(directories.as_bytes()).unwrap();
 
             (r_path, al_path)
         }

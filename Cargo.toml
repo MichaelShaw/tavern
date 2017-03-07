@@ -18,3 +18,5 @@ howl = { path = "./howl" }
 opt-level = 3
 
 [profile.release]
+lto = true
+panic = 'abort'
