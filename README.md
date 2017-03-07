@@ -5,6 +5,12 @@ Chip tune "hollow wanderer" is from
 
 https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F7HVMjJjdqSqU
 
+# build
+
+    [profile.release]
+    lto = true
+    panic = 'abort'
+
 # Santorini
 - Add alpha beta pruning
 - Add move ordering
@@ -24,11 +30,11 @@ https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F
 ### Naive Move Counting
 
 #### From Start
-	depth 0 moves -> 1 in 0.000s branch 1.0
-	depth 1 moves -> 300 in 0.000s branch 300.0
-	depth 2 moves -> 75900 in 0.002s branch 275.5
-	depth 3 moves -> 4313232 in 0.109s branch 162.8
-	depth 4 moves -> 237559488 in 5.846s branch 124.1
+    depth 0 moves -> 1 in 0.000s branch 1.0
+    depth 1 moves -> 300 in 0.000s branch 300.0
+    depth 2 moves -> 75900 in 0.002s branch 275.5
+    depth 3 moves -> 4313232 in 0.109s branch 162.8
+    depth 4 moves -> 237559488 in 5.846s branch 124.1
     
 #### From move 2 (post start)
     depth 0 moves -> 1 in 0.000s branch 1.0
@@ -40,9 +46,9 @@ https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F
     depth 6 moves -> 4467841671 in 109.096s branch 40.6
     
 #### Add starting move symmetry checking
-	depth 0 moves -> 1 in 0.000s branch 1.0
-	depth 1 moves -> 85 in 0.000s branch 85.0
-	depth 2 moves -> 20053 in 0.006s branch 141.6
-	depth 3 moves -> 1148717 in 0.038s branch 104.7
-	depth 4 moves -> 63167200 in 1.562s branch 89.2
-	depth 5 moves -> 3841150351 in 91.991s branch 82.6
+    depth 0 moves -> 1 in 0.000s branch 1.0
+    depth 1 moves -> 85 in 0.000s branch 85.0
+    depth 2 moves -> 20053 in 0.006s branch 141.6
+    depth 3 moves -> 1148717 in 0.038s branch 104.7
+    depth 4 moves -> 63167200 in 1.562s branch 89.2
+    depth 5 moves -> 3841150351 in 91.991s branch 82.6

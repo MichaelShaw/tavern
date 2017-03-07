@@ -22,18 +22,66 @@ use howl::engine::SoundEngineUpdate::*;
 
 use santorini;
 
-#[cfg(target_os = "windows")] 
-const OPENAL_PATH: &'static str = "./native/OpenAL64.dll";
-#[cfg(target_os = "macos")]
-const OPENAL_PATH: &'static str = "./native/openal.dylib";
+use std::env;
+use std::fs::File;
+use std::io::prelude::*;
+
+use std::thread;
+use std;
 
 pub fn run_app() {
-    let sound_worker = SoundWorker::create(OPENAL_PATH.into(), "./resources/sound".into(), "ogg".into(), 1_000_000, 5.0);
+
+    // println!("PRE");
+    // thread::sleep(std::time::Duration::from_millis(2000));
+    // println!("POST");
+
+    let (resources_path, openal_path) : (String, String) = if cfg!(all(target_os = "macos")) { // -- mac release
+        if cfg!(debug_assertions) { //
+            ("./resources".into(), "./native/openal.dylib".into())
+        } else {
+            // mac in a .app
+            let mut resources_path = env::current_exe().unwrap();
+            resources_path.pop();
+            resources_path.pop();
+            resources_path.push("Resources");
+
+
+
+            let mut f = File::create(resources_path.with_file_name("my_paths.txt")).unwrap();  
+
+            let r_path = resources_path.to_str().unwrap().into();
+
+            let mut alpth = resources_path.clone();
+            alpth.push("openal.dylib");
+
+            let al_path = alpth.to_str().unwrap().into();
+            let directories = format!("resources -> {:?} openal -> {:?}", r_path, al_path);
+            f.write_all(directories.as_bytes()).unwrap();
+
+
+            (r_path, al_path)
+        }
+    } else  {
+        ("./resources".into(), "./native/OpenAL64.dll".into())
+    };
+
+    let directories = format!("resources -> {:?} openal -> {:?}", resources_path, openal_path);
+    println!("{}", directories);
+
+
+    let sound_path = format!("{}/sound", resources_path);
+    let vertex_shader_path = format!("{}/shader/fat.vert", resources_path);
+    let fragment_shader_path = format!("{}/shader/fat.frag", resources_path);
+    let texture_path = format!("{}/textures", resources_path);
+    let fonts_path = format!("{}/fonts", resources_path);
+
+
+    let sound_worker = SoundWorker::create(openal_path, sound_path, "ogg".into(), 1_000_000, 5.0);
     sound_worker.send(Preload(vec![("place_tile".into(), 1.0), ("select".into(), 1.0)])).unwrap();
 
-    let shader_pair = ShaderPair::for_paths("resources/shader/fat.vert", "resources/shader/fat.frag");
-    let texture_dir = TextureDirectory::for_path("resources/textures", hashset!["png".into()]);
-    let font_dir = FontDirectory::for_path("resources/fonts");
+    let shader_pair = ShaderPair::for_paths(&vertex_shader_path, &fragment_shader_path);
+    let texture_dir = TextureDirectory::for_path(&texture_path, hashset!["png".into()]);
+    let font_dir = FontDirectory::for_path(&fonts_path);
 
     let renderer = Renderer::new(shader_pair, texture_dir, font_dir, (800, 600)).expect("a renderer");
 

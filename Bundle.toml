@@ -1,0 +1,6 @@
+name = "tavern"
+identifier = "io.michaelshaw.tavern"
+icon = ["icon128x128.png"]
+version = "1.0.0"
+resources = []
+copyright = "Copyright (c) Jane Doe 2016. All rights reserved."
