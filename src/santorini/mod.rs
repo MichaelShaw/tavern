@@ -24,8 +24,7 @@ pub fn unseeded_rng() -> XorShiftRng {
 }
 
 pub struct SantoriniGame {
-    // rest is per game, more transient
-    pub game : CoreGame,
+    pub game : CoreGame, // should the core game have AI state?
     pub tentative : TentativeGame,
 
     pub analysis: Option<StateAnalysis>,
@@ -48,8 +47,9 @@ const PLAYER_COLORS : [Color; 2] = [RED, YELLOW];
 
 impl SantoriniGame {
     pub fn new() -> SantoriniGame {
-        let cpu_players = hashset![Player(1)]; // HashSet::default();
-        // cpu_players.insert(Player(1));
+        let mut rng = unseeded_rng();
+
+        let cpu_players = hashset![Player(rng.gen_range(0, 2))]; 
         
         let core_game = CoreGame::new(StandardBoard::new(), State::initial());
         let tentative = core_game.tentative(&Vec::new(), None);
@@ -66,7 +66,7 @@ impl SantoriniGame {
 
             atlas: SantoriniAtlas::build(),
 
-            rand: unseeded_rng(),
+            rand: rng,
 
             ai_service: AIService::new(),
         };
@@ -149,7 +149,6 @@ impl SantoriniGame {
         'ai_loop: loop {
             match self.ai_service.receive.try_recv() {
                 Ok(analysis) => {
-                    println!("front end received analysis -> {:?}", analysis.depth);
                     if analysis.state == self.game.state {
                         self.analysis = Some(analysis);
                     } else {
@@ -163,8 +162,9 @@ impl SantoriniGame {
         }
     }
 
-    pub fn play_move(&mut self, mve: Move) {
-        match self.game.make_move(mve) {
+    pub fn play_move(&mut self, mve: Move) -> MatchStatus {
+        let status = self.game.make_move(mve);
+        match status {
             MatchStatus::Won(player) => {
                 println!("uhh player {:?} won", player);
                 self.reset();
@@ -176,9 +176,11 @@ impl SantoriniGame {
         if self.cpu_players.contains(&self.game.state.player()) {
             self.ai_service.request_analysis(&self.game.state);    
         }
+        status
     }
 
     pub fn reset(&mut self) {
+        self.cpu_players = hashset![Player(self.rand.gen_range(0, 2))]; 
         self.game = CoreGame::new(StandardBoard::new(), State::initial());
         self.tentative = self.game.tentative(&Vec::new(), None);
     }

@@ -18,14 +18,6 @@ fn main() {
     tavern::app::run_app();
 }
 
-fn execute_playout() {
-    let board = StandardBoard::new();
-    let init = State::initial();
-
-    
-
-}
-
 fn count_moves() {
     let board = StandardBoard::new();
 
@@ -43,7 +35,9 @@ fn count_moves() {
 
         let branch_factor = (moves as f64).powf(1.0 / (depth as f64));
 
-        println!("depth {:?} moves -> {:?} in {:.3}s branch {:.1}", depth, moves, as_seconds, branch_factor);
+        let million_moves_per_second = (moves as f64) / as_seconds / 1_000_000f64;
+
+        println!("depth {:?} moves -> {:?} in {:.3}s branch {:.1} ({:.2} million moves/second)", depth, moves, as_seconds, branch_factor, million_moves_per_second);
     }
 }
 

@@ -5,13 +5,8 @@ Chip tune "hollow wanderer" is from
 
 https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F7HVMjJjdqSqU
 
-# build
-
-    [profile.release]
-    lto = true
-    panic = 'abort'
-
 # Santorini
+- Make iterative deepening a little smarter. If you reach a winning position terminate. If you reach a losing position terminate with result from last known pass if possible.
 - Add alpha beta pruning
 - Add move ordering
 - Add better heuristic

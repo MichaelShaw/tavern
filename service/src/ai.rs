@@ -84,6 +84,9 @@ impl AIService {
 			let start = time::precise_time_ns();
 	        let mut moves = Negamax::evaluate::<SimpleHeightHeuristic>(board, state, depth); 	
 			moves.sort_by_key(|&(_, hv)| -hv);
+
+			let best_move_score = moves.get(0).map(|&(_, score)| score);
+
 			send.send(StateAnalysis {
 				state: state.clone(),
 				depth: depth,
@@ -92,7 +95,7 @@ impl AIService {
 			}).unwrap();	
 			let duration = time::precise_time_ns() - start;
 			let as_seconds = (duration as f64) / 1_000_000_000f64;
-			println!("depth {:?} evaluated -> {:.3}", depth, as_seconds);
+			println!("depth {:?} evaluated in {:.3}s score -> {:?}", depth, as_seconds, best_move_score);
 		}
 
 		println!("Evaluation has concluded");
