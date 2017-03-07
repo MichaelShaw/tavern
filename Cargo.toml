@@ -13,3 +13,9 @@ tavern_core = { path = "./core" }
 tavern_service = { path = "./service" }
 jam = { path = "./jam" }
 howl = { path = "./howl" }
+
+
+
+[profile.release]
+lto = true
+panic = 'abort'
