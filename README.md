@@ -7,6 +7,7 @@ https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F
 
 # Santorini
 - Make iterative deepening a little smarter. If you reach a winning position terminate. If you reach a losing position terminate with result from last known pass if possible.
+- Properly nest our state. "Game" should contain CPU as well as tentative stuff, proper nesting prevents enganglement.
 - Add alpha beta pruning
 - Add move ordering
 - Add better heuristic
