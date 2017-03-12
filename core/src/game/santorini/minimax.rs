@@ -1,18 +1,11 @@
 
 use game::santorini::*;
-
 use std::cmp::{max, min};
 
-pub struct MiniMax {
+pub struct MiniMax {}
 
-}
-
-pub const PLAYER_0_WIN : HeuristicValue = 100;
-pub const PLAYER_1_WIN : HeuristicValue = -100;
-
-impl MiniMax {
-    pub fn evaluate<H>(board: &StandardBoard, state: &State, depth: u8) -> Vec<(Move, HeuristicValue)> where H: Heuristic {
-
+impl Evaluation for MiniMax {
+    fn evaluate<H>(board: &StandardBoard, state: &State, depth: u8) -> Vec<(Move, HeuristicValue)> where H: Heuristic {
         let mut moves = Vec::new();
         board.next_moves(state, &mut moves);
 
@@ -35,9 +28,10 @@ impl MiniMax {
             unsorted_moves.sort_by_key(|&(_, hv)| hv); // minimizing player wants smallest first
             unsorted_moves
         }
-        
     }
 
+}
+impl MiniMax {
     pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8) -> HeuristicValue where H: Heuristic {
         if depth == 0 {
             return H::evaluate(board, state)
@@ -56,7 +50,7 @@ impl MiniMax {
 
             for &mve in &moves {
                 if board.ascension_winning_move(state, mve) {
-                    return PLAYER_1_WIN;
+                    return PLAYER_0_WIN;
                 } else {
                     let new_state = board.apply(mve, state);
                     let v = MiniMax::eval::<H>(board, &new_state, depth - 1);
@@ -75,7 +69,7 @@ impl MiniMax {
 
             for &mve in &moves {
                 if board.ascension_winning_move(state, mve) {
-                    return PLAYER_0_WIN;
+                    return PLAYER_1_WIN;
                 } else {
                     let new_state = board.apply(mve, state);
                     let v = MiniMax::eval::<H>(board, &new_state, depth - 1);

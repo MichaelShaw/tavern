@@ -16,46 +16,17 @@ use tavern_core::game::util::*; // , Packed, Packed1, Packed2, Slot};
 fn main() {
     // count_moves();
     // tavern::app::run_app();
-    run_test();
+    sample_playout(3);
 }
 
-fn run_test() {
+fn sample_playout(depth:u8) {
     let board = StandardBoard::new();
-
     let init = State::initial();
     let new_state = board.apply(Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, &init);
     let mut new_state_b = board.apply(Move::PlaceBuilders { a: Slot(23), b: Slot(24) }, &new_state);
     new_state_b.buildings = new_state_b.buildings.set(Slot(5), 1);
-    println!("to move -> {:?}", new_state_b.to_move);
-    new_state_b.to_move = Player(0);
 
-    // println!("init {}", board.print(&init));
-    // println!("a {}", board.print(&new_state));
-    println!("start {}", board.print(&new_state_b));
-
-    println!("close move first, expect -> 1, 1, 2, 1");
-
-    evaluate(&board, &new_state_b);
-
-    println!("people far away move first, expect -> 0, 1, 0, 1"); // basically Player A gets a head start
-    // B NOWHERE, A UP, B UP
-
-    new_state_b.to_move = Player(1);
-    evaluate(&board, &new_state_b);
-}
-
-fn evaluate(board:&StandardBoard, state:&State) {
-    for depth in 1..5 {
-        let mut negamax_moves = NegaMax::evaluate::<SimpleHeightHeuristic>(board, state, depth);
-        let mut minimax_moves = MiniMax::evaluate::<SimpleHeightHeuristic>(board, state, depth);
-        
-        // if let Some(&(mve, score)) = negamax_moves.first() {
-        //     println!("==== NEGAMAX depth {:?} winning move {:?} score -> {:?} ====", depth, mve, score);
-        // }
-        if let Some(&(mve, score)) = minimax_moves.first() {
-            println!("==== MINIMAX depth {:?} winning move {:?} score -> {:?} ====", depth, mve, score);
-        }
-    }
+    playout::<MiniMax, SimpleHeightHeuristic>(&board, &new_state_b, depth);
 }
 
 fn count_moves() {

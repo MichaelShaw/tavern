@@ -14,7 +14,7 @@ use jam::color::rgb;
 
 use time;
 
-use cgmath::{Rad, Zero, Vector3};
+use cgmath::{Rad, Zero};
 
 use howl::{Listener, SoundEvent, Vec3f, HashMap};
 use howl::worker::SoundWorker;
@@ -23,11 +23,11 @@ use howl::engine::SoundEngineUpdate::*;
 use santorini;
 
 use std::env;
-use std::fs::File;
-use std::io::prelude::*;
+// use std::fs::File;
+// use std::io::prelude::*;
 
-use std::thread;
-use std;
+// use std::thread;
+// use std;
 
 pub fn run_app() {
     let (resources_path, openal_path) : (String, String) = if cfg!(all(target_os = "macos")) { // -- mac release
@@ -150,6 +150,7 @@ impl App {
         }
     }
 
+    #[allow(unused_variables)]
     fn update(&mut self, input_state:&InputState, dimensions:Dimensions, time: Seconds, delta_time: Seconds) {
         let mut sound_events : Vec<SoundEvent> = Vec::new();
         
@@ -169,7 +170,7 @@ impl App {
         self.camera.viewport = dimensions;
 
         // "song".into() => song()
-        self.sound_worker.send(Render { master_gain: 1.0, sounds:sound_events, persistent_sounds: hashmap![], listener: Listener::default() }).unwrap();
+        self.sound_worker.send(Render { master_gain: 1.0, sounds:sound_events, persistent_sounds: HashMap::default(), listener: Listener::default() }).unwrap();
     }
 
     fn render(&mut self) -> Vec<Pass<String>> {

@@ -1,19 +1,16 @@
 use game::santorini::*;
 
-pub type HeuristicValue = i8;
-
 pub const BEST : HeuristicValue = 100;
 
 pub const WORST : HeuristicValue = -100;
 
-
-pub trait Heuristic {
-    fn evaluate(board: &StandardBoard, state: &State) -> HeuristicValue;
-}
+pub const PLAYER_0_WIN : HeuristicValue = 100;
+pub const PLAYER_1_WIN : HeuristicValue = -100;
 
 pub struct SimpleHeightHeuristic {}
 
 impl Heuristic for SimpleHeightHeuristic {
+    #[allow(unused_variables)]
     fn evaluate(board: &StandardBoard, state: &State) -> HeuristicValue {
         let mut n : i8 = 0;
 
