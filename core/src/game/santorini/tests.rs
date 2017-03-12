@@ -164,35 +164,39 @@ pub fn test_cases(board:&StandardBoard) -> Vec<TestCase> {
     ]
 }
 
+pub fn test_all_cases<E, H>(name:&str) -> bool where E: Evaluation, H: Heuristic {
+    use colored::*;
+
+    println!("==== Testing {} all cases =====", name);
+    let board = StandardBoard::new();
+    let mut error_cases = 0;
+    let cases = test_cases(&board);
+    for case in &cases {
+        println!("Testing {} to move {:?}", case.name, case.state.to_move);
+        let scores = evaluate::<E, H>(&board, &case.state, case.scores.len() as u8);
+
+        if scores != case.scores {
+            playout::<E, H>(&board, &case.state, case.scores.len() as u8);
+            error_cases += 1;
+            println!("{}", format!("test case expected {:?} but got {:?}", case.scores, scores).red());
+        } else {
+            println!("{}", "ok".green());
+        }
+    }
+
+    if error_cases > 0 {
+        println!("{}", format!("==== {:?} had {}/{} error cases", name, error_cases, cases.len()));
+    }
+
+    error_cases == 0
+}
+
 mod minimax {
     use super::*;
-    use colored::*;
 
     #[test]
     fn all() {
-        let board = StandardBoard::new();
-        let mut all_ok = true;
-        for case in &test_cases(&board) {
-            println!("Testing {} to move {:?}", case.name, case.state.to_move);
-            let scores = evaluate::<MiniMax, SimpleHeightHeuristic>(&board, &case.state, case.scores.len() as u8);
-
-            if scores != case.scores {
-                playout::<MiniMax, SimpleHeightHeuristic>(&board, &case.state, case.scores.len() as u8);
-                all_ok = false;
-                println!("{}", format!("test case expected {:?} but got {:?}", case.scores, scores).red());
-            } else {
-                println!("{}", "ok".green());
-            }
-            
-        }
-        assert!(all_ok);
-    }
-
-    // #[test]
-    fn test_playout() {
-        // let board = StandardBoard::new();
-        // let state = &a_unavoidable_win_in_2(&board, Player(0));
-        // playout::<MiniMax, SimpleHeightHeuristic>(&board, &state, 3);
+        assert!(test_all_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax"));
     }
 }
 
@@ -200,16 +204,9 @@ mod minimax {
 mod negamax {
     use super::*;
 
-    #[test]
-    fn mild_a_moves() {
-        let board = StandardBoard::new();
-        assert_eq!(evaluate::<NegaMax, SimpleHeightHeuristic>(&board, &mild_a_advantage(&board, Player(0)), 4), vec![1,1,2,1]); 
-    }
-
-    #[test]
-    fn mild_b_moves() {
-        let board = StandardBoard::new();
-        assert_eq!(evaluate::<NegaMax, SimpleHeightHeuristic>(&board, &mild_a_advantage(&board, Player(1)), 4), vec![0,1,0,1]); 
+   #[test]
+    fn all() {
+        assert!(test_all_cases::<NegaMax, SimpleHeightHeuristic>("NegaMax"));
     }
 }
     

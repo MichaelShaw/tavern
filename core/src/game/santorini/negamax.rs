@@ -33,15 +33,23 @@ impl Evaluation for NegaMax {
         // println!("NEGAMAX moves -> {:?}", unsorted_moves);
         if state.to_move == Player(0) {
             let mut unsorted_moves : Vec<_> = moves.iter().map(|&mve| {
-                let new_state = board.apply(mve, state);
-                (mve, -NegaMax::eval::<H>(board, &new_state, depth - 1, -color))
+                if board.ascension_winning_move(state, mve) {
+                    (mve, PLAYER_0_WIN)
+                } else {
+                    let new_state = board.apply(mve, state);
+                    (mve, -NegaMax::eval::<H>(board, &new_state, depth - 1, -color))
+                }
             }).collect();
             unsorted_moves.sort_by_key(|&(_, hv)| -hv); // big first
             unsorted_moves
         } else {
             let mut unsorted_moves : Vec<_> = moves.iter().map(|&mve| {
-                let new_state = board.apply(mve, state);
-                (mve, NegaMax::eval::<H>(board, &new_state, depth - 1, -color))
+                if board.ascension_winning_move(state, mve) {
+                    (mve, PLAYER_1_WIN)
+                } else {
+                    let new_state = board.apply(mve, state);
+                    (mve, NegaMax::eval::<H>(board, &new_state, depth - 1, -color))
+                }
             }).collect();
             unsorted_moves.sort_by_key(|&(_, hv)| hv);
             unsorted_moves
@@ -51,23 +59,25 @@ impl Evaluation for NegaMax {
 
 impl NegaMax {
     pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8, color: i8) -> HeuristicValue where H: Heuristic {
-        if depth == 0 {
-            return color * H::evaluate(board, state);
-        }
-
         let mut moves = Vec::new();
         board.next_moves(state, &mut moves);
 
-        if moves.is_empty() { 
-            println!("moves empty");
-            let v : HeuristicValue = if state.to_move == Player(0) { PLAYER_1_WIN } else { PLAYER_0_WIN };
-            return v * color;
+        if depth == 0 {
+            let v = if moves.is_empty() {
+                if state.to_move == Player(0) {
+                    PLAYER_1_WIN
+                } else {
+                    PLAYER_0_WIN
+                }
+            } else {
+                H::evaluate(board, state)
+            };
+            return color * v;
         }
 
         let mut best_observed = WORST;
         for &mve in &moves {
             let v : HeuristicValue = if board.ascension_winning_move(state, mve) {
-                println!("got a winner");
                 let wv = if state.to_move == Player(0) { PLAYER_0_WIN } else { PLAYER_1_WIN };
                 wv * color
             } else {
