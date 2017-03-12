@@ -90,7 +90,7 @@ impl AIService {
 		};
 		for depth in 1..(max_depth+1) {
 			let start = time::precise_time_ns();
-	        let mut moves = Negamax::evaluate::<SimpleHeightHeuristic>(board, state, depth); 	
+	        let mut moves = NegaMax::evaluate::<SimpleHeightHeuristic>(board, state, depth); 	
 			moves.sort_by_key(|&(_, hv)| -hv);
 
 			let best_move_score = moves.get(0).map(|&(_, score)| score);

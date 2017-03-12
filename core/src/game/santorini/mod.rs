@@ -4,11 +4,14 @@
 pub mod move_builder;
 pub mod perft;
 pub mod negamax;
+pub mod minimax;
 pub mod heuristic;
+
 
 pub use self::move_builder::*;
 pub use self::heuristic::*;
 pub use self::negamax::*;
+pub use self::minimax::*;
 
 use HashSet;
 use super::util::*;

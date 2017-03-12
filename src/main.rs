@@ -29,32 +29,31 @@ fn run_test() {
     println!("to move -> {:?}", new_state_b.to_move);
     new_state_b.to_move = Player(0);
 
-
-
     // println!("init {}", board.print(&init));
     // println!("a {}", board.print(&new_state));
     println!("start {}", board.print(&new_state_b));
 
-    println!("close move first, expect -> us up 1 them 1 us up 2 them up 1");
+    println!("close move first, expect -> 1, 1, 2, 1");
 
-    for depth in 1..5 {
-        let mut moves = Negamax::evaluate::<SimpleHeightHeuristic>(&board, &new_state_b, depth);
-        moves.sort_by_key(|&(_, hv)| -hv);
-        
-        if let Some(&(mve, score)) = moves.first() {
-            println!("==== depth {:?} winning move {:?} score -> {:?} ====", depth, mve, score);
-        }
-    }
+    evaluate(&board, &new_state_b);
 
-    println!("people far away move first, expect -> us 0 them -1  us up 0 them up -1");
+    println!("people far away move first, expect -> 0, 1, 0, 1"); // basically Player A gets a head start
+    // B NOWHERE, A UP, B UP
 
     new_state_b.to_move = Player(1);
+    evaluate(&board, &new_state_b);
+}
+
+fn evaluate(board:&StandardBoard, state:&State) {
     for depth in 1..5 {
-        let mut moves = Negamax::evaluate::<SimpleHeightHeuristic>(&board, &new_state_b, depth);
-        moves.sort_by_key(|&(_, hv)| -hv);
+        let mut negamax_moves = NegaMax::evaluate::<SimpleHeightHeuristic>(board, state, depth);
+        let mut minimax_moves = MiniMax::evaluate::<SimpleHeightHeuristic>(board, state, depth);
         
-        if let Some(&(mve, score)) = moves.first() {
-            println!("==== depth {:?} winning move {:?} score -> {:?} ====", depth, mve, score);
+        // if let Some(&(mve, score)) = negamax_moves.first() {
+        //     println!("==== NEGAMAX depth {:?} winning move {:?} score -> {:?} ====", depth, mve, score);
+        // }
+        if let Some(&(mve, score)) = minimax_moves.first() {
+            println!("==== MINIMAX depth {:?} winning move {:?} score -> {:?} ====", depth, mve, score);
         }
     }
 }
