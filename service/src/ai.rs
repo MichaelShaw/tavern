@@ -86,7 +86,7 @@ impl AIService {
 		let max_depth = if state.builders_to_place() {
 			3
 		}  else {
-			5
+			4
 		};
 		for depth in 1..(max_depth+1) {
 			let start = time::precise_time_ns();

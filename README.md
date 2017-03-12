@@ -9,9 +9,9 @@ https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F
 opt-level = 3
 
 # Santorini
-- Implement negamax.
-- Implement test suites that include test cases. Mild Player(0)/Player(1). Unavoidable winner for Player(0)/Player(1) (both sides). Avoidable winner for Player(0)/Player(1) both sides.
+- Add trapped boolean test. Will this work for all heroes?
 - Make iterative deepening a little smarter. If you reach a winning position terminate. If you reach a losing position terminate with result from last known pass if possible.
+- Animation of moves. An optional "previous state + move"? 
 - Investigate performance cost of tracking move savings. Generic approach?
 - Properly nest our state. "Game" should contain CPU as well as tentative stuff, proper nesting prevents enganglement.
 - Add alpha beta pruning

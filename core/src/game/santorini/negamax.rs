@@ -20,16 +20,6 @@ impl Evaluation for NegaMax {
         let mut moves = Vec::new();
         board.next_moves(state, &mut moves);
 
-        // let mut unsorted_moves : Vec<_> = moves.iter().map(|&mve| {
-        //     if board.ascension_winning_move(state, mve) {
-        //         let wv = if state.to_move == Player(0) { PLAYER_0_WIN } else { PLAYER_1_WIN };
-        //         (mve, wv * color)
-        //     } else {
-        //         let new_state = board.apply(mve, state);
-        //         (mve, NegaMax::eval::<H>(board, &new_state, depth - 1, color))
-        //     }
-        // }).collect();
-
         // println!("NEGAMAX moves -> {:?}", unsorted_moves);
         if state.to_move == Player(0) {
             let mut unsorted_moves : Vec<_> = moves.iter().map(|&mve| {
