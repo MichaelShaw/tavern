@@ -9,17 +9,17 @@ https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F
 opt-level = 3
 
 # Santorini
-- Add trapped boolean test. Will this work for all heroes?
 - Make iterative deepening a little smarter. If you reach a winning position terminate. If you reach a losing position terminate with result from last known pass if possible.
 - Animation of moves. An optional "previous state + move"? 
 - Investigate performance cost of tracking move savings. Generic approach?
-- Properly nest our state. "Game" should contain CPU as well as tentative stuff, proper nesting prevents enganglement.
+- Properly nest our state. "Game" should contain CPU as well as tentative stuff, proper nesting prevents enganglement/invalid states.
 - Add alpha beta pruning
 - Add move ordering
 - Add better heuristic
+- Add iterative deepening based root move ordering (for alpha beta pruning)
+- Adversarial heuristic testing
 
 # Heuristic
-- Height of pieces
 - Height of squares available to move in (will reward high centre)
 
 # Move Ordering

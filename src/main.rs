@@ -15,6 +15,7 @@ use tavern_core::game::util::*; // , Packed, Packed1, Packed2, Slot};
 
 fn main() {
     // count_moves();
+    print_sizes();
     tavern::app::run_app();
     // sample_playout(3);
 }
