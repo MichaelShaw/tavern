@@ -49,7 +49,8 @@ impl SantoriniGame {
     pub fn new() -> SantoriniGame {
         let mut rng = unseeded_rng();
 
-        let cpu_players = hashset![Player(rng.gen_range(0, 2))]; 
+        // let cpu_players = hashset![Player(rng.gen_range(0, 2))]; 
+        let cpu_players = hashset![Player(0)]; 
         
         let core_game = CoreGame::new(StandardBoard::new(), State::initial());
         let tentative = core_game.tentative(&Vec::new(), None);

@@ -146,9 +146,9 @@ impl StandardBoard {
             let from = Slot(i);
             let to = slot_transform.slots[i as usize];
 
-            new_state.buildings.set(to, state.buildings.get(from));
-            new_state.domes.set(to, state.domes.get(from));
-            new_state.collision.set(to, state.collision.get(from));
+            new_state.buildings = new_state.buildings.set(to, state.buildings.get(from));
+            new_state.domes = new_state.domes.set(to, state.domes.get(from));
+            new_state.collision = new_state.collision.set(to, state.collision.get(from));
         }
 
         for player_id in 0..2 {

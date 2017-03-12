@@ -1,9 +1,9 @@
 
 use tavern_core::game::santorini::*;
+use tavern_core::game::util::*;
 
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Sender, Receiver};
-use std::sync::mpsc::SendError;
 
 use std::thread;
 use std::thread::JoinHandle;
@@ -69,11 +69,19 @@ impl AIService {
 		}
 	}
 
+	pub fn player_multiplier(player:Player) -> i8 {
+		match player {
+			Player(0) => 1,
+			Player(1) => -1,
+			_ => -128,
+		}
+	}
+
 	pub fn evaluate(board: &StandardBoard, state:&State, send: &Sender<StateAnalysis>) {
 		println!("AI Worker has been asked for analysis");
 		println!("{}", board.print(&state));
-		let score = SimpleHeightHeuristic::evaluate(board, state);
-		println!("we score it as -> {:?}", score);
+		let score = SimpleHeightHeuristic::evaluate(board, state) * Self::player_multiplier(state.to_move);
+		println!("we score it as -> {:?} to move {:?}", score, state.to_move);
 
 		let max_depth = if state.builders_to_place() {
 			3

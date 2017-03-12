@@ -15,7 +15,48 @@ use tavern_core::game::util::*; // , Packed, Packed1, Packed2, Slot};
 
 fn main() {
     // count_moves();
-    tavern::app::run_app();
+    // tavern::app::run_app();
+    run_test();
+}
+
+fn run_test() {
+    let board = StandardBoard::new();
+
+    let init = State::initial();
+    let new_state = board.apply(Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, &init);
+    let mut new_state_b = board.apply(Move::PlaceBuilders { a: Slot(23), b: Slot(24) }, &new_state);
+    new_state_b.buildings = new_state_b.buildings.set(Slot(5), 1);
+    println!("to move -> {:?}", new_state_b.to_move);
+    new_state_b.to_move = Player(0);
+
+
+
+    // println!("init {}", board.print(&init));
+    // println!("a {}", board.print(&new_state));
+    println!("start {}", board.print(&new_state_b));
+
+    println!("close move first, expect -> us up 1 them 1 us up 2 them up 1");
+
+    for depth in 1..5 {
+        let mut moves = Negamax::evaluate::<SimpleHeightHeuristic>(&board, &new_state_b, depth);
+        moves.sort_by_key(|&(_, hv)| -hv);
+        
+        if let Some(&(mve, score)) = moves.first() {
+            println!("==== depth {:?} winning move {:?} score -> {:?} ====", depth, mve, score);
+        }
+    }
+
+    println!("people far away move first, expect -> us 0 them -1  us up 0 them up -1");
+
+    new_state_b.to_move = Player(1);
+    for depth in 1..5 {
+        let mut moves = Negamax::evaluate::<SimpleHeightHeuristic>(&board, &new_state_b, depth);
+        moves.sort_by_key(|&(_, hv)| -hv);
+        
+        if let Some(&(mve, score)) = moves.first() {
+            println!("==== depth {:?} winning move {:?} score -> {:?} ====", depth, mve, score);
+        }
+    }
 }
 
 fn count_moves() {

@@ -14,9 +14,6 @@ tavern_service = { path = "./service" }
 jam = { path = "./jam" }
 howl = { path = "./howl" }
 
-[profile.dev]
-opt-level = 3
-
 [profile.release]
 lto = true
 panic = 'abort'
