@@ -38,6 +38,7 @@ pub fn playout<E, H>(board:&StandardBoard, state:&State, depth:u8) where E: Eval
     let mut current_state = state.clone();
     for d in (1..(depth+1)).rev() {
         let moves = E::evaluate::<H>(board, &current_state, d);
+        println!("legal moves -> {:?}", moves);
         if let Some(&(mve, _)) = moves.first() {
             current_state = board.apply(mve, &current_state);
             let h = H::evaluate(board, &current_state);

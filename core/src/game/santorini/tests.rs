@@ -70,7 +70,7 @@ pub fn a_blockable(board: &StandardBoard, to_move: Player) -> State {
     state
 }
 
-pub fn b_blockable_win(board: &StandardBoard, to_move: Player) -> State {
+pub fn b_blockable(board: &StandardBoard, to_move: Player) -> State {
     let mut state = State::initial();
     for &mve in &vec![Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, 
                      Move::PlaceBuilders { a: Slot(3), b: Slot(4) }] {
@@ -83,14 +83,37 @@ pub fn b_blockable_win(board: &StandardBoard, to_move: Player) -> State {
     state
 }
 
-// pub fn to_move_win(board:&StandardBoard, to_move: Player) -> State {
+pub fn any_in_1(board:&StandardBoard, to_move: Player) -> State {
+    let mut state = State::initial();
+    for &mve in &vec![Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, 
+                     Move::PlaceBuilders { a: Slot(3), b: Slot(4) }] {
+        state = board.apply(mve, &state);
+    }
+    state.buildings = state.buildings.set(Slot(1), 2);
+    state.buildings = state.buildings.set(Slot(2), 3);
+    state.buildings = state.buildings.set(Slot(3), 2); // we put the B player up a bit so it must move down to sacrifice
+    state.to_move = to_move;
+    state
+}
 
-// }
+pub fn any_trap_in_1(board:&StandardBoard, to_move: Player) -> State {
+ let mut state = State::initial();
+    for &mve in &vec![Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, 
+                     Move::PlaceBuilders { a: Slot(3), b: Slot(4) }] {
+        state = board.apply(mve, &state);
+    }
+    state.buildings = state.buildings.set(Slot(2), 1); // in between, so can build on top of this to block in 1
+    state.buildings = state.buildings.set(Slot(5), 2); 
+    state.buildings = state.buildings.set(Slot(6), 2); 
+    state.buildings = state.buildings.set(Slot(7), 1); // escape route
+    state.buildings = state.buildings.set(Slot(8), 2); 
+    state.buildings = state.buildings.set(Slot(9), 2); 
+    state.to_move = to_move;
+    state
+}
 
-// trapping
 
-
-pub fn evaluate<E, H>(board:&StandardBoard, state:&State, max_depth: u8)  -> Vec<HeuristicValue> where E: Evaluation, H:Heuristic {
+pub fn evaluate<E, H>(board:&StandardBoard, state:&State, max_depth: u8) -> Vec<HeuristicValue> where E: Evaluation, H:Heuristic {
     (1..(max_depth+1)).flat_map(|depth| {
         E::evaluate::<H>(board, state, depth).iter().map(|&(_, sc)| sc).take(1).collect::<Vec<_>>()
     }).collect()
@@ -130,8 +153,14 @@ pub fn test_cases(board:&StandardBoard) -> Vec<TestCase> {
         case("a_blockable", a_blockable(board, Player(0)), vec![PLAYER_0_WIN] ),
         case("a_blockable", a_blockable(board, Player(1)), vec![1, 1] ),
 
-        case("b_blockable", a_blockable(board, Player(0)), vec![-1, -1] ),
-        case("b_blockable", a_blockable(board, Player(1)), vec![PLAYER_1_WIN] ),
+        case("b_blockable", b_blockable(board, Player(0)), vec![-1, -1] ),
+        case("b_blockable", b_blockable(board, Player(1)), vec![PLAYER_1_WIN] ),
+
+        case("any_in_1", any_in_1(board, Player(0)), vec![PLAYER_0_WIN] ),
+        case("any_in_1", any_in_1(board, Player(1)), vec![PLAYER_1_WIN] ),
+
+        case("any_trap_in_1", any_trap_in_1(board, Player(0)), vec![PLAYER_0_WIN] ),
+        case("any_trap_in_1", any_trap_in_1(board, Player(1)), vec![PLAYER_1_WIN] ),
     ]
 }
 
@@ -141,10 +170,19 @@ mod minimax {
     #[test]
     fn all() {
         let board = StandardBoard::new();
+        let mut all_ok = true;
         for case in &test_cases(&board) {
             println!("Testing {} to move {:?}", case.name, case.state.to_move);
-            assert_eq!(evaluate::<MiniMax, SimpleHeightHeuristic>(&board, &case.state, case.scores.len() as u8), case.scores); 
+            let scores = evaluate::<MiniMax, SimpleHeightHeuristic>(&board, &case.state, case.scores.len() as u8);
+
+            if scores != case.scores {
+                playout::<MiniMax, SimpleHeightHeuristic>(&board, &case.state, case.scores.len() as u8);
+                all_ok = false;
+                println!("test case expected {:?} but got {:?}", case.scores, scores);
+            }
+            
         }
+        assert!(all_ok);
     }
 
     // #[test]

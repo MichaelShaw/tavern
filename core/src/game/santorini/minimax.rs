@@ -33,19 +33,23 @@ impl Evaluation for MiniMax {
 }
 impl MiniMax {
     pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8) -> HeuristicValue where H: Heuristic {
-        if depth == 0 {
-            return H::evaluate(board, state)
-        }
-
         let mut moves = Vec::new();
         board.next_moves(state, &mut moves);
 
-        if state.to_move == Player(0) {
-            // Player(0) to move, maximising player
-            if moves.is_empty() {
-                return PLAYER_1_WIN;
-            }
+        if depth == 0 {
+            return if moves.is_empty() {
+                if state.to_move == Player(0) {
+                    PLAYER_1_WIN
+                } else {
+                    PLAYER_0_WIN
+                }
+            } else {
+                H::evaluate(board, state)
+            };
+        }
 
+
+        if state.to_move == Player(0) {
             let mut best_observed = PLAYER_1_WIN; // assume worst case
 
             for &mve in &moves {
@@ -60,11 +64,6 @@ impl MiniMax {
             
             best_observed
         } else {
-            // Player 1 to move, minimizing player
-            if moves.is_empty() {
-                return PLAYER_0_WIN
-            }
-
             let mut best_observed = PLAYER_0_WIN; // assume worst cast
 
             for &mve in &moves {
