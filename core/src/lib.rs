@@ -4,6 +4,7 @@
 extern crate rand;
 extern crate pad;
 extern crate fnv;
+extern crate colored;
 
 pub mod game;
 

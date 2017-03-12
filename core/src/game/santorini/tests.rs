@@ -166,6 +166,7 @@ pub fn test_cases(board:&StandardBoard) -> Vec<TestCase> {
 
 mod minimax {
     use super::*;
+    use colored::*;
 
     #[test]
     fn all() {
@@ -178,7 +179,9 @@ mod minimax {
             if scores != case.scores {
                 playout::<MiniMax, SimpleHeightHeuristic>(&board, &case.state, case.scores.len() as u8);
                 all_ok = false;
-                println!("test case expected {:?} but got {:?}", case.scores, scores);
+                println!("{}", format!("test case expected {:?} but got {:?}", case.scores, scores).red());
+            } else {
+                println!("{}", "ok".green());
             }
             
         }

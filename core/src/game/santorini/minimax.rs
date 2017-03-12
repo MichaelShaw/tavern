@@ -29,8 +29,8 @@ impl Evaluation for MiniMax {
             unsorted_moves
         }
     }
-
 }
+
 impl MiniMax {
     pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8) -> HeuristicValue where H: Heuristic {
         let mut moves = Vec::new();
