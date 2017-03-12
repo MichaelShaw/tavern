@@ -70,9 +70,18 @@ pub fn a_blockable(board: &StandardBoard, to_move: Player) -> State {
     state
 }
 
-// pub fn b_blockable_win(board: &StandardBoard, to_move: Player) -> State {
-    
-// }
+pub fn b_blockable_win(board: &StandardBoard, to_move: Player) -> State {
+    let mut state = State::initial();
+    for &mve in &vec![Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, 
+                     Move::PlaceBuilders { a: Slot(3), b: Slot(4) }] {
+        state = board.apply(mve, &state);
+    }
+    state.buildings = state.buildings.set(Slot(1), 1);
+    state.buildings = state.buildings.set(Slot(2), 3);
+    state.buildings = state.buildings.set(Slot(3), 2); // we put the B player up a bit so it must move down to sacrifice
+    state.to_move = to_move;
+    state
+}
 
 // pub fn to_move_win(board:&StandardBoard, to_move: Player) -> State {
 
@@ -120,6 +129,9 @@ pub fn test_cases(board:&StandardBoard) -> Vec<TestCase> {
 
         case("a_blockable", a_blockable(board, Player(0)), vec![PLAYER_0_WIN] ),
         case("a_blockable", a_blockable(board, Player(1)), vec![1, 1] ),
+
+        case("b_blockable", a_blockable(board, Player(0)), vec![-1, -1] ),
+        case("b_blockable", a_blockable(board, Player(1)), vec![PLAYER_1_WIN] ),
     ]
 }
 
