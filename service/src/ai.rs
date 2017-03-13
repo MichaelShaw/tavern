@@ -69,7 +69,7 @@ impl AIService {
 		}
 	}
 
-	pub fn player_multiplier(player:Player) -> i8 {
+	pub fn player_multiplier(player:Player) -> HeuristicValue {
 		match player {
 			Player(0) => 1,
 			Player(1) => -1,
@@ -90,7 +90,8 @@ impl AIService {
 		};
 		for depth in 1..(max_depth+1) {
 			let start = time::precise_time_ns();
-	        let moves = NegaMax::evaluate::<SimpleHeightHeuristic>(board, state, depth); 	
+	        let (moves, move_count) = NegaMax::evaluate::<SimpleHeightHeuristic>(board, state, depth); 	
+
 
 			let best_move_score = moves.get(0).map(|&(_, score)| score);
 
@@ -102,7 +103,10 @@ impl AIService {
 			}).unwrap();	
 			let duration = time::precise_time_ns() - start;
 			let as_seconds = (duration as f64) / 1_000_000_000f64;
-			println!("depth {:?} evaluated in {:.3}s score -> {:?}", depth, as_seconds, best_move_score);
+
+			let average_branch_factor = branch_factor(move_count, depth);
+			println!("depth {:?} evaluated in {:.3}s score -> {:?} total moves evaluationed -> {:?} branch_factor -> {:?}", depth, as_seconds, best_move_score, move_count, average_branch_factor);
+			
 		}
 
 		println!("Evaluation has concluded");

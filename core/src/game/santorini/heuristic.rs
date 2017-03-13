@@ -1,11 +1,11 @@
 use game::santorini::*;
+use std;
 
-pub const BEST : HeuristicValue = 100;
+pub const BEST : HeuristicValue = std::i16::MAX;
+pub const WORST : HeuristicValue = -std::i16::MAX; // to prevent overflow on negation
 
-pub const WORST : HeuristicValue = -100;
-
-pub const PLAYER_0_WIN : HeuristicValue = 100;
-pub const PLAYER_1_WIN : HeuristicValue = -100;
+pub const PLAYER_0_WIN : HeuristicValue = std::i16::MAX;
+pub const PLAYER_1_WIN : HeuristicValue = -std::i16::MAX; // to prevent overflow on negation
 
 pub struct SimpleHeightHeuristic {}
 

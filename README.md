@@ -26,6 +26,16 @@ https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F
 
 # AI 
 
+### Notes on our heuristic degradation
+
+We currently check for opponent trappedness when we evaluate the heuristic. This is currently the only method of checking that our last move secured a trapedness win.
+
+It's interesting to basically lose 1 ply of search depth over this.
+
+If we left this out, we'd still need to increase the extra ply to work out whether it's a trapping victory or not.
+
+Running one extra ply, and leaving it out .... could still be more efficient. You run N+1 ply, you miss out on the opponents N+1 trap (you would if you ran N), and you get to run the heuristic at N+1.
+
 ### Naive Move Counting
 
 #### From Start

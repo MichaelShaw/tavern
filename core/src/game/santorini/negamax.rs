@@ -81,7 +81,9 @@ impl NegaMax {
         for &mve in &moves {
             let (v, move_count)  = if board.ascension_winning_move(state, mve) {
                 let wv = if state.to_move == Player(0) { PLAYER_0_WIN } else { PLAYER_1_WIN };
-                (wv * color, 1)
+
+                return (wv * color, total_moves + 1)
+                // (wv * color, 1)
             } else {
                 let new_state = board.apply(mve, state);
                 let (v, mves) = NegaMax::eval::<H>(board, &new_state, depth - 1, -color);
