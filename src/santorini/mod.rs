@@ -185,28 +185,22 @@ impl SantoriniGame {
                 if let Some(mve) = completed_moves.first() {
                     self.play_move(* mve);
                 }
-
-                self.game.tentative = self.game.board_state.tentative(&self.game.current_move_positions, self.mouse_over_slot);
             },
             InteractionState::WaitingVictory { ref mut elapsed, .. } => {
                 *elapsed += delta_time;
-                if *elapsed > VICTORY_WAIT {
+                if *elapsed >= VICTORY_WAIT {
                     println!("we've waited long enough, reset");
                     new_interaction_state = Some(StateTransition::Reset);
                 }
             },
             InteractionState::AnimatingMove { ref mut elapsed, winner, .. } => {
                 *elapsed = *elapsed + delta_time;
-                if *elapsed > ANIMATION_WAIT {
-                    println!("we've animated long enough, winner? {:?}", winner);
+                if *elapsed >= ANIMATION_WAIT {
                     let is = if let Some(player) = winner {
                         InteractionState::WaitingVictory { player: player, elapsed: 0.0 }
                     } else {
                         InteractionState::awaiting_input(&self.game.board_state.state, &self.game.cpu_players)
                     };
-
-                    println!("new interaction state -> {:?}", is);
-
                     new_interaction_state = Some(StateTransition::NewInteractionState(is));
                 }
             },
@@ -220,6 +214,8 @@ impl SantoriniGame {
             },
             None => (),
         }
+
+        self.game.tentative = self.game.board_state.tentative(&self.game.current_move_positions, self.mouse_over_slot);
 
 
         'ai_loop: loop {
@@ -292,11 +288,9 @@ impl SantoriniGame {
 
         let next_player_color = PLAYER_COLORS[self.game.board_state.state.player().0 as usize];
 
-        let draw_state : &State = &self.game.tentative.proposed_state;
-
         match &self.game.interaction_state {
-            &InteractionState::AnimatingMove {  player_type: PlayerType::Human, .. } => {
-                 self.draw_opaques(draw_state, opaque, units_per_point)
+            &InteractionState::AnimatingMove { player_type: PlayerType::Human, .. } => {
+                 self.draw_opaques(&self.game.board_state.state, opaque, units_per_point)
             }
             &InteractionState::AnimatingMove { ref prior_state, mve, player_type:PlayerType::AI, elapsed, .. } => {
                 let subtracted_state = subtract(prior_state, mve);
@@ -339,10 +333,10 @@ impl SantoriniGame {
                 }
             },
             &InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => {
-                self.draw_opaques(draw_state, opaque, units_per_point);
+                self.draw_opaques(&self.game.board_state.state, opaque, units_per_point);
             },
             &InteractionState::AwaitingInput { player_type: PlayerType::Human, ..  } => {
-                self.draw_opaques(draw_state, opaque, units_per_point);
+                self.draw_opaques(&self.game.tentative.proposed_state, opaque, units_per_point);
                 for slot in &self.game.tentative.matching_slots {
                     let pos = StandardBoard::position(*slot);
                     let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
@@ -351,7 +345,7 @@ impl SantoriniGame {
                 }
             },
             &InteractionState::WaitingVictory { .. } => {
-                self.draw_opaques(draw_state, opaque, units_per_point);
+                self.draw_opaques(&self.game.board_state.state, opaque, units_per_point);
             },
         }
         
