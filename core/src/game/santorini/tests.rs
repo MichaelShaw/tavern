@@ -1,5 +1,6 @@
 
 use game::santorini::*;
+use time;
 
 pub fn mild_a_advantage(board:&StandardBoard, to_move: Player) -> State {
     let mut state = distant_state(board);
@@ -191,12 +192,27 @@ pub fn test_all_cases<E, H>(name:&str) -> bool where E: Evaluation, H: Heuristic
     error_cases == 0
 }
 
+pub fn time_test_cases<E, H>(name: &str) -> bool where E: Evaluation, H: Heuristic {
+    let start = time::precise_time_ns();
+    let v = test_all_cases::<E, H>(name);
+    let duration = (time::precise_time_ns() - start) as f64 / 1_000_000_000f64;
+
+    println!("testing {} took {:.5} seconds", name, duration);
+    v
+}
+
 mod minimax {
     use super::*;
 
     #[test]
     fn all() {
         assert!(test_all_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax"));
+    }
+
+    #[test]
+    fn bench() {
+        let errors = time_test_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax");
+        println!("errors {:?}", errors);
     }
 }
 
@@ -207,6 +223,12 @@ mod negamax {
    #[test]
     fn all() {
         assert!(test_all_cases::<NegaMax, SimpleHeightHeuristic>("NegaMax"));
+    }
+
+    #[test]
+    fn bench() {
+        let errors = time_test_cases::<NegaMax, SimpleHeightHeuristic>("NegaMax");
+        println!("errors {:?}", errors);
     }
 }
     

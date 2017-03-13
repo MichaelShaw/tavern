@@ -6,6 +6,7 @@ Chip tune "hollow wanderer" is from
 https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F7HVMjJjdqSqU
 
 # Santorini
+- Add benchmarking test cases
 - Make iterative deepening a little smarter. If you reach a winning position terminate. If you reach a losing position terminate with result from last known pass if possible.
 - Measure performance loss of move counting in Evaluation strategies.
 - Animation of moves. An optional "previous state + move"? 
