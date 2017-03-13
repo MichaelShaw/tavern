@@ -1,30 +1,27 @@
 # tavern
 Board game engine
 
-Chip tune "hollow wanderer" is from 
-
-https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F7HVMjJjdqSqU
-
 # Santorini
 - Make iterative deepening a little smarter. If you reach a winning position terminate. If you reach a losing position terminate with result from last known pass if possible.
 - Animation of moves. An optional "previous state + move"? 
 - Properly nest our state. "Game" should contain CPU as well as tentative stuff, proper nesting prevents enganglement/invalid states.
 - Add alpha beta pruning
-- Add move ordering
+- Add some form of move ordering?
 - Add better heuristic
 - Add iterative deepening based root move ordering (for alpha beta pruning)
 - Adversarial heuristic testing
 - Test MaxMax? (heuristic is relative? ... maybe it could work for 3+ player)
 
-# Heuristic
+## Heuristic
 - Height of squares available to move in (will reward high centre)
+- Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
 
-# Move Ordering
+## Move Ordering
 - Move up
 - Build on a square one higher than an opponent 
 - Move towards highest opponent
 
-# AI 
+## AI 
 
 ### Notes on our heuristic degradation
 
@@ -61,3 +58,9 @@ Running one extra ply, and leaving it out .... could still be more efficient. Yo
     depth 3 moves -> 1148717 in 0.038s branch 104.7
     depth 4 moves -> 63167200 in 1.562s branch 89.2
     depth 5 moves -> 3841150351 in 91.991s branch 82.6
+
+## Licensing Reminders
+
+Chip tune "hollow wanderer" is from 
+
+https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F7HVMjJjdqSqU

@@ -141,7 +141,9 @@ impl App {
 
             let render_passes = self.render();
 
-            self.renderer.render(render_passes, rgb(132, 193, 255)).unwrap();
+            // rgb(132, 193, 255)
+            // 
+            self.renderer.render(render_passes, rgb(116, 181, 231)).unwrap();
 
             last_time = time;
             if input_state.close {

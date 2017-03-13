@@ -191,23 +191,34 @@ impl SantoriniGame {
 
         let next_player_color = PLAYER_COLORS[self.game.state.player().0 as usize];
 
-        // DRAW MOUSE OVER
+        let draw_state : &State = &self.tentative.proposed_state;
+        self.draw_opaques(draw_state, opaque, units_per_point);
+        
+
+        for slot in &self.tentative.matching_slots {
+            let pos = StandardBoard::position(*slot);
+            let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
+            trans.color = next_player_color.float_raw();
+            trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.1, false);
+        }
+
+         // DRAW MOUSE OVER
         if let Some(slot) = self.mouse_over_slot {
             let position = StandardBoard::position(slot);
             let v = Vec3::new(position.x as f64, 0.0, position.y as f64) + BOARD_OFFSET;
             trans.color = color::WHITE.float_raw();
-            trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.1, false);
+            trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.12, false);
         }
+    }
 
-        let draw_state : &State = &self.tentative.proposed_state;
-
+    pub fn draw_opaques(&self, state: &State, opaque: &mut GeometryTesselator, units_per_point: f64) {
         // DRAW BOARD CONTENTS
         for &slot in &self.game.board.slots {
             let pos = StandardBoard::position(slot);
             let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
 
-            let building_height = draw_state.buildings.get(slot);
-            let dome = draw_state.domes.get(slot) == 1;
+            let building_height = state.buildings.get(slot);
+            let dome = state.domes.get(slot) == 1;
 
             // RENDER THE BUILDING
             for i in 0..building_height {
@@ -222,23 +233,16 @@ impl SantoriniGame {
         }
 
         // DRAW THE GUYS
-        for (player_id, locations) in draw_state.builder_locations.iter().enumerate() {
+        for (player_id, locations) in state.builder_locations.iter().enumerate() {
             for &slot in locations {
                 if slot != UNPLACED_BUILDER {
                     let pos = StandardBoard::position(slot);
                     let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
-                    let building_height = draw_state.buildings.get(slot);
+                    let building_height = state.buildings.get(slot);
                     let vert_offset = (BUILDING_PIXEL_OFFSETS[building_height as usize] as f64) * units_per_point;
-                    opaque.draw_floor_tile_at(&self.atlas.players[player_id as usize], 0, v + Vec3::new(0.0, vert_offset, 0.0), 0.12, false );
+                    opaque.draw_floor_tile_at(&self.atlas.players[player_id as usize], 0, v + Vec3::new(0.0, vert_offset, 0.0), 0.15, false );
                 }
             }
-        }
-
-        for slot in &self.tentative.matching_slots {
-            let pos = StandardBoard::position(*slot);
-            let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
-            trans.color = next_player_color.float_raw();
-            trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.1, false);
         }
     }
 }
