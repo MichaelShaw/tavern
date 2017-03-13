@@ -1,6 +1,7 @@
 
 use game::santorini::*;
 use time;
+use colored::*;
 
 pub fn mild_a_advantage(board:&StandardBoard, to_move: Player) -> State {
     let mut state = distant_state(board);
@@ -176,8 +177,11 @@ pub fn test_cases(board:&StandardBoard) -> Vec<TestCase> {
     ]
 }
 
-pub fn test_all_cases<E, H>(name:&str) -> bool where E: Evaluation, H: Heuristic {
-    use colored::*;
+pub fn test_all_cases<E, H>(name:&str) -> (u32, MoveCount, BranchFactor) where E: Evaluation, H: Heuristic {
+    
+
+    let mut total_moves = 0;
+    let mut branch_factors = Vec::new();
 
     println!("==== Testing {} all cases =====", name);
     let board = StandardBoard::new();
@@ -186,7 +190,8 @@ pub fn test_all_cases<E, H>(name:&str) -> bool where E: Evaluation, H: Heuristic
     for case in &cases {
         println!("Testing {} to move {:?}", case.name, case.state.to_move);
         let (scores, move_count, average_branch_factor) = evaluate::<E, H>(&board, &case.state, case.scores.len() as u8);
-
+        total_moves += move_count;
+        branch_factors.push(average_branch_factor);
         if scores != case.scores {
             playout::<E, H>(&board, &case.state, case.scores.len() as u8);
             error_cases += 1;
@@ -200,16 +205,22 @@ pub fn test_all_cases<E, H>(name:&str) -> bool where E: Evaluation, H: Heuristic
         println!("{}", format!("==== {:?} had {}/{} error cases", name, error_cases, cases.len()));
     }
 
-    error_cases == 0
+    (error_cases, total_moves, average(&branch_factors))
 }
 
 pub fn time_test_cases<E, H>(name: &str) -> bool where E: Evaluation, H: Heuristic {
     let start = time::precise_time_ns();
-    let v = test_all_cases::<E, H>(name);
+    let (v, move_count, average_branch_factor) = test_all_cases::<E, H>(name);
     let duration = (time::precise_time_ns() - start) as f64 / 1_000_000_000f64;
 
-    println!("testing {} took {:.5} seconds", name, duration);
-    v
+    if v > 0 {
+        println!("{}", format!("testing {} took {:.5} seconds", name, duration).red());    
+    } else {
+        let moves_per_second = move_count as f64 / duration;
+        println!("{}", format!("testing {} took {:.5} seconds {} moves ({:.0}/second) {:.3} average branch factor", name, duration, move_count,  moves_per_second, average_branch_factor).green());    
+    }
+    
+    v == 0
 }
 
 mod minimax {
