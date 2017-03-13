@@ -2,7 +2,6 @@
 Board game engine
 
 # Santorini
-- Animation of moves. An optional "previous state + move"? 
 - Add alpha beta pruning
 - Add some form of move ordering?
 - Add better heuristic
