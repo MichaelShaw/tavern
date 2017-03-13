@@ -9,6 +9,7 @@ Board game engine
 - Adversarial heuristic testing
 - Test MaxMax? (heuristic is relative? ... maybe it could work for 3+ player)
 - Playout needs to be improved to include an equivalent of rollback.
+- Add something better than lerp for animation.
 
 ## Heuristic
 - Height of squares available to move in (will reward high centre)
