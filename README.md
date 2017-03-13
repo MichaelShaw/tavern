@@ -5,11 +5,9 @@ Chip tune "hollow wanderer" is from
 
 https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F7HVMjJjdqSqU
 
-[profile.dev]
-opt-level = 3
-
 # Santorini
 - Make iterative deepening a little smarter. If you reach a winning position terminate. If you reach a losing position terminate with result from last known pass if possible.
+- Measure performance loss of move counting in Evaluation strategies.
 - Animation of moves. An optional "previous state + move"? 
 - Investigate performance cost of tracking move savings. Generic approach?
 - Properly nest our state. "Game" should contain CPU as well as tentative stuff, proper nesting prevents enganglement/invalid states.
@@ -18,6 +16,7 @@ opt-level = 3
 - Add better heuristic
 - Add iterative deepening based root move ordering (for alpha beta pruning)
 - Adversarial heuristic testing
+- Test MaxMax? (heuristic is relative? ... maybe it could work for 3+ player)
 
 # Heuristic
 - Height of squares available to move in (will reward high centre)
