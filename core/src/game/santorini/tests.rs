@@ -114,10 +114,21 @@ pub fn any_trap_in_1(board:&StandardBoard, to_move: Player) -> State {
 }
 
 
-pub fn evaluate<E, H>(board:&StandardBoard, state:&State, max_depth: u8) -> Vec<HeuristicValue> where E: Evaluation, H:Heuristic {
-    (1..(max_depth+1)).flat_map(|depth| {
-        E::evaluate::<H>(board, state, depth).iter().map(|&(_, sc)| sc).take(1).collect::<Vec<_>>()
-    }).collect()
+pub fn evaluate<E, H>(board:&StandardBoard, state:&State, max_depth: u8) -> (Vec<HeuristicValue>, MoveCount, BranchFactor) where E: Evaluation, H:Heuristic {
+    let mut branch_factors = Vec::new();
+    let mut total_moves = 0;
+    let heuristic_values : Vec<_> = (1..(max_depth+1)).flat_map(|depth| {
+        let (moves, move_count) = E::evaluate::<H>(board, state, depth);
+        branch_factors.push(branch_factor(move_count, depth));
+        total_moves += move_count;
+        moves.iter().map(|&(_, sc)| sc).take(1).collect::<Vec<_>>()
+    }).collect();
+    (heuristic_values, total_moves, average(&branch_factors))
+}
+
+fn average(arr: &[f64]) -> f64 {
+    let n = arr.len() as f64;
+    arr.iter().fold(0.0, |acc, val| acc + val) / n
 }
 
 pub struct TestCase {
@@ -174,14 +185,14 @@ pub fn test_all_cases<E, H>(name:&str) -> bool where E: Evaluation, H: Heuristic
     let cases = test_cases(&board);
     for case in &cases {
         println!("Testing {} to move {:?}", case.name, case.state.to_move);
-        let scores = evaluate::<E, H>(&board, &case.state, case.scores.len() as u8);
+        let (scores, move_count, average_branch_factor) = evaluate::<E, H>(&board, &case.state, case.scores.len() as u8);
 
         if scores != case.scores {
             playout::<E, H>(&board, &case.state, case.scores.len() as u8);
             error_cases += 1;
             println!("{}", format!("test case expected {:?} but got {:?}", case.scores, scores).red());
         } else {
-            println!("{}", "ok".green());
+            println!("{}", format!("ok {} moves {:.2} average branch factor", move_count, average_branch_factor).green());
         }
     }
 
@@ -206,29 +217,16 @@ mod minimax {
 
     #[test]
     fn all() {
-        assert!(test_all_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax"));
-    }
-
-    #[test]
-    fn bench() {
-        let errors = time_test_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax");
-        println!("errors {:?}", errors);
+        assert!(time_test_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax"));
     }
 }
-
 
 mod negamax {
     use super::*;
 
-   #[test]
-    fn all() {
-        assert!(test_all_cases::<NegaMax, SimpleHeightHeuristic>("NegaMax"));
-    }
-
     #[test]
-    fn bench() {
-        let errors = time_test_cases::<NegaMax, SimpleHeightHeuristic>("NegaMax");
-        println!("errors {:?}", errors);
+    fn all() {
+        assert!(time_test_cases::<NegaMax, SimpleHeightHeuristic>("NegaMax"));
     }
 }
     

@@ -24,20 +24,29 @@ use HashSet;
 use super::util::*;
 use pad::Alignment;
 
-pub type HeuristicValue = i8;
+pub type MoveCount = u32;
+
+pub type HeuristicValue = i16;
+
+pub type BranchFactor = f64;
+
 pub trait Heuristic {
     fn evaluate(board: &StandardBoard, state: &State) -> HeuristicValue;
 }
 
 pub trait Evaluation {
-    fn evaluate<H>(board: &StandardBoard, state: &State, depth: u8) -> Vec<(Move, HeuristicValue)> where H: Heuristic;
+    fn evaluate<H>(board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, MoveCount) where H: Heuristic;
+}
+
+pub fn branch_factor(move_count: MoveCount, depth: u8) -> f64 {
+    (move_count as f64).powf(1.0 / (depth as f64))
 }
 
 pub fn playout<E, H>(board:&StandardBoard, state:&State, depth:u8) where E: Evaluation, H: Heuristic {
     println!("about to playout {}", board.print(state));
     let mut current_state = state.clone();
     for d in (1..(depth+1)).rev() {
-        let moves = E::evaluate::<H>(board, &current_state, d);
+        let (moves, _) = E::evaluate::<H>(board, &current_state, d);
         println!("legal moves -> {:?}", moves);
         if let Some(&(mve, _)) = moves.first() {
             current_state = board.apply(mve, &current_state);

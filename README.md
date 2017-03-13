@@ -6,11 +6,10 @@ Chip tune "hollow wanderer" is from
 https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F7HVMjJjdqSqU
 
 # Santorini
-- Add benchmarking test cases
+- Add benchmarking test cases. Add a bunch more diverse cases, variety of heights + player locations.
 - Make iterative deepening a little smarter. If you reach a winning position terminate. If you reach a losing position terminate with result from last known pass if possible.
-- Measure performance loss of move counting in Evaluation strategies.
+- Measure performance loss of including "move counting" in Evaluation strategies.
 - Animation of moves. An optional "previous state + move"? 
-- Investigate performance cost of tracking move savings. Generic approach?
 - Properly nest our state. "Game" should contain CPU as well as tentative stuff, proper nesting prevents enganglement/invalid states.
 - Add alpha beta pruning
 - Add move ordering
