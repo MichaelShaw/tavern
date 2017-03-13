@@ -90,10 +90,10 @@ impl AIService {
     }
 
     pub fn evaluate<E, H>(board: &StandardBoard, state:&State, send: &Sender<StateAnalysis>) where E: Evaluation, H: Heuristic {
-        println!("AI Worker has been asked for analysis");
-        println!("{}", board.print(&state));
+        println!("AI :: Asked for analysis");
+        // println!("{}", board.print(&state));
         let score = SimpleHeightHeuristic::evaluate(board, state) * Self::player_multiplier(state.to_move);
-        println!("we score it as -> {:?} to move {:?}", score, state.to_move);
+        println!("AI :: current score it as -> {:?} with {:?} to move", score, state.to_move);
 
         let max_depth = if state.builders_to_place() {
             3
@@ -114,14 +114,14 @@ impl AIService {
             let as_seconds = (duration as f64) / 1_000_000_000f64;
 
             let average_branch_factor = branch_factor(move_count, depth);
-            println!("depth {:?} evaluated in {:.3}s score -> {:?} total moves evaluationed -> {:?} branch_factor -> {:?}", depth, as_seconds, best_move_score, move_count, average_branch_factor);
+            println!("AI :: depth {:?} evaluated in {:.3}s score -> {:?} total moves evaluationed -> {:?} branch_factor -> {:?}", depth, as_seconds, best_move_score, move_count, average_branch_factor);
 
             if let Some(player) = winning_player {
-                println!("at depth {:?} we've established winning player will be {:?}", depth, player);
+                println!("AI :: at depth {:?} we've established winning player will be {:?}", depth, player);
 
                 if player != state.to_move && depth > 0 {
-                    println!("it's us not us, and we've got a rollback state, rolling back, performing sample playout");
-                    playout::<E, H>(board, state, depth);
+                    println!("AI :: we've lost, and we've got a rollback state, rolling back, performing sample playout");
+                    // playout::<E, H>(board, state, depth);
                     send.send(StateAnalysis {
                         state: state.clone(),
                         depth: depth,
@@ -130,7 +130,6 @@ impl AIService {
                         rollback: true,
                     }).unwrap();
                 } else {
-                    println!("we win ... or have nothing to rollback to");
                     send.send(StateAnalysis {
                         state: state.clone(),
                         depth: depth,
@@ -152,7 +151,7 @@ impl AIService {
             }
         }
 
-        println!("Evaluation has concluded");
+        println!("AI :: Evaluation over");
     }
 
     pub fn request_analysis(&self, state: &State) {

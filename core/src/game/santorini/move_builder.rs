@@ -11,15 +11,26 @@ pub enum MatchStatus {
 }
 
 #[derive(Debug, Clone)]
-pub struct CoreGame { 
-    pub moves: Vec<Move>,
+pub struct BoardState { 
+    pub moves: Vec<Move>, // basically a replay
     pub state: State,
     pub board: StandardBoard,
     pub next_moves : Vec<Move>,
 }
 
+impl BoardState {
+    pub fn new(board : StandardBoard, state: State) -> BoardState {
+        let mut next_moves = Vec::new();
+        board.next_moves_for_player(&state, &mut next_moves);
 
-impl CoreGame {
+        BoardState { // this is the core
+            moves: Vec::new(),
+            state: state,
+            board: board,
+            next_moves : next_moves,
+        }
+    }
+
     pub fn make_move(&mut self, mve:Move) -> MatchStatus {
         let is_winning_move = self.board.ascension_winning_move(&self.state, mve);
 
@@ -43,19 +54,7 @@ impl CoreGame {
         }
     }
 
-    pub fn new(board : StandardBoard, state: State) -> CoreGame {
-        let mut next_moves = Vec::new();
-        board.next_moves_for_player(&state, &mut next_moves);
-
-        CoreGame { // this is the core
-            moves: Vec::new(),
-            state: state,
-            board: board,
-            next_moves : next_moves,
-        }
-    }
-
-    pub fn tentative(&self, positions : &Vec<Slot>, tentative: Option<Slot>) -> TentativeGame {
+    pub fn tentative(&self, positions : &Vec<Slot>, tentative: Option<Slot>) -> TentativeState {
         let legal_moves_as_slots : Vec<_> = self.next_moves.iter().map(|m| m.to_slots()).filter(|sl| {
             sl.starts_with(&positions)
         }).collect();
@@ -81,7 +80,7 @@ impl CoreGame {
             }
         }
 
-        TentativeGame {
+        TentativeState {
             proposed_state: new_state,
             matching_slots: matching_slots,
             move_count: tentative_move_count,
@@ -89,12 +88,11 @@ impl CoreGame {
     }
 }
 
-pub struct TentativeGame {
+pub struct TentativeState {
     pub proposed_state: State,
     pub matching_slots : HashSet<Slot>,
     pub move_count : usize,
 }
-
 
 fn modify_state(base_state:&State, slots:&Vec<Slot>) -> State {
     let mut new_state = base_state.clone();

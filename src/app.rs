@@ -134,8 +134,8 @@ impl App {
             let (dimensions, input_state) = self.renderer.begin();
 
             let time = time::precise_time_ns();
-            let delta_time = ((time - last_time) as f64) / 1_000_000.0;
-            let since_start = ((time - start_time) as f64 )/ 1_000_000.0;
+            let delta_time = ((time - last_time) as f64) / 1_000_000_000.0;
+            let since_start = ((time - start_time) as f64) / 1_000_000_000.0;
 
             self.update(&input_state, dimensions, since_start, delta_time);  
 
@@ -156,14 +156,13 @@ impl App {
     fn update(&mut self, input_state:&InputState, dimensions:Dimensions, time: Seconds, delta_time: Seconds) {
         let mut sound_events : Vec<SoundEvent> = Vec::new();
         
-
         let ground_plane = Plane::from_origin_normal(Vec3::zero(), Vec3::new(0.0, 1.0, 0.0));
         let (mx, my) = input_state.mouse.at;
 
         let ground_intersection = self.camera.world_line_segment_for_mouse_position(mx, my).and_then(|ls| ls.intersects(ground_plane));
         match &mut self.state {
             &mut Game::Santorini(ref mut game) => {
-                game.update(ground_intersection, &input_state, &mut sound_events);
+                game.update(ground_intersection, &input_state, &mut sound_events, delta_time);
             },
         }
 

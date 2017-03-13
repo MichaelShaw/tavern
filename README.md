@@ -3,17 +3,18 @@ Board game engine
 
 # Santorini
 - Animation of moves. An optional "previous state + move"? 
-- Properly nest our state. "Game" should contain CPU as well as tentative stuff, proper nesting prevents enganglement/invalid states.
 - Add alpha beta pruning
 - Add some form of move ordering?
 - Add better heuristic
 - Add iterative deepening based root move ordering (for alpha beta pruning)
 - Adversarial heuristic testing
 - Test MaxMax? (heuristic is relative? ... maybe it could work for 3+ player)
+- Playout needs to be improved to include an equivalent of rollback.
 
 ## Heuristic
 - Height of squares available to move in (will reward high centre)
 - Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
+- Heuristic when checking trapness should inform the heuristic which workers are free to move .... or will adjacency already cover this.
 
 ## Move Ordering
 - Move up

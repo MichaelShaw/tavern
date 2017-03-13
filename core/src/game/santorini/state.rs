@@ -11,6 +11,18 @@ pub struct State {
 }
 
 impl State {
+    pub fn without_builder_at(&self, slot:Slot) -> State {
+        let mut new_state = self.clone();
+        for player_id in 0..2 {
+            for builder_id in 0..2 {
+                if new_state.builder_locations[player_id][builder_id] == slot {
+                    new_state.builder_locations[player_id][builder_id] = UNPLACED_BUILDER;
+                }
+            }
+        }
+        new_state
+    }
+
     pub fn is_ordered(&self) -> bool {
         self.builder_locations[0][0] <= self.builder_locations[0][1] && self.builder_locations[1][0] <= self.builder_locations[1][1]
     }
