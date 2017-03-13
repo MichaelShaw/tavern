@@ -2,7 +2,6 @@
 Board game engine
 
 # Santorini
-- Make iterative deepening a little smarter. If you reach a winning position terminate. If you reach a losing position terminate with result from last known pass if possible.
 - Animation of moves. An optional "previous state + move"? 
 - Properly nest our state. "Game" should contain CPU as well as tentative stuff, proper nesting prevents enganglement/invalid states.
 - Add alpha beta pruning
