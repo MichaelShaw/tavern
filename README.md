@@ -11,7 +11,6 @@ Board game engine
 - Add something better than lerp for animation.
 
 ## Heuristic
-- Height of squares available to move in (will reward high centre)
 - Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
 - Heuristic when checking trapness should inform the heuristic which workers are free to move .... or will adjacency already cover this.
 

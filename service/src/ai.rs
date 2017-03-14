@@ -49,7 +49,7 @@ impl AIService {
                             Analysis(state) => {
                                 // NegaMax
                                 // NegaMaxAlphaBeta
-                                AIService::evaluate::<NegaMaxAlphaBeta, SimpleHeightHeuristic>(&board, &state, &ai_tx);
+                                AIService::evaluate::<NegaMaxAlphaBeta, NeighbourHeuristic>(&board, &state, &ai_tx);
                             },
                             Shutdown => {
                                 println!("Ai shutdown requested");
@@ -98,7 +98,7 @@ impl AIService {
         println!("AI :: current score it as -> {:?} with {:?} to move", score, state.to_move);
 
         let max_depth = if state.builders_to_place() {
-            4
+            5
         }  else {
             6
         };

@@ -223,6 +223,25 @@ pub fn time_test_cases<E, H>(name: &str) -> bool where E: Evaluation, H: Heurist
     v == 0
 }
 
+pub fn time_exploration<E, H>(name:&str, depth:u8) -> MoveCount where E: Evaluation, H: Heuristic  {
+    let mut total_moves = 0;
+    let mut branch_factors = Vec::new();
+    let board = StandardBoard::new();
+    let cases = test_cases(&board);
+
+    let start = time::precise_time_ns();
+    for case in &cases {
+        let (_, move_count, average_branch_factor) = evaluate::<E, H>(&board, &case.state, depth);
+        total_moves += move_count;
+        branch_factors.push(average_branch_factor);
+    }
+
+    let duration = (time::precise_time_ns() - start) as f64 / 1_000_000_000f64;
+    let moves_per_second = total_moves as f64 / duration;
+    println!("{}", format!("testing {} took {:.5} seconds {} moves ({:.0}/second) {:.3} average branch factor", name, duration, total_moves,  moves_per_second, average(&branch_factors)).green());    
+    total_moves
+}
+
 
 mod minimax_alphabeta {
     use super::*;
@@ -238,7 +257,18 @@ mod negamax_alphabeta {
 
     #[test]
     fn all() {
-        assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>("NegaMax_AlphaBeta"));
+        // assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>("NegaMax_AlphaBeta"));
+    }
+}
+
+mod bench {
+    use super::*;
+
+    #[test]
+    fn all() {
+        time_exploration::<MiniMax, NeighbourHeuristic>("MiniMax", 4);
+        time_exploration::<NegaMax, NeighbourHeuristic>("NegaMax", 4);
+        time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMaxAlphaBeta", 4);
     }
 }
 
