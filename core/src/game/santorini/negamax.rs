@@ -14,7 +14,6 @@ fn color(player:Player) -> HeuristicValue {
 }
 
 impl Evaluation for NegaMax {
-    // THIS IS 100% FUCKED
     fn evaluate<H>(board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, MoveCount) where H: Heuristic {
         let color = color(state.to_move);
         let mut moves = Vec::with_capacity(200);
@@ -23,37 +22,20 @@ impl Evaluation for NegaMax {
         let mut total_moves = 0;
         let mut unsorted_moves : Vec<(Move, HeuristicValue)> = Vec::with_capacity(200);
 
-        // println!("NEGAMAX moves -> {:?}", unsorted_moves);
-        if state.to_move == Player(0) {
-            for &mve in &moves {
-                if board.ascension_winning_move(state, mve) {
-                    unsorted_moves.push((mve, PLAYER_0_WIN));
-                    total_moves += 1;
-                } else {
-                    let new_state = board.apply(mve, state);
+        for &mve in &moves {
+            if board.ascension_winning_move(state, mve) {
+                unsorted_moves.push((mve, BEST * color));
+                total_moves += 1;
+            } else {
+                let new_state = board.apply(mve, state);
 
-                    let (v, move_count) = NegaMax::eval::<H>(board, &new_state, depth - 1, -color);
-                    
-                    unsorted_moves.push((mve, -v));
-                    total_moves += move_count;
-                }
+                let (v, move_count) = NegaMax::eval::<H>(board, &new_state, depth - 1, -color);
+                
+                unsorted_moves.push((mve, v * -color));
+                total_moves += move_count;
             }
-            
-            unsorted_moves.sort_by_key(|&(_, hv)| -hv); // big first
-        } else {
-            for &mve in &moves {
-                if board.ascension_winning_move(state, mve) {
-                    unsorted_moves.push((mve, PLAYER_1_WIN));
-                    total_moves += 1;
-                } else {
-                    let new_state = board.apply(mve, state);
-                    let (v, move_count) = NegaMax::eval::<H>(board, &new_state, depth - 1, -color);
-                    unsorted_moves.push((mve, v));
-                    total_moves += move_count;
-                }
-            }
-            unsorted_moves.sort_by_key(|&(_, hv)| hv);
         }
+        unsorted_moves.sort_by_key(|&(_, hv)| hv * -color);
         (unsorted_moves, total_moves)
     }
 }
@@ -65,34 +47,24 @@ impl NegaMax {
 
         if depth == 0 {
             let v = if moves.is_empty() {
-                if state.to_move == Player(0) {
-                    PLAYER_1_WIN
-                } else {
-                    PLAYER_0_WIN
-                }
+                WORST
             } else {
-                H::evaluate(board, state)
+                H::evaluate(board, state) * color
             };
-            return (color * v, 1);
+            return (v, 1);
         }
 
         let mut total_moves = 0;
         let mut best_observed = WORST;
         for &mve in &moves {
-            let (v, move_count)  = if board.ascension_winning_move(state, mve) {
-                let wv = if state.to_move == Player(0) { PLAYER_0_WIN } else { PLAYER_1_WIN };
-
-                return (wv * color, total_moves + 1)
-                // (wv * color, 1)
+            if board.ascension_winning_move(state, mve) {
+                return (BEST, total_moves + 1);
             } else {
                 let new_state = board.apply(mve, state);
-                let (v, mves) = NegaMax::eval::<H>(board, &new_state, depth - 1, -color);
-
-                (-v, mves) 
-            };
-            total_moves += move_count;
-
-            best_observed = max(v, best_observed);
+                let (v, move_count) = NegaMax::eval::<H>(board, &new_state, depth - 1, -color);
+                total_moves += move_count;
+                best_observed = max(-v, best_observed);
+            }
         }
 
         (best_observed, total_moves)
