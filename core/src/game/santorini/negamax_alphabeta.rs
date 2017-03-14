@@ -1,6 +1,6 @@
 
 use game::santorini::*;
-use std::cmp::max;
+use std::cmp::{max, min};
 
 fn color(player:Player) -> HeuristicValue {
     match player {
@@ -24,27 +24,57 @@ impl Evaluation for NegaMaxAlphaBeta {
 
 
     	// let mut alpha = WORST;
+        if state.to_move == Player(0) {
+            let mut alpha = WORST;
+            for &mve in &moves {
+                if board.ascension_winning_move(state, mve) {
+                    let av = BEST * color;
+                    unsorted_moves.push((mve, av));
 
-        for &mve in &moves {
-            if board.ascension_winning_move(state, mve) {
-            	let av = BEST * color;
-                unsorted_moves.push((mve, av));
+                    alpha = max(alpha, av);
 
-                // alpha = max(alpha, av);
+                    total_moves += 1;
+                } else {
+                    let new_state = board.apply(mve, state);
 
-                total_moves += 1;
-            } else {
-                let new_state = board.apply(mve, state);
+                    let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, WORST, -alpha, -color);
+                    
+                    let av = v * -color;
 
-                let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, WORST, BEST, -color);
-                
-                let av = v * -color;
+                    alpha = max(alpha, av);
 
-                // alpha = max(alpha, av);
-                unsorted_moves.push((mve, av));
-                total_moves += move_count;
+                    unsorted_moves.push((mve, av));
+                    total_moves += move_count;
+                }
+            }
+        } else {
+            let mut beta = BEST;
+            for &mve in &moves {
+                if board.ascension_winning_move(state, mve) {
+                    let av = BEST * color;
+                    unsorted_moves.push((mve, av));
+
+                    // alpha = max(alpha, av);
+                    beta = min(beta, av);
+
+                    total_moves += 1;
+                } else {
+                    let new_state = board.apply(mve, state);
+
+                    let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, WORST, beta, -color);
+                    
+                    let av = v * -color;
+
+                    beta = min(beta, av);
+
+                    // alpha = max(alpha, av);
+                    unsorted_moves.push((mve, av));
+                    total_moves += move_count;
+                }
             }
         }
+
+        
        
         
         unsorted_moves.sort_by_key(|&(_, hv)| hv * -color);

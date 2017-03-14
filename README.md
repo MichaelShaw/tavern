@@ -2,7 +2,6 @@
 Board game engine
 
 # Santorini
-- Add alpha beta pruning
 - Add some form of move ordering?
 - Add better heuristic
 - Add iterative deepening based root move ordering (for alpha beta pruning)
