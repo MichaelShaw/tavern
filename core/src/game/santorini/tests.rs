@@ -193,7 +193,7 @@ pub fn test_all_cases<E, H>(name:&str) -> (u32, MoveCount, BranchFactor) where E
         total_moves += move_count;
         branch_factors.push(average_branch_factor);
         if scores != case.scores {
-            playout::<E, H>(&board, &case.state, case.scores.len() as u8);
+            // playout::<E, H>(&board, &case.state, case.scores.len() as u8);
             error_cases += 1;
             println!("{}", format!("test case expected {:?} but got {:?}", case.scores, scores).red());
         } else {
@@ -223,12 +223,22 @@ pub fn time_test_cases<E, H>(name: &str) -> bool where E: Evaluation, H: Heurist
     v == 0
 }
 
+
+mod minimax_alphabeta {
+    use super::*;
+
+    #[test]
+    fn all() {
+        assert!(time_test_cases::<MiniMaxAlphaBeta, SimpleHeightHeuristic>("MiniMax_AlphaBeta"));
+    }
+}
+
 mod negamax_alphabeta {
     use super::*;
 
     #[test]
     fn all() {
-        // assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>("NegaMax AlphaBeta"));
+        assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>("NegaMax_AlphaBeta"));
     }
 }
 
@@ -237,7 +247,7 @@ mod minimax {
 
     #[test]
     fn all() {
-        assert!(time_test_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax"));
+        // assert!(time_test_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax"));
     }
 }
 
@@ -246,7 +256,7 @@ mod negamax {
 
     #[test]
     fn all() {
-        assert!(time_test_cases::<NegaMax, SimpleHeightHeuristic>("NegaMax"));
+        // assert!(time_test_cases::<NegaMax, SimpleHeightHeuristic>("NegaMax"));
     }
 }
     

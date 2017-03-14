@@ -21,6 +21,11 @@ Board game engine
 - Build on a square one higher than an opponent 
 - Move towards highest opponent
 
+### Other concerns
+- Principal Variation
+- Aspiration windows (alpha beta) based on last iterative deepening pass?
+- Transposition tables
+
 ## AI 
 
 ### Notes on our heuristic degradation

@@ -3,9 +3,11 @@
 // extern crate pad;
 pub mod move_builder;
 pub mod perft;
+pub mod minimax;
+pub mod minimax_alphabeta;
 pub mod negamax;
 pub mod negamax_alphabeta;
-pub mod minimax;
+
 pub mod heuristic;
 pub mod board;
 pub mod state;
@@ -21,6 +23,7 @@ pub use self::negamax_alphabeta::*;
 pub use self::minimax::*;
 pub use self::board::*;
 pub use self::state::*;
+pub use self::minimax_alphabeta::*;
 
 
 use HashSet;

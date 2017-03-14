@@ -47,7 +47,7 @@ impl NegaMax {
 
         if depth == 0 {
             let v = if moves.is_empty() {
-                WORST
+                WORST// * color
             } else {
                 H::evaluate(board, state) * color
             };

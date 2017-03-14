@@ -22,76 +22,70 @@ impl Evaluation for NegaMaxAlphaBeta {
         let mut total_moves = 0;
         let mut unsorted_moves : Vec<(Move, HeuristicValue)> = Vec::with_capacity(200);
 
-        // println!("NEGAMAX moves -> {:?}", unsorted_moves);
-        if state.to_move == Player(0) {
-            for &mve in &moves {
-                if board.ascension_winning_move(state, mve) {
-                    unsorted_moves.push((mve, PLAYER_0_WIN));
-                    total_moves += 1;
-                } else {
-                    let new_state = board.apply(mve, state);
 
-                    let (v, move_count) = NegaMax::eval::<H>(board, &new_state, depth - 1, -color);
-                    
-                    unsorted_moves.push((mve, -v));
-                    total_moves += move_count;
-                }
+    	// let mut alpha = WORST;
+
+        for &mve in &moves {
+            if board.ascension_winning_move(state, mve) {
+            	let av = BEST * color;
+                unsorted_moves.push((mve, av));
+
+                // alpha = max(alpha, av);
+
+                total_moves += 1;
+            } else {
+                let new_state = board.apply(mve, state);
+
+                let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, WORST, BEST, -color);
+                
+                let av = v * -color;
+
+                // alpha = max(alpha, av);
+                unsorted_moves.push((mve, av));
+                total_moves += move_count;
             }
-            
-            unsorted_moves.sort_by_key(|&(_, hv)| -hv); // big first
-        } else {
-            for &mve in &moves {
-                if board.ascension_winning_move(state, mve) {
-                    unsorted_moves.push((mve, PLAYER_1_WIN));
-                    total_moves += 1;
-                } else {
-                    let new_state = board.apply(mve, state);
-                    let (v, move_count) = NegaMax::eval::<H>(board, &new_state, depth - 1, -color);
-                    unsorted_moves.push((mve, v));
-                    total_moves += move_count;
-                }
-            }
-            unsorted_moves.sort_by_key(|&(_, hv)| hv);
         }
+       
+        
+        unsorted_moves.sort_by_key(|&(_, hv)| hv * -color);
         (unsorted_moves, total_moves)
     }
 }
 
 impl NegaMaxAlphaBeta {
-    pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8, color: HeuristicValue) -> (HeuristicValue, MoveCount) where H: Heuristic {
+    pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8, alpha:HeuristicValue, beta:HeuristicValue, color: HeuristicValue) -> (HeuristicValue, MoveCount) where H: Heuristic {
         let mut moves = Vec::with_capacity(200); // enough to prevent resizing
         board.next_moves(state, &mut moves);
 
         if depth == 0 {
             let v = if moves.is_empty() {
-                if state.to_move == Player(0) {
-                    PLAYER_1_WIN
-                } else {
-                    PLAYER_0_WIN
-                }
+                WORST
             } else {
-                H::evaluate(board, state)
+               H::evaluate(board, state) * color
             };
-            return (color * v, 1);
+            // let v = H::evaluate(board, state) * color;
+            return (v, 1);
         }
+
+        // let mut moves = Vec::with_capacity(200); // enough to prevent resizing
+        // board.next_moves(state, &mut moves);
 
         let mut total_moves = 0;
         let mut best_observed = WORST;
+        let mut new_alpha = alpha;
         for &mve in &moves {
-            let (v, move_count)  = if board.ascension_winning_move(state, mve) {
-                let wv = if state.to_move == Player(0) { PLAYER_0_WIN } else { PLAYER_1_WIN };
-
-                return (wv * color, total_moves + 1)
-                // (wv * color, 1)
+            if board.ascension_winning_move(state, mve) {
+                return (BEST, total_moves + 1);
             } else {
                 let new_state = board.apply(mve, state);
-                let (v, mves) = NegaMax::eval::<H>(board, &new_state, depth - 1, -color);
-
-                (-v, mves) 
-            };
-            total_moves += move_count;
-
-            best_observed = max(v, best_observed);
+                let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, -beta, -new_alpha, -color);
+                total_moves += move_count;
+                best_observed = max(-v, best_observed);
+                new_alpha = max(new_alpha, -v);
+                if beta <= new_alpha {
+                	break;
+                }
+            }
         }
 
         (best_observed, total_moves)

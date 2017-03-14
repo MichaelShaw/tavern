@@ -47,7 +47,7 @@ impl AIService {
                     Ok(event) => {
                         match event {
                             Analysis(state) => {
-                                AIService::evaluate::<NegaMax, SimpleHeightHeuristic>(&board, &state, &ai_tx);
+                                AIService::evaluate::<NegaMaxAlphaBeta, SimpleHeightHeuristic>(&board, &state, &ai_tx);
                             },
                             Shutdown => {
                                 println!("Ai shutdown requested");
@@ -96,9 +96,9 @@ impl AIService {
         println!("AI :: current score it as -> {:?} with {:?} to move", score, state.to_move);
 
         let max_depth = if state.builders_to_place() {
-            3
-        }  else {
             4
+        }  else {
+            5
         };
 
         let mut best_moves : Vec<(Move, HeuristicValue)> = Vec::new();
