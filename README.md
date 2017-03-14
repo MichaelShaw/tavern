@@ -33,6 +33,8 @@ If we left this out, we'd still need to increase the extra ply to work out wheth
 
 Running one extra ply, and leaving it out .... could still be more efficient. You run N+1 ply, you miss out on the opponents N+1 trap (you would if you ran N), and you get to run the heuristic at N+1.
 
+Let's assume it's the opposite, the last move seen is them trapping you, due to complete lack of movement the heuristic score will be dreadful, basically near zero. (no adjacencies)
+
 ### Naive Move Counting
 
 #### From Start

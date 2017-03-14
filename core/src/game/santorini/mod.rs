@@ -4,10 +4,12 @@
 pub mod move_builder;
 pub mod perft;
 pub mod negamax;
+pub mod negamax_alphabeta;
 pub mod minimax;
 pub mod heuristic;
 pub mod board;
 pub mod state;
+
 
 #[cfg(test)]
 pub mod tests;
@@ -15,6 +17,7 @@ pub mod tests;
 pub use self::move_builder::*;
 pub use self::heuristic::*;
 pub use self::negamax::*;
+pub use self::negamax_alphabeta::*;
 pub use self::minimax::*;
 pub use self::board::*;
 pub use self::state::*;

@@ -17,11 +17,11 @@ impl Evaluation for NegaMax {
     // THIS IS 100% FUCKED
     fn evaluate<H>(board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, MoveCount) where H: Heuristic {
         let color = color(state.to_move);
-        let mut moves = Vec::new();
+        let mut moves = Vec::with_capacity(200);
         board.next_moves(state, &mut moves);
 
         let mut total_moves = 0;
-        let mut unsorted_moves : Vec<(Move, HeuristicValue)> = Vec::new();
+        let mut unsorted_moves : Vec<(Move, HeuristicValue)> = Vec::with_capacity(200);
 
         // println!("NEGAMAX moves -> {:?}", unsorted_moves);
         if state.to_move == Player(0) {
@@ -60,7 +60,7 @@ impl Evaluation for NegaMax {
 
 impl NegaMax {
     pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8, color: HeuristicValue) -> (HeuristicValue, MoveCount) where H: Heuristic {
-        let mut moves = Vec::new();
+        let mut moves = Vec::with_capacity(200); // enough to prevent resizing
         board.next_moves(state, &mut moves);
 
         if depth == 0 {

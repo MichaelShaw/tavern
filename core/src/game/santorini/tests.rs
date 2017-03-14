@@ -223,6 +223,15 @@ pub fn time_test_cases<E, H>(name: &str) -> bool where E: Evaluation, H: Heurist
     v == 0
 }
 
+mod negamax_alphabeta {
+    use super::*;
+
+    #[test]
+    fn all() {
+        // assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>("NegaMax AlphaBeta"));
+    }
+}
+
 mod minimax {
     use super::*;
 

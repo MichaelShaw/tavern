@@ -6,11 +6,11 @@ pub struct MiniMax {}
 
 impl Evaluation for MiniMax {
     fn evaluate<H>(board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, MoveCount) where H: Heuristic {
-        let mut moves = Vec::new();
+        let mut moves = Vec::with_capacity(200);
         board.next_moves(state, &mut moves);
 
         let mut total_moves = 0;
-        let mut unsorted_moves : Vec<(Move, HeuristicValue)> = Vec::new();
+        let mut unsorted_moves : Vec<(Move, HeuristicValue)> = Vec::with_capacity(200);
 
         for &mve in &moves {
             if board.ascension_winning_move(state, mve) {
@@ -39,7 +39,7 @@ impl Evaluation for MiniMax {
 
 impl MiniMax {
     pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8) -> (HeuristicValue, MoveCount) where H: Heuristic {
-        let mut moves = Vec::new();
+        let mut moves = Vec::with_capacity(200);
         board.next_moves(state, &mut moves);
 
         if depth == 0 {
