@@ -2,15 +2,15 @@
 Board game engine
 
 # Santorini
+- Remove allocation from moves, use a single preallocated move array, with a pointer. What about a Vec with capacity? There'd be a lot of checking with push. We push a *lot* of moves.
 - Add some form of move ordering?
-- Add better heuristic
 - Add iterative deepening based root move ordering (for alpha beta pruning)
 - Adversarial heuristic testing
-- Test MaxMax? (heuristic is relative? ... maybe it could work for 3+ player)
 - Playout needs to be improved to include an equivalent of rollback.
 - Add something better than lerp for animation.
 
 ## Heuristic
+- Make zero height be better than invalid ...
 - Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
 - Heuristic when checking trapness should inform the heuristic which workers are free to move .... or will adjacency already cover this.
 
@@ -27,6 +27,8 @@ Board game engine
 ## AI 
 
 ### Notes on our heuristic degradation
+
+It's a matter of efficiency and bang for buck .... the heuristic can basically detect trapedness already.
 
 We currently check for opponent trappedness when we evaluate the heuristic. This is currently the only method of checking that our last move secured a trapedness win.
 

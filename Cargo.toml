@@ -16,6 +16,7 @@ howl = { path = "./howl" }
 
 [profile.dev]
 opt-level = 3
+debug = true
 
 [profile.release]
 lto = true

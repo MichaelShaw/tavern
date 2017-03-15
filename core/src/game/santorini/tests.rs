@@ -19,6 +19,11 @@ pub fn distant_state(board:&StandardBoard) -> State {
     state
 }
 
+pub fn initial(board: &StandardBoard, to_move:Player) -> State {
+    let mut state = State::initial();
+    state.to_move = to_move;
+    state
+}
 
 pub fn a_in_1(board:&StandardBoard, to_move: Player) -> State {
     let mut state = distant_state(board);
@@ -148,6 +153,9 @@ pub fn case(name:&str, state:State, scores:Vec<HeuristicValue>) -> TestCase {
 
 pub fn test_cases(board:&StandardBoard) -> Vec<TestCase> {
     vec![
+        case("init_a", initial(board, Player(0)), vec![0,0,0,0,0]),
+        case("init_b", initial(board, Player(1)), vec![0,0,0,0,0]),
+
         case("mild_a", mild_a_advantage(board, Player(0)), vec![1,1,2,1]),
         case("mild_a", mild_a_advantage(board, Player(1)), vec![0,1,0,1]),
 
@@ -238,56 +246,53 @@ pub fn time_exploration<E, H>(name:&str, depth:u8) -> MoveCount where E: Evaluat
 
     let duration = (time::precise_time_ns() - start) as f64 / 1_000_000_000f64;
     let moves_per_second = total_moves as f64 / duration;
-    println!("{}", format!("testing {} took {:.5} seconds {} moves ({:.0}/second) {:.3} average branch factor", name, duration, total_moves,  moves_per_second, average(&branch_factors)).green());    
+    println!("{}", format!("PERFORMANCE TIMING {} took {:.5} seconds {} moves ({:.1}M/second) {:.3} average branch factor", name, duration, total_moves,  moves_per_second / 1_000_000f64, average(&branch_factors)).green());    
     total_moves
 }
 
-
-mod minimax_alphabeta {
+#[cfg(test)]
+mod tests {
+    use game::santorini::*;
     use super::*;
 
     #[test]
-    fn all() {
+    fn minimax_alphabeta() {
         // assert!(time_test_cases::<MiniMaxAlphaBeta, SimpleHeightHeuristic>("MiniMax_AlphaBeta"));
     }
-}
-
-mod negamax_alphabeta {
-    use super::*;
 
     #[test]
-    fn all() {
-        // assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>("NegaMax_AlphaBeta"));
+    fn negamax_alphabeta() {
+        assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>("NegaMax_AlphaBeta"));
+    }   
+
+    #[test]
+    fn negamax_alphabeta_exp() {
+        assert!(time_test_cases::<NegaMaxAlphaBetaExp, SimpleHeightHeuristic>("NegaMax_AlphaBeta_Exp"));
     }
-}
-
-mod bench {
-    use super::*;
 
     #[test]
-    fn all() {
-        time_exploration::<MiniMax, NeighbourHeuristic>("MiniMax", 4);
-        time_exploration::<NegaMax, NeighbourHeuristic>("NegaMax", 4);
-        time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMaxAlphaBeta", 4);
-    }
-}
-
-mod minimax {
-    use super::*;
-
-    #[test]
-    fn all() {
+    fn minimax() {
         // assert!(time_test_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax"));
     }
-}
-
-mod negamax {
-    use super::*;
 
     #[test]
-    fn all() {
+    fn negamax() {
         // assert!(time_test_cases::<NegaMax, SimpleHeightHeuristic>("NegaMax"));
+    } 
+
+    mod bench {
+        use game::santorini::tests::*;
+        use game::santorini::*;
+
+        #[test]
+        fn all() {
+            println!("==== PERFORMANCE TESTING =======");
+            // time_exploration::<MiniMax, NeighbourHeuristic>("MiniMax", 4);
+            // time_exploration::<NegaMax, NeighbourHeuristic>("NegaMax", 4);
+            time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMax_AlphaBeta", 5);
+            time_exploration::<NegaMaxAlphaBetaExp, NeighbourHeuristic>("NegaMax_AlphaBeta_Exp", 5);
+        }
     }
 }
-    
+   
 

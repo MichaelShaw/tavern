@@ -73,10 +73,7 @@ impl Evaluation for NegaMaxAlphaBeta {
                 }
             }
         }
-
-        
-       
-        
+  
         unsorted_moves.sort_by_key(|&(_, hv)| hv * -color);
         (unsorted_moves, total_moves)
     }
@@ -96,8 +93,7 @@ impl NegaMaxAlphaBeta {
             // let v = H::evaluate(board, state) * color;
             return (v, 1);
         }
-
-        // let mut moves = Vec::with_capacity(200); // enough to prevent resizing
+          // let mut moves = Vec::with_capacity(200); // enough to prevent resizing
         // board.next_moves(state, &mut moves);
 
         let mut total_moves = 0;

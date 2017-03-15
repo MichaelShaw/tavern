@@ -14,12 +14,13 @@ use tavern_core::game::santorini::*;
 use tavern_core::game::util::*; // , Packed, Packed1, Packed2, Slot};
 
 fn main() {
-    let (mn, mx) = (std::i16::MIN, std::i16::MAX);
-    println!("i16 min {} max {}", mn, mx);
+    tavern_core::game::santorini::tests::time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMaxAlphaBeta", 6);
+    // let (mn, mx) = (std::i16::MIN, std::i16::MAX);
+    // println!("i16 min {} max {}", mn, mx);
 
     // count_moves();
-    print_sizes();
-    tavern::app::run_app();
+    // print_sizes();
+    // tavern::app::run_app();
     // sample_playout(3);
 }
 

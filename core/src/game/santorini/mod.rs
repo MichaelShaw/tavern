@@ -7,23 +7,26 @@ pub mod minimax;
 pub mod minimax_alphabeta;
 pub mod negamax;
 pub mod negamax_alphabeta;
+pub mod negamax_alphabeta_exp;
 
 pub mod heuristic;
 pub mod board;
 pub mod state;
+pub mod transposition;
 
 
-#[cfg(test)]
 pub mod tests;
 
 pub use self::move_builder::*;
 pub use self::heuristic::*;
 pub use self::negamax::*;
 pub use self::negamax_alphabeta::*;
+pub use self::negamax_alphabeta_exp::*;
 pub use self::minimax::*;
 pub use self::board::*;
 pub use self::state::*;
 pub use self::minimax_alphabeta::*;
+pub use self::transposition::*;
 
 
 use HashSet;

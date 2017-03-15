@@ -51,14 +51,14 @@ impl NeighbourHeuristic {
         for &bl in &state.builder_locations[player.0 as usize] {
             if StandardBoard::valid(bl) {
                 let current_height = state.buildings.get(bl);
-                n += current_height as HeuristicValue;
+                n += (current_height + 1) as HeuristicValue;
                 for &move_to in board.adjacencies[bl.0 as usize].iter() {
                     if move_to == NONE { // we've reached end of adjacencies
                         break;
                     }
                     let target_height = state.buildings.get(move_to);
                     if state.collision.get(move_to) == 0 && target_height <= current_height + 1 {
-                        n += target_height as HeuristicValue;
+                        n += (target_height + 1) as HeuristicValue;
                     }
                 }
             }
