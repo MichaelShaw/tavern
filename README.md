@@ -2,7 +2,8 @@
 Board game engine
 
 # Santorini
-- Add some form of move ordering?
+- Add some form of move ordering? (Requires quite a few changes)
+- Change Move to be index based for (from) rather than slot based
 - Add iterative deepening based root move ordering (for alpha beta pruning)
 - Adversarial heuristic testing (play AIs with same search depth against each other 
 - Playout needs to be improved to include an equivalent of rollback.

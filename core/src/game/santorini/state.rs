@@ -11,6 +11,14 @@ pub struct State {
 }
 
 impl State {
+    pub fn hash_height(&self, slot:Slot) -> usize { // should output 0-4
+        if self.domes.get(slot) == 1 {
+            4
+        } else {
+            self.buildings.get(slot) as usize
+        }
+    }
+
     pub fn without_builder_at(&self, slot:Slot) -> State {
         let mut new_state = self.clone();
         for player_id in 0..2 {

@@ -112,6 +112,9 @@ impl Evaluation for NegaMaxAlphaBetaExp {
 
 impl NegaMaxAlphaBetaExp {
     pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8, alpha:HeuristicValue, beta:HeuristicValue, color: HeuristicValue, move_stack: &mut MoveStack) -> (HeuristicValue, MoveCount) where H: Heuristic {
+        let mut new_alpha = alpha;
+        let mut new_beta = beta;
+
         let stack_begin = move_stack.next;
         board.next_moves(state, move_stack);
         let stack_end = move_stack.next;
@@ -129,7 +132,7 @@ impl NegaMaxAlphaBetaExp {
        
         let mut total_moves = 0;
         let mut best_observed = WORST;
-        let mut new_alpha = alpha;
+        
         
         for idx in stack_begin..stack_end {
             let mve = move_stack.moves[idx];

@@ -192,7 +192,7 @@ pub fn test_all_cases<E, H>(name:&str) -> (u32, MoveCount, BranchFactor) where E
     let mut branch_factors = Vec::new();
 
     println!("==== Testing {} all cases =====", name);
-    let board = StandardBoard::new();
+    let board = StandardBoard::new(ZobristHash::new_unseeded());
     let mut error_cases = 0;
     let cases = test_cases(&board);
     for case in &cases {
@@ -234,7 +234,7 @@ pub fn time_test_cases<E, H>(name: &str) -> bool where E: Evaluation, H: Heurist
 pub fn time_exploration<E, H>(name:&str, depth:u8) -> MoveCount where E: Evaluation, H: Heuristic  {
     let mut total_moves = 0;
     let mut branch_factors = Vec::new();
-    let board = StandardBoard::new();
+    let board = StandardBoard::new(ZobristHash::new_unseeded());
     let cases = test_cases(&board);
 
     let start = time::precise_time_ns();
@@ -260,12 +260,12 @@ mod tests {
         // assert!(time_test_cases::<MiniMaxAlphaBeta, SimpleHeightHeuristic>("MiniMax_AlphaBeta"));
     }
 
-    #[test]
+    // #[test]
     fn negamax_alphabeta() {
         assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>("NegaMax_AlphaBeta"));
     }   
 
-    #[test]
+    // #[test]
     fn negamax_alphabeta_exp() {
         assert!(time_test_cases::<NegaMaxAlphaBetaExp, SimpleHeightHeuristic>("NegaMax_AlphaBeta_Exp"));
     }
@@ -284,7 +284,7 @@ mod tests {
         use game::santorini::tests::*;
         use game::santorini::*;
 
-        #[test]
+        // #[test]
         fn all() {
             println!("==== PERFORMANCE TESTING =======");
             // time_exploration::<MiniMax, NeighbourHeuristic>("MiniMax", 4);

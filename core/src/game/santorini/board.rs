@@ -2,11 +2,14 @@
 use pad::PadStr;
 use game::santorini::*;
 
+pub const SLOT_COUNT : usize = 25;
+
 #[derive(Debug, Clone)]
 pub struct StandardBoard {
-    pub slots : [Slot; 25],
-    pub adjacencies : [[Slot ; 8] ; 25],
+    pub slots : [Slot; SLOT_COUNT],
+    pub adjacencies : [[Slot ; 8] ; SLOT_COUNT],
     pub transforms : [SlotTransform; 7],
+    pub hash : ZobristHash,
 }
 
 pub trait MoveSink {
@@ -76,7 +79,7 @@ impl StandardBoard {
         }
     }
 
-    pub fn new() -> StandardBoard {
+    pub fn new(hash:ZobristHash) -> StandardBoard {
         let mut slots = [Slot(0) ; 25];
         let mut adjacencies = [[NONE ; 8] ; 25];
 
@@ -105,6 +108,7 @@ impl StandardBoard {
             slots: slots,
             adjacencies: adjacencies,
             transforms: [EMPTY_SLOT_TRANSFORM; 7],
+            hash: hash,
         };
 
         board.transforms = [
@@ -254,6 +258,24 @@ impl StandardBoard {
         Slot(position.x + position.y * 5)
     }
 
+    pub fn hash(&self, state: &State) -> StateHash {
+        let mut hash = self.hash.to_move[state.to_move.0 as usize];
+
+        for i in 0..BUILDERS {
+            for &bl in &state.builder_locations[i] {
+                if Self::valid(bl) {
+                    hash = hash + self.hash.builders[i as usize][bl.0 as usize];
+                }
+            }
+        }
+
+        for &sl in &self.slots {
+            hash = hash + self.hash.buildings[sl.0 as usize][state.hash_height(sl)];
+        }
+
+        hash
+    }
+
     pub fn apply(&self, mve:Move, state:&State) -> State { // this implicitly destroys the state atm.
         match mve {
             Move::PlaceBuilders { a, b } => {
@@ -287,7 +309,7 @@ impl StandardBoard {
                     }
                 }
 
-                // new_state.ensure_ordered(player_to_move);
+                new_state.ensure_ordered(player_to_move);
                
                 // perform build
                 new_state.build_at(build);
@@ -295,6 +317,25 @@ impl StandardBoard {
                 // alternate player
                 new_state.to_move = new_state.next_player();
                 new_state
+            },
+        }
+    }
+
+    pub fn delta_hash(&self, state: &State, mve:Move) -> StateHash { // this implicitly destroys the state atm.
+        match mve {
+            Move::PlaceBuilders { a, b } => {
+               let to_move = state.to_move.0 as usize;
+               self.hash.switch_move + self.hash.builders[to_move][a.0 as usize] + self.hash.builders[to_move][b.0 as usize]
+            },
+            Move::Move { from, to, build } => {
+               let to_move = state.to_move.0 as usize;
+               let original_height = state.hash_height(build);
+
+
+               let build_at = build.0 as usize;
+
+               self.hash.switch_move + self.hash.builders[to_move][from.0 as usize] + self.hash.builders[to_move][to.0 as usize] + 
+                self.hash.buildings[build_at][original_height] + self.hash.buildings[build_at][original_height + 1]
             },
         }
     }
