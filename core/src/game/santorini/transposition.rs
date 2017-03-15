@@ -1,6 +1,6 @@
 use game::santorini::*;
 
-
+use std::mem;
 
 #[derive(Eq, Copy, PartialEq, Clone, Debug)]
 pub enum EntryType {
@@ -9,15 +9,23 @@ pub enum EntryType {
     Upper,
 }
 
-#[derive(Eq, PartialEq, Clone, Debug)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub struct TranspositionEntry {
-    pub state: State,
+    pub hash: StateHash,
     pub value: HeuristicValue,
     pub entry_type: EntryType,
     pub depth: u8,
     pub best_move: Option<Move>,
     // best move
 }
+
+pub const NULL_ENTRY : TranspositionEntry = TranspositionEntry {
+    hash : StateHash(0),
+    value: 0,
+    entry_type: EntryType::Exact,
+    depth: 0, 
+    best_move: None,
+};
 
 
 #[derive(Eq, Copy, PartialEq, Clone, Debug)]
@@ -35,12 +43,37 @@ impl Add for StateHash {
     }
 }
 
-pub const TABLE_ENTRY_COUNT : usize = 1 << 24; // 800MB
-pub const TABLE_ENTRY_MASK : usize = 0b1111_1111_1111_1111_1111_1111_usize; // 24 bit mask
-
+#[derive(Clone)]
 pub struct TranspositionTable {
-    pub entries : [TranspositionEntry; TABLE_ENTRY_COUNT],
+    pub mask: usize,
+    pub entries : Vec<TranspositionEntry>,
 }
+
+impl TranspositionTable {
+
+    pub fn approx_size_bytes(&self) -> usize {
+        mem::size_of::<TranspositionEntry>() * self.entries.capacity()
+    }
+
+    pub fn new(power_of_two:usize) -> TranspositionTable{
+        let size = 1 << power_of_two;
+        let mut mask : usize = 1;
+        for _ in 0..(power_of_two-1) {
+            mask = mask | (mask << 1);
+        }
+
+        let mut entries = Vec::with_capacity(size);
+        entries.resize(size, NULL_ENTRY);
+
+
+        TranspositionTable {
+            mask: mask,
+            entries: entries,
+        }
+    }
+}
+
+
 
 #[derive(Debug, Clone)]
 pub struct ZobristHash {
@@ -88,7 +121,6 @@ impl ZobristHash {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use game::santorini::*;
@@ -102,15 +134,38 @@ mod tests {
         println!("EntryType size -> {}", mem::size_of::<EntryType>());
         println!("TranspositionEntry size -> {}", mem::size_of::<TranspositionEntry>());
 
-        println!("talble entry count -> {}", TABLE_ENTRY_COUNT);
+        // println!("talble entry count -> {}", TABLE_ENTRY_COUNT);
         println!("size of table -> {}", mem::size_of::<TranspositionTable>());
     }
+
+    pub const MAH_CAP : usize = 200_000_000;
 
     #[test]
     fn hash() {
         let new_hash = ZobristHash::new_unseeded();
-        println!("new hash -> {:?}", new_hash);
+        println!("constructing table");
+        let table = TranspositionTable::new(26);
+        println!("mask -> {:#b}", table.mask);
+        println!("capacity -> {}", table.entries.capacity());
+        println!("approx size -> {}", table.approx_size_bytes());
+        // println!("new hash -> {:?}", new_hash);
 
+        use time;
+        
+    
+
+        let start = time::precise_time_ns();
+        let mut growable : Vec<TranspositionEntry> = Vec::with_capacity(MAH_CAP);
+        // unsafe { growable.set_len(MAH_CAP) };
+        for _ in 0..MAH_CAP {
+            growable.push(NULL_ENTRY);
+            // growable[i] = NULL_ENTRY;
+        }
+        println!("what is stupid -> {:?}", growable[3000]);
+        let duration = (time::precise_time_ns() - start) as f64 / 1_000_000_000f64;
+        println!("vec n set {:.3}", duration);
+    
+        // let huge_table = 
     }
 
     #[test] 

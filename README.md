@@ -2,17 +2,25 @@
 Board game engine
 
 # Santorini
+- Make heuristics stateful? Transposition tables etc.
+- Iterative deepening test harness
 - Add some form of move ordering? (Requires quite a few changes)
-- Change Move to be index based for (from) rather than slot based
+- Change Move to be index based for (from) rather than slot based? Yes/No? Hrm.
 - Add iterative deepening based root move ordering (for alpha beta pruning)
 - Adversarial heuristic testing (play AIs with same search depth against each other 
-- Playout needs to be improved to include an equivalent of rollback.
 - Add something better than lerp for animation.
 
+## Late Move Reductions
+Search depth 4 in full detail.
+
+After that, reduce depth for shitty looking nodes (fail low) if we had nothing that was too good (fail high).
+
 ## Heuristic
-- Make zero height be better than invalid ...
 - Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
-- Heuristic when checking trapness should inform the heuristic which workers are free to move .... or will adjacency already cover this.
+
+## Transposition
+- Store if depth is greater (better information about this)
+- Staleness/pass flag, one byte, which iteration it's found on? some notion of age?
 
 ## Move Ordering
 - Move up

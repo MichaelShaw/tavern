@@ -287,7 +287,7 @@ mod tests {
         #[test]
         fn all() {
             println!("==== PERFORMANCE TESTING =======");
-            time_exploration::<MiniMax, NeighbourHeuristic>("MiniMax", 4);
+            time_exploration::<MiniMax, NeighbourHeuristic>("MiniMax", 3);
             // time_exploration::<NegaMax, NeighbourHeuristic>("NegaMax", 4);
             time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMax_AlphaBeta", 4);
             time_exploration::<NegaMaxAlphaBetaExp, NeighbourHeuristic>("NegaMax_AlphaBeta_Exp", 4);
