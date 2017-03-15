@@ -65,6 +65,11 @@ Let's assume it's the opposite, the last move seen is them trapping you, due to 
     depth 3 moves -> 1148717 in 0.038s branch 104.7
     depth 4 moves -> 63167200 in 1.562s branch 89.2
     depth 5 moves -> 3841150351 in 91.991s branch 82.6
+    
+#### 16 Mar, unordered alpha beta
+	MiniMax took 47 seconds 153,853,305 moves (3.3M/second) 36.6 avg branch
+	NegaMax_AlphaBeta took 0.74 seconds 2,096,447 moves (2.8M/second) 20.9 avg branch
+	NegaMax_AlphaBeta_Exp took 0.67 seconds 2,096,447 moves (3.1M/second) 20.9 avg branch
 
 ## Licensing Reminders
 
