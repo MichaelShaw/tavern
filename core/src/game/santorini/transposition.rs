@@ -15,6 +15,8 @@ pub struct TranspositionEntry {
 	pub value: HeuristicValue,
 	pub entry_type: EntryType,
 	pub depth: u8,
+	pub best_move: Option<Move>,
+	// best move
 }
 
 pub fn print_sizes() {
@@ -29,6 +31,7 @@ mod tests {
     #[test]
     fn sizes() {
     	println!("State size -> {}", mem::size_of::<State>());
+    	println!("Move size -> {}", mem::size_of::<Move>());
 	    println!("EntryType size -> {}", mem::size_of::<EntryType>());
 	    println!("TranspositionEntry size -> {}", mem::size_of::<TranspositionEntry>());
     }

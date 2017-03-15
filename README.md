@@ -2,10 +2,9 @@
 Board game engine
 
 # Santorini
-- Remove allocation from moves, use a single preallocated move array, with a pointer. What about a Vec with capacity? There'd be a lot of checking with push. We push a *lot* of moves.
 - Add some form of move ordering?
 - Add iterative deepening based root move ordering (for alpha beta pruning)
-- Adversarial heuristic testing
+- Adversarial heuristic testing (play AIs with same search depth against each other 
 - Playout needs to be improved to include an equivalent of rollback.
 - Add something better than lerp for animation.
 

@@ -14,7 +14,12 @@ use tavern_core::game::santorini::*;
 use tavern_core::game::util::*; // , Packed, Packed1, Packed2, Slot};
 
 fn main() {
-    tavern_core::game::santorini::tests::time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMaxAlphaBeta", 6);
+    let some_numbers = [0,1,2,3,4,5,6,7,8];
+    println!("the numbers {:?}", some_numbers);
+    let the_slice = &some_numbers[0 .. 4];
+    println!("the slice {:?}", the_slice);
+
+    // tavern_core::game::santorini::tests::time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMaxAlphaBeta", 6);
     // let (mn, mx) = (std::i16::MIN, std::i16::MAX);
     // println!("i16 min {} max {}", mn, mx);
 

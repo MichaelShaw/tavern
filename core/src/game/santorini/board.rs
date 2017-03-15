@@ -9,6 +9,16 @@ pub struct StandardBoard {
     pub transforms : [SlotTransform; 7],
 }
 
+pub trait MoveSink {
+    fn sink(&mut self, mve:Move);
+}
+
+impl MoveSink for Vec<Move> {
+    fn sink(&mut self, mve:Move) {
+        self.push(mve);
+    }
+}
+
 
 impl StandardBoard {
     pub fn transform<F>(&self, f: F) -> SlotTransform where F: Fn(Position) -> Position {
@@ -127,7 +137,7 @@ impl StandardBoard {
         out
     }
 
-    pub fn next_moves(&self, state:&State, move_sink: &mut Vec<Move>) {
+    pub fn next_moves<T : MoveSink>(&self, state:&State, move_sink: &mut T) {
         let builders_to_move = state.builder_locations[state.to_move.0 as usize];
         let builders_to_place = builders_to_move.iter().any(|&pl| pl == UNPLACED_BUILDER );
 
@@ -155,7 +165,7 @@ impl StandardBoard {
                             }
 
                             if !dupe {
-                                move_sink.push(Move::PlaceBuilders { a: slot_a, b:slot_b });    
+                                move_sink.sink(Move::PlaceBuilders { a: slot_a, b:slot_b });    
                                 seen.insert(slots);
                             }
                         }
@@ -179,7 +189,7 @@ impl StandardBoard {
                                     break;
                                 }
                                 if state.collision.get(build_at) == 0 || build_at == builder_location {
-                                    move_sink.push(Move::Move { from: builder_location, to:move_to, build: build_at });
+                                    move_sink.sink(Move::Move { from: builder_location, to:move_to, build: build_at });
                                 }
                             }
                         }
