@@ -3,7 +3,7 @@ use game::santorini::*;
 use std::cmp::max;
 
 
-pub struct NegaMax {}
+pub struct NegaMax { }
 
 fn color(player:Player) -> HeuristicValue {
     match player {
@@ -13,10 +13,17 @@ fn color(player:Player) -> HeuristicValue {
     }
 }
 
-impl Evaluation for NegaMax {
-    fn evaluate<H>(board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, MoveCount) where H: Heuristic {
+impl Evaluator for NegaMax {
+    type EvaluatorState = ();
+    
+    fn new_state(board:&StandardBoard) -> () {
+        ()
+    }
+
+    fn evaluate_moves<H>(evaluator_state:  &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, MoveCount) where H: Heuristic {
         let color = color(state.to_move);
         let mut moves = Vec::with_capacity(200);
+
         board.next_moves(state, &mut moves);
 
         let mut total_moves = 0;

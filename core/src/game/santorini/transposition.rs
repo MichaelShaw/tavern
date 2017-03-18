@@ -136,6 +136,8 @@ mod tests {
 
         // println!("talble entry count -> {}", TABLE_ENTRY_COUNT);
         println!("size of table -> {}", mem::size_of::<TranspositionTable>());
+
+        println!("size of unit -> {}", mem::size_of::<()>())
     }
 
     pub const MAH_CAP : usize = 200_000_000;

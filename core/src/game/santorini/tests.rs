@@ -120,18 +120,6 @@ pub fn any_trap_in_1(board:&StandardBoard, to_move: Player) -> State {
 }
 
 
-pub fn evaluate<E, H>(board:&StandardBoard, state:&State, max_depth: u8) -> (Vec<HeuristicValue>, MoveCount, BranchFactor) where E: Evaluation, H:Heuristic {
-    let mut branch_factors = Vec::new();
-    let mut total_moves = 0;
-    let heuristic_values : Vec<_> = (1..(max_depth+1)).flat_map(|depth| {
-        let (moves, move_count) = E::evaluate::<H>(board, state, depth);
-        branch_factors.push(branch_factor(move_count, depth));
-        total_moves += move_count;
-        moves.iter().map(|&(_, sc)| sc).take(1).collect::<Vec<_>>()
-    }).collect();
-    (heuristic_values, total_moves, average(&branch_factors))
-}
-
 fn average(arr: &[f64]) -> f64 {
     let n = arr.len() as f64;
     arr.iter().fold(0.0, |acc, val| acc + val) / n
@@ -185,9 +173,19 @@ pub fn test_cases(board:&StandardBoard) -> Vec<TestCase> {
     ]
 }
 
-pub fn test_all_cases<E, H>(name:&str) -> (u32, MoveCount, BranchFactor) where E: Evaluation, H: Heuristic {
-    
+pub fn evaluate_state<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, max_depth: u8) -> (Vec<HeuristicValue>, MoveCount, BranchFactor) where E: Evaluator, H:Heuristic {
+    let mut branch_factors = Vec::new();
+    let mut total_moves = 0;
+    let heuristic_values : Vec<_> = (1..(max_depth+1)).flat_map(|depth| {
+        let (moves, move_count) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);
+        branch_factors.push(branch_factor(move_count, depth));
+        total_moves += move_count;
+        moves.iter().map(|&(_, sc)| sc).take(1).collect::<Vec<_>>()
+    }).collect();
+    (heuristic_values, total_moves, average(&branch_factors))
+}
 
+pub fn test_all_cases<E, H>(name:&str) -> (u32, MoveCount, BranchFactor) where E: Evaluator, H: Heuristic {
     let mut total_moves = 0;
     let mut branch_factors = Vec::new();
 
@@ -195,9 +193,13 @@ pub fn test_all_cases<E, H>(name:&str) -> (u32, MoveCount, BranchFactor) where E
     let board = StandardBoard::new(ZobristHash::new_unseeded());
     let mut error_cases = 0;
     let cases = test_cases(&board);
+    
     for case in &cases {
         println!("Testing {} to move {:?}", case.name, case.state.to_move);
-        let (scores, move_count, average_branch_factor) = evaluate::<E, H>(&board, &case.state, case.scores.len() as u8);
+
+        let mut evaluator_state = E::new_state(&board);
+
+        let (scores, move_count, average_branch_factor) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, case.scores.len() as u8);
         total_moves += move_count;
         branch_factors.push(average_branch_factor);
         if scores != case.scores {
@@ -216,7 +218,7 @@ pub fn test_all_cases<E, H>(name:&str) -> (u32, MoveCount, BranchFactor) where E
     (error_cases, total_moves, average(&branch_factors))
 }
 
-pub fn time_test_cases<E, H>(name: &str) -> bool where E: Evaluation, H: Heuristic {
+pub fn time_test_cases<E, H>(name: &str) -> bool where E: Evaluator, H: Heuristic {
     let start = time::precise_time_ns();
     let (v, move_count, average_branch_factor) = test_all_cases::<E, H>(name);
     let duration = (time::precise_time_ns() - start) as f64 / 1_000_000_000f64;
@@ -231,15 +233,18 @@ pub fn time_test_cases<E, H>(name: &str) -> bool where E: Evaluation, H: Heurist
     v == 0
 }
 
-pub fn time_exploration<E, H>(name:&str, depth:u8) -> MoveCount where E: Evaluation, H: Heuristic  {
+pub fn time_exploration<E, H>(name:&str, depth:u8) -> MoveCount where E: Evaluator, H: Heuristic  {
     let mut total_moves = 0;
     let mut branch_factors = Vec::new();
     let board = StandardBoard::new(ZobristHash::new_unseeded());
     let cases = test_cases(&board);
 
+
+
     let start = time::precise_time_ns();
     for case in &cases {
-        let (_, move_count, average_branch_factor) = evaluate::<E, H>(&board, &case.state, depth);
+        let mut evaluator_state = E::new_state(&board);
+        let (_, move_count, average_branch_factor) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, depth);
         total_moves += move_count;
         branch_factors.push(average_branch_factor);
     }
@@ -273,6 +278,7 @@ mod tests {
     #[test]
     fn minimax() {
         // assert!(time_test_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax"));
+
     }
 
     #[test]
@@ -286,11 +292,12 @@ mod tests {
 
         #[test]
         fn all() {
-            println!("==== PERFORMANCE TESTING =======");
-            time_exploration::<MiniMax, NeighbourHeuristic>("MiniMax", 3);
+           println!("==== PERFORMANCE TESTING =======");
+           time_exploration::<MiniMax, NeighbourHeuristic>("MiniMax", 3);
             // time_exploration::<NegaMax, NeighbourHeuristic>("NegaMax", 4);
-            time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMax_AlphaBeta", 4);
-            time_exploration::<NegaMaxAlphaBetaExp, NeighbourHeuristic>("NegaMax_AlphaBeta_Exp", 4);
+           time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMax_AlphaBeta", 4);
+
+           time_exploration::<NegaMaxAlphaBetaExp, NeighbourHeuristic>("NegaMax_AlphaBeta_Exp", 4);
         }
     }
 }

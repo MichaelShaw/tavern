@@ -2,8 +2,10 @@
 Board game engine
 
 # Santorini
+- Add Playing a game between two adversarial AIs.
+- Paramaterize Evaluator by State (e.g. transposition table)
 - Make heuristics stateful? Transposition tables etc.
-- Iterative deepening test harness
+- Iterative deepening test harness. Stateful test harness, construct an X with it's persistent state, ask it to run tests on various situations.
 - Add some form of move ordering? (Requires quite a few changes)
 - Change Move to be index based for (from) rather than slot based? Yes/No? Hrm.
 - Add iterative deepening based root move ordering (for alpha beta pruning)

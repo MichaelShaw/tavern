@@ -10,12 +10,18 @@ fn color(player:Player) -> HeuristicValue {
     }
 }
 
-pub struct NegaMaxAlphaBeta {}
+pub struct NegaMaxAlphaBeta { }
 
-impl Evaluation for NegaMaxAlphaBeta {
-    // THIS IS 100% FUCKED
-    fn evaluate<H>(board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, MoveCount) where H: Heuristic {
+impl Evaluator for NegaMaxAlphaBeta {
+    type EvaluatorState = ();
+    
+    fn new_state(board:&StandardBoard) -> () {
+        ()
+    }
+
+    fn evaluate_moves<H>(evaluator_state:  &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, MoveCount) where H: Heuristic {
     	let color = color(state.to_move);
+
         let mut moves = Vec::with_capacity(200);
         board.next_moves(state, &mut moves);
 

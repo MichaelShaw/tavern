@@ -10,42 +10,21 @@ fn color(player:Player) -> HeuristicValue {
     }
 }
 
-pub const MAX_DEPTH: usize = 15;
-pub const MAX_MOVES: usize = 256;
-pub const MAX_MOVE_STACK : usize = MAX_DEPTH * MAX_MOVES;
+pub struct NegaMaxAlphaBetaExp { }
 
-pub struct MoveStack {
-    pub moves: [Move; MAX_MOVE_STACK],
-    pub next: usize,
-}
-
-impl MoveStack {
-    pub fn new() -> MoveStack {
-        MoveStack {
-            moves: [Move::PlaceBuilders { a: Slot(0), b: Slot(0) } ; MAX_MOVE_STACK],
-            next: 0,
-        }
+impl Evaluator for NegaMaxAlphaBetaExp {
+    type EvaluatorState = ();
+    
+    #[allow(unused_variables)]
+    fn new_state(board:&StandardBoard) -> () {
+        ()
     }
 
-    pub fn push(&mut self, mve:Move) {
-       self.moves[self.next] = mve;
-       self.next += 1;
-    }
-}
-
-impl MoveSink for MoveStack {
-    fn sink(&mut self, mve:Move) {
-        self.push(mve);
-    }
-}
-
-pub struct NegaMaxAlphaBetaExp {}
-
-impl Evaluation for NegaMaxAlphaBetaExp {
-    // THIS IS 100% FUCKED
-    fn evaluate<H>(board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, MoveCount) where H: Heuristic {
+    #[allow(unused_variables)]
+    fn evaluate_moves<H>(evaluator_state: &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, MoveCount) where H: Heuristic {
         let color = color(state.to_move);
         let mut moves = Vec::with_capacity(200);
+
         board.next_moves(state, &mut moves);
 
         let mut total_moves = 0;
