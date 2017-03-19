@@ -28,14 +28,18 @@ fn main() {
 }
 
 fn run_playouts() {
+    // this playout stuff is worthless until we can find a way to reintroduce randomness?
+    // does it matter? root sort?
+
     let mut descriptions : HashMap<String, u32> = HashMap::default();
 
     let mut rng = XorShiftRng::new_unseeded();
     
-    let (a, b) = aggregate_playouts::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, NeighbourHeuristic, _>(4, 4, 1, &mut rng, &mut descriptions);    
+    let (a, b) = aggregate_playouts::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, SimpleHeightHeuristic, NeighbourHeuristic, _>(4, 4, 200, &mut rng, &mut descriptions);    
+    let (a, b) = aggregate_playouts::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, SimpleHeightHeuristic, _>(4, 4, 200, &mut rng, &mut descriptions);    
 
-    println!("A info -> {:?}", a);
-    println!("B info -> {:?}", b);
+    // println!("A info -> {:?}", a);
+    // println!("B info -> {:?}", b);
 
     println!("\n\n\n=== PLAYOUTS DONE ==== \n\n");
     for (description, count) in descriptions.iter() {
