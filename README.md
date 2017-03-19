@@ -2,9 +2,7 @@
 Board game engine
 
 # Santorini
-- Move Evaluator to return only the best node, the principal variant.
-- Custom pretty print for Evaluator Info.
-- Make a generigrouping function, Vec -> HashMap
+- Make a generic grouping function, Vec -> HashMap
 - We need to degenerify stuff, sum types are better than too much genericity. Closed sum types for evaluators + heuristics is fine. EvaluatorDescription, HeuristicDescription. I think degenerify evaluator first. (leave Heuristic generic for now .. it's used in inner loops)
 - Iterative deepening test harness. Stateful test harness, construct an X with it's persistent state, ask it to run tests on various situations.
 - Add something better than lerp for animation.
@@ -19,17 +17,19 @@ Board game engine
 - Build on a square one higher than an opponent 
 - Move towards highest opponent
 
-
 ## Heuristic
 - Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
  
+### Bit board improvements
+- For each slot store a mask of it's adjacencies. Produce moves through intersection of masks.
 
 ### Other concerns
 - Principal Variation
 - Aspiration windows (alpha beta) based on last iterative deepening pass?
 - Transposition tables
 - Late Move Reduction
-- 
+- "Quiet" moves, quinesence search.
+
 ## AI 
 
 ### Notes on our heuristic degradation

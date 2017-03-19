@@ -1,7 +1,8 @@
 use std::ops::{Add, AddAssign};
 use game::santorini::*;
+use std::fmt;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct EvaluatorInfo {
     pub move_count : MoveCount,
     pub branch_factors : Vec<f64>,
@@ -35,6 +36,14 @@ impl EvaluatorInfo {
         } else {
             0.0
         }
+    }
+}
+
+impl fmt::Debug for EvaluatorInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let average_branch_factor = average(&self.branch_factors);
+        let moves_per_second = self.move_count as f64 / self.time / 1000000.0;
+        write!(f, "EvaluatorInfo {{ moves: {} ({:.2}M/second) average branch factor: {:.1} time: {:0.2}s }}", self.move_count, moves_per_second, average_branch_factor, self.time)
     }
 }
 
