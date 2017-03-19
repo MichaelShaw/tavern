@@ -34,10 +34,12 @@ pub use self::move_stack::*;
 pub use self::evaluator_info::*;
 
 use time;
+use std::cmp::max;
 
 use HashSet;
 use super::util::*;
 use pad::Alignment;
+pub use rand::Rng;
 
 pub type MoveCount = u32;
 
@@ -65,14 +67,14 @@ pub trait Evaluator {
     fn evaluate_moves_impl<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic;
 }
 
-
-
 // the manual/crap way
 pub fn principal_variant<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, depth:u8) where E: Evaluator, H: Heuristic {
     println!("about to playout {}", board.print(state));
     let mut current_state = state.clone();
     for d in (1..(depth+1)).rev() {
         let (moves, _) = E::evaluate_moves::<H>(evaluator_state, board, &current_state, d);
+
+
         println!("legal moves -> {:?}", moves);
         if let Some(&(mve, _)) = moves.first() {
             current_state = board.apply(mve, &current_state);
@@ -86,7 +88,36 @@ pub fn principal_variant<E, H>(evaluator_state: &mut E::EvaluatorState, board:&S
     // println!("what is shit -> {:?}", shit);
 }
 
-pub fn adversarial_playout<EA, EB, AH, BH, F>(board:&StandardBoard, a_depth: u8, b_depth: u8, mut on_move: F) -> (Player, EvaluatorInfo, EvaluatorInfo) where EA: Evaluator, EB: Evaluator, AH: Heuristic, BH: Heuristic, F: FnMut(&State, &Move) -> () {
+
+
+pub fn select_winner<R>(moves: &Vec<(Move, HeuristicValue)>, r: &mut R) -> Option<(Move, HeuristicValue)> where R: Rng {
+    if let Some(&(_, score)) = moves.first() {
+        println!("\n\nall moves -> {:?}", moves);
+        // HOLY SHIT ARE YOU RETARDED
+        let potential_winners : Vec<(Move, HeuristicValue)> = moves.iter().filter(|&&(_, sc)| {
+            sc == score
+        } ).cloned().collect();
+
+        println!("\n\npotential winners -> {:?}", potential_winners);
+        let move_idx = r.gen_range(0, potential_winners.len()) as usize;
+        println!("\n\nrolled {}", move_idx);
+        potential_winners.get(move_idx).cloned()
+    } else {
+        None
+    }
+}
+
+pub fn winners(moves: &Vec<(Move, HeuristicValue)>) -> Vec<(Move, HeuristicValue)> {
+    if let Some(&(_, score)) = moves.first() {
+        moves.iter().filter(|&&(_, sc)| {
+            sc == score
+        } ).cloned().collect()
+    } else {
+        Vec::new()
+    }
+}
+
+pub fn adversarial_playout<EA, EB, AH, BH, R, F>(board:&StandardBoard, a_depth: u8, b_depth: u8, r: &mut R, mut on_move: F) -> (Player, EvaluatorInfo, EvaluatorInfo) where EA: Evaluator, EB: Evaluator, AH: Heuristic, BH: Heuristic, R: Rng, F: FnMut(&State, &Move, HeuristicValue) -> () {
     let mut a_state = EA::new_state(board);
     let mut b_state = EB::new_state(board);
 
@@ -96,12 +127,19 @@ pub fn adversarial_playout<EA, EB, AH, BH, F>(board:&StandardBoard, a_depth: u8,
 
     let mut a_info = EvaluatorInfo::new();
     let mut b_info = EvaluatorInfo::new();
+
+    let mut move_count = 0;
     
     while winner == None {
+        let mut depth = if state.to_move == Player(0) { a_depth } else { b_depth }; 
+        if move_count < 2 {
+            depth = max(2, depth - 1);
+        }
+
         let (moves_with_heuristics, info) = if state.to_move == Player(0) {
-            EA::evaluate_moves::<AH>(&mut a_state, board, &state, a_depth)
+            EA::evaluate_moves::<AH>(&mut a_state, board, &state, depth)
         } else {
-            EB::evaluate_moves::<BH>(&mut b_state, board, &state, b_depth)
+            EB::evaluate_moves::<BH>(&mut b_state, board, &state, depth)
         };
 
         if state.to_move == Player(0) {
@@ -110,21 +148,22 @@ pub fn adversarial_playout<EA, EB, AH, BH, F>(board:&StandardBoard, a_depth: u8,
             b_info += info;
         }
 
-        winner = if let Some(&(mve, _)) = moves_with_heuristics.first() {
+        winner = if let Some((mve, score)) = select_winner::<R>(&moves_with_heuristics, r) {
             let is_winning_move = board.ascension_winning_move(&state, mve);
             if is_winning_move {
                 let winner = state.to_move;
                 state = board.apply(mve, &state);
-                on_move(&state, &mve);
+                on_move(&state, &mve, score);
                 Some(winner) // swap it back
             } else {
                 state = board.apply(mve, &state);
-                on_move(&state, &mve);
+                on_move(&state, &mve, score);
                 None
             }
         } else {
             Some(state.next_player())
         };
+        move_count += 1;
     }
 
     (winner.unwrap(), a_info, b_info)

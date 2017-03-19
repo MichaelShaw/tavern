@@ -49,7 +49,7 @@ pub enum PlayerType {
 pub enum InteractionState {
     AnimatingMove { prior_state: State, mve:Move, player_type: PlayerType, elapsed : Seconds, winner: Option<Player> }, // player_type is for who's move we're animating ...
     AwaitingInput { player: Player, player_type: PlayerType },
-    WaitingVictory { player: Player, elapsed : Seconds  },
+    WaitingVictory { player: Player, elapsed : Seconds },
 }
 
 fn player_type_for(state:&State, cpu_players: &HashSet<Player>) -> PlayerType {
@@ -103,7 +103,6 @@ impl SantoriniGame {
 
         let ai_service = AIService::new::<NegaMaxAlphaBetaExp>();
         
-
         match &player_game.interaction_state {
             &InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => {
                 ai_service.request_analysis(&player_game.board_state.state);   
@@ -134,9 +133,11 @@ impl SantoriniGame {
             InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => {
                 if let Some(ref analysis) = self.game.analysis.clone() {
                     if analysis.terminal {
-                        if let Some(&(mve, h)) = analysis.moves.first() {
+                        println!("move analysis -> {:?}", analysis.moves);
+                        // if let Some(&(mve, h)) = analysis.moves.first() {
+                        if let Some((mve, h)) = select_winner(&analysis.moves, &mut self.rand) {
                             if self.game.board_state.next_moves.iter().any(|&m| m == mve) {
-                                println!("playin move with heuristic {:?}", h);
+                                println!("playin move with heuristic {:?} -> {:?}", h, mve);
                                 self.play_move(mve);
                             }
                         }

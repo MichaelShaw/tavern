@@ -131,7 +131,7 @@ mod tests {
     use std::mem;
     use super::*;
 
-    #[test]
+    // #[test]
     fn sizes() {
         println!("State size -> {}", mem::size_of::<State>());
         println!("Move size -> {}", mem::size_of::<Move>());
@@ -146,7 +146,7 @@ mod tests {
 
     pub const MAH_CAP : usize = 200_000_000;
 
-    #[test]
+    // #[test]
     fn hash() {
         let new_hash = ZobristHash::new_unseeded();
         println!("constructing table");
@@ -174,7 +174,7 @@ mod tests {
         // let huge_table = 
     }
 
-    #[test] 
+    // #[test] 
     fn hasher() {
         use super::Move::*;
 

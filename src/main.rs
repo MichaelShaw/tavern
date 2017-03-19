@@ -6,55 +6,73 @@ extern crate tavern_core;
 extern crate time;
 extern crate tavern;
 
-
+use rand::{Rng, XorShiftRng};
 
 use std::mem;
 
 use tavern_core::game::santorini::*;
 use tavern_core::game::util::*; // , Packed, Packed1, Packed2, Slot};
 
+use tavern_core::HashMap;
+use std::collections::hash_map::Entry::*;
+
 fn main() {
-    // tavern::app::run_app();
+    tavern::app::run_app();
 
     // SimpleHeightHeuristic
     // NeighbourHeuristic
 
     // NegaMaxAlphaBetaExp
     
-    let mut winners = Vec::new();
+    // run_playouts();    
+}
 
+fn run_playouts() {
+    let mut descriptions : HashMap<String, u32> = HashMap::default();
 
+    let mut rng = XorShiftRng::new_unseeded();
+    
+    let (a, b) = aggregate_playouts::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, NeighbourHeuristic, _>(4, 4, 1, &mut rng, &mut descriptions);    
 
-    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, NeighbourHeuristic>(3, 3));
-    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, NeighbourHeuristic>(4, 4));
-    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, NeighbourHeuristic>(5, 5));
-    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, SimpleHeightHeuristic, NeighbourHeuristic>(3, 3));
-    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, SimpleHeightHeuristic, NeighbourHeuristic>(4, 4));
-    winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, SimpleHeightHeuristic, NeighbourHeuristic>(5, 5));
-
-    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, NeighbourHeuristic>(3, 5));
-    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, SimpleHeightHeuristic, NeighbourHeuristic>(3, 5));
-    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, NeighbourHeuristic>(4, 5));
-    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, SimpleHeightHeuristic, NeighbourHeuristic>(4, 5));
-
+    println!("A info -> {:?}", a);
+    println!("B info -> {:?}", b);
 
     println!("\n\n\n=== PLAYOUTS DONE ==== \n\n");
-    for winner in winners {
-        println!("{}",winner);
+    for (description, count) in descriptions.iter() {
+        println!("{}x   {}", count, description);
     }
 }
 
-fn sample_adversarial_playout<EA, EB, HA, HB>(a_depth: u8, b_depth: u8) -> String where EA : Evaluator, EB : Evaluator, HA: Heuristic, HB: Heuristic {
+fn aggregate_playouts<EA, EB, HA, HB, R>(a_depth: u8, b_depth: u8, count: u32, r: &mut R, descriptions: &mut HashMap<String, u32>) -> (EvaluatorInfo, EvaluatorInfo) where EA : Evaluator, EB : Evaluator, HA: Heuristic, HB: Heuristic, R : Rng {
+    let mut a_info = EvaluatorInfo::new();
+    let mut b_info = EvaluatorInfo::new();
+    for i in 0..count {
+        let (winner_description, a, b) = sample_adversarial_playout::<EA, EB, HA, HB, _>(a_depth, b_depth, r);    
+        a_info += a;
+        b_info += b;
+        match descriptions.entry(winner_description) {
+            Occupied(mut oe) => {
+                *oe.get_mut() += 1;
+            },
+            Vacant(ve) => { ve.insert(1); },
+        }
+        println!("Completed {} out of {}", i, count);
+
+    }
+    (a_info, b_info)
+}
+
+fn sample_adversarial_playout<EA, EB, HA, HB, R>(a_depth: u8, b_depth: u8, r: &mut R) -> (String, EvaluatorInfo, EvaluatorInfo) where EA : Evaluator, EB : Evaluator, HA: Heuristic, HB: Heuristic, R : Rng {
     let board = StandardBoard::new(ZobristHash::new_unseeded());
     let mut move_number = 0;
 
-    let (winner, a_info, b_info) = adversarial_playout::<EA, EB, HA, HB, _>(&board, a_depth, b_depth,  |state, mve| { 
+    let (winner, a_info, b_info) = adversarial_playout::<EA, EB, HA, HB, R, _>(&board, a_depth, b_depth, r, |state, mve, score| { 
         move_number += 1;
-        let score = NeighbourHeuristic::evaluate(&board, state);
+        let h = NeighbourHeuristic::evaluate(&board, state);
         println!("======= MOVE {} =======", move_number);
-        println!("state makes move {:?}", mve);
+        println!("{:?} makes {:?} with expected score {}", state.next_player(), mve, score);
         println!("{}", board.print(state));
-        println!("scored as {}", score);
+        println!("heuristic current state -> {}", h);
         println!("");
     });
 
@@ -72,7 +90,7 @@ fn sample_adversarial_playout<EA, EB, HA, HB>(a_depth: u8, b_depth: u8) -> Strin
     println!("a info -> {:?}", a_info);
     println!("b info -> {:?}", b_info);
 
-    winner_message
+    (winner_message, a_info, b_info)
 }
 
 fn sample_principal_variant(depth:u8) {

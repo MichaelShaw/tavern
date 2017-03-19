@@ -241,6 +241,44 @@ mod tests {
     use super::*;
 
     #[test]
+    fn minimax_vs_negamax() {
+        let board = StandardBoard::new(ZobristHash::new_unseeded());
+        let depth = 4;
+        let state = a_blockable(&board, Player(1));
+        println!("test case state");
+        println!("{}", board.print(&state));
+
+        let (minimax_moves, minimax_info) = MiniMax::evaluate_moves_impl::<SimpleHeightHeuristic>(&mut (), &board, &state, depth);
+        let minimax_winners = winners(&minimax_moves);
+        println!("\n\n=== MINIMAX ===");
+        println!("moves -> {:?}", minimax_moves);
+        println!("winners -> {:?}", minimax_winners);
+        println!("info -> {:?}", minimax_info);
+
+        let (negamax_moves, negamax_info) = NegaMax::evaluate_moves_impl::<SimpleHeightHeuristic>(&mut (), &board, &state, depth);
+        let negamax_winners = winners(&negamax_moves);
+        println!("\n\n=== NEGAMAX ===");
+        println!("moves -> {:?}", negamax_moves);
+        println!("winners -> {:?}", negamax_winners);
+        println!("info -> {:?}", negamax_info);
+
+        let (minimax_alphabeta_moves, minimax_alphabeta_info) = MiniMaxAlphaBeta::evaluate_moves_impl::<SimpleHeightHeuristic>(&mut (), &board, &state, depth);
+        let minimax_alphabeta_winners = winners(&minimax_alphabeta_moves);
+        println!("\n\n=== MINIMAX ALPHABETA ===");
+        println!("moves -> {:?}", minimax_alphabeta_moves);
+        println!("winners -> {:?}", minimax_alphabeta_winners);
+        println!("info -> {:?}", minimax_alphabeta_info);
+
+        let (negamax_alphabeta_moves, negamax_alphabeta_info) = NegaMaxAlphaBeta::evaluate_moves_impl::<SimpleHeightHeuristic>(&mut (), &board, &state, depth);
+        let negamax_alphabeta_winners = winners(&negamax_alphabeta_moves);
+        println!("\n\n=== NEGAMAX ALPHABETA ===");
+        println!("moves -> {:?}", negamax_alphabeta_moves);
+        println!("winners -> {:?}", negamax_alphabeta_winners);
+        println!("info -> {:?}", negamax_alphabeta_info);
+        println!("winner -> {:?}", negamax_alphabeta_info);
+    }
+
+    // #[test]
     fn minimax_alphabeta() {
         // assert!(time_test_cases::<MiniMaxAlphaBeta, SimpleHeightHeuristic>("MiniMax_AlphaBeta"));
     }
@@ -255,13 +293,13 @@ mod tests {
         assert!(time_test_cases::<NegaMaxAlphaBetaExp, SimpleHeightHeuristic>("NegaMax_AlphaBeta_Exp"));
     }
 
-    #[test]
+    // #[test]
     fn minimax() {
         // assert!(time_test_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax"));
 
     }
 
-    #[test]
+    // #[test]
     fn negamax() {
         // assert!(time_test_cases::<NegaMax, SimpleHeightHeuristic>("NegaMax"));
     } 
@@ -270,14 +308,14 @@ mod tests {
         use game::santorini::tests::*;
         // use game::santorini::*;
 
-        #[test]
+        // #[test]
         fn all() {
            println!("==== PERFORMANCE TESTING =======");
-           time_exploration::<MiniMax, NeighbourHeuristic>("MiniMax", 3);
+           // time_exploration::<MiniMax, NeighbourHeuristic>("MiniMax", 3);
             // time_exploration::<NegaMax, NeighbourHeuristic>("NegaMax", 4);
-           time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMax_AlphaBeta", 4);
+           // time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMax_AlphaBeta", 4);
 
-           time_exploration::<NegaMaxAlphaBetaExp, NeighbourHeuristic>("NegaMax_AlphaBeta_Exp", 4);
+           // time_exploration::<NegaMaxAlphaBetaExp, NeighbourHeuristic>("NegaMax_AlphaBeta_Exp", 4);
         }
     }
 }

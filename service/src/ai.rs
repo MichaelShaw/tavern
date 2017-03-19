@@ -136,14 +136,21 @@ impl AIService {
                 }
                 break;
             } else {
+                let next_timing_calc = info.time * (info.average_branch_factor() as f64);
+                println!("we're at depth {} time was {:.3} next timing calc is {:.3}", depth, info.time, next_timing_calc);
+                let terminate = depth == max_depth || next_timing_calc > 15.0;
+
                 best_moves = moves.clone();
                 send.send(StateAnalysis {
                     state: state.clone(),
                     depth: depth,
                     moves: moves,
-                    terminal: depth == max_depth, 
+                    terminal: terminate, 
                     rollback: false,
                 }).unwrap();
+                if terminate {
+                    break;
+                }
             }
         }
 

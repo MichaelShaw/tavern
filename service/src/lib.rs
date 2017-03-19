@@ -3,5 +3,6 @@
 
 extern crate tavern_core;
 extern crate time;
+extern crate rand;
 
 pub mod ai;
