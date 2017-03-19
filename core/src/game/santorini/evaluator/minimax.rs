@@ -6,6 +6,10 @@ pub struct MiniMax {}
 
 impl Evaluator for MiniMax {
     type EvaluatorState = ();
+
+    fn name() -> String {
+        "MiniMax".into()
+    }
     
     #[allow(unused_variables)]
     fn new_state(board:&StandardBoard) -> () {

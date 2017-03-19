@@ -14,6 +14,10 @@ pub struct NegaMaxAlphaBeta { }
 
 impl Evaluator for NegaMaxAlphaBeta {
     type EvaluatorState = ();
+
+    fn name() -> String {
+        "NegaMaxAlphaBeta".into()
+    }
     
     #[allow(unused_variables)]
     fn new_state(board:&StandardBoard) -> () {

@@ -5,12 +5,7 @@ Board game engine
 - Custom pretty print for Evaluator Info.
 - Iterative deepening test harness. Stateful test harness, construct an X with it's persistent state, ask it to run tests on various situations.
 - Add something better than lerp for animation.
-- Better bit board move generation
-- Late Move Reduction
-
-
-
-
+- Better bit board move generation (no more builder_locations, seperate maps for each side, & to produce collision maps)
 
 ## Transposition
 - Store if depth is greater (better information about this)
@@ -30,7 +25,8 @@ Board game engine
 - Principal Variation
 - Aspiration windows (alpha beta) based on last iterative deepening pass?
 - Transposition tables
-
+- Late Move Reduction
+- 
 ## AI 
 
 ### Notes on our heuristic degradation

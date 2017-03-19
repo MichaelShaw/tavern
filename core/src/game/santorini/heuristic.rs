@@ -10,6 +10,10 @@ pub const PLAYER_1_WIN : HeuristicValue = -std::i16::MAX; // to prevent overflow
 pub struct SimpleHeightHeuristic {}
 
 impl Heuristic for SimpleHeightHeuristic {
+    fn name() -> String {
+        "SimpleHeightHeuristic".into()
+    }
+
     #[allow(unused_variables)]
     fn evaluate(board: &StandardBoard, state: &State) -> HeuristicValue {
         let mut n : HeuristicValue = 0;
@@ -39,6 +43,10 @@ impl Heuristic for SimpleHeightHeuristic {
 pub struct NeighbourHeuristic {}
 
 impl Heuristic for NeighbourHeuristic {
+    fn name() -> String {
+        "NeighbourHeuristic".into()
+    }
+
     fn evaluate(board: &StandardBoard, state: &State) -> HeuristicValue {
         Self::freedom_for(board, state, Player(0)) - Self::freedom_for(board, state, Player(1))
     }

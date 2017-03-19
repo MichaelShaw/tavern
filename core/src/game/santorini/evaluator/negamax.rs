@@ -15,6 +15,10 @@ fn color(player:Player) -> HeuristicValue {
 
 impl Evaluator for NegaMax {
     type EvaluatorState = ();
+
+    fn name() -> String {
+        "NegaMax".into()
+    }
     
     #[allow(unused_variables)]
     fn new_state(board:&StandardBoard) -> () {

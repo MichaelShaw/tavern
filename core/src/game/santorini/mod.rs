@@ -46,12 +46,14 @@ pub type HeuristicValue = i16;
 pub type BranchFactor = f64;
 
 pub trait Heuristic {
+    fn name() -> String;
     fn evaluate(board: &StandardBoard, state: &State) -> HeuristicValue;
 }
 
 pub trait Evaluator {
     type EvaluatorState;
 
+    fn name() -> String;
     fn new_state(board:&StandardBoard) -> Self::EvaluatorState;
     fn evaluate_moves<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
         let start_time = time::precise_time_ns();
@@ -84,7 +86,7 @@ pub fn principal_variant<E, H>(evaluator_state: &mut E::EvaluatorState, board:&S
     // println!("what is shit -> {:?}", shit);
 }
 
-pub fn adversarial_playout<EA, EB, H, F>(board:&StandardBoard, a_depth: u8, b_depth: u8, mut on_move: F) -> (Player, EvaluatorInfo, EvaluatorInfo) where EA: Evaluator, EB: Evaluator, H: Heuristic, F: FnMut(&State, &Move) -> () {
+pub fn adversarial_playout<EA, EB, AH, BH, F>(board:&StandardBoard, a_depth: u8, b_depth: u8, mut on_move: F) -> (Player, EvaluatorInfo, EvaluatorInfo) where EA: Evaluator, EB: Evaluator, AH: Heuristic, BH: Heuristic, F: FnMut(&State, &Move) -> () {
     let mut a_state = EA::new_state(board);
     let mut b_state = EB::new_state(board);
 
@@ -97,9 +99,9 @@ pub fn adversarial_playout<EA, EB, H, F>(board:&StandardBoard, a_depth: u8, b_de
     
     while winner == None {
         let (moves_with_heuristics, info) = if state.to_move == Player(0) {
-            EA::evaluate_moves::<H>(&mut a_state, board, &state, a_depth)
+            EA::evaluate_moves::<AH>(&mut a_state, board, &state, a_depth)
         } else {
-            EB::evaluate_moves::<H>(&mut b_state, board, &state, b_depth)
+            EB::evaluate_moves::<BH>(&mut b_state, board, &state, b_depth)
         };
 
         if state.to_move == Player(0) {
@@ -111,7 +113,10 @@ pub fn adversarial_playout<EA, EB, H, F>(board:&StandardBoard, a_depth: u8, b_de
         winner = if let Some(&(mve, _)) = moves_with_heuristics.first() {
             let is_winning_move = board.ascension_winning_move(&state, mve);
             if is_winning_move {
-                Some(state.to_move)
+                let winner = state.to_move;
+                state = board.apply(mve, &state);
+                on_move(&state, &mve);
+                Some(winner) // swap it back
             } else {
                 state = board.apply(mve, &state);
                 on_move(&state, &mve);

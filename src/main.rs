@@ -14,26 +14,41 @@ use tavern_core::game::santorini::*;
 use tavern_core::game::util::*; // , Packed, Packed1, Packed2, Slot};
 
 fn main() {
-    // let some_numbers = [0,1,2,3,4,5,6,7,8];
-    // println!("the numbers {:?}", some_numbers);
-    // let the_slice = &some_numbers[0 .. 4];
-    // println!("the slice {:?}", the_slice);
-
-    // tavern_core::game::santorini::tests::time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMaxAlphaBeta", 6);
-    // let (mn, mx) = (std::i16::MIN, std::i16::MAX);
-    // println!("i16 min {} max {}", mn, mx);
-
-    // count_moves();
-    // print_sizes();
     // tavern::app::run_app();
-    // sample_playout(3);
-    sample_adversarial_playout();
+
+    // SimpleHeightHeuristic
+    // NeighbourHeuristic
+
+    // NegaMaxAlphaBetaExp
+    
+    let mut winners = Vec::new();
+
+
+
+    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, NeighbourHeuristic>(3, 3));
+    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, NeighbourHeuristic>(4, 4));
+    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, NeighbourHeuristic>(5, 5));
+    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, SimpleHeightHeuristic, NeighbourHeuristic>(3, 3));
+    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, SimpleHeightHeuristic, NeighbourHeuristic>(4, 4));
+    winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, SimpleHeightHeuristic, NeighbourHeuristic>(5, 5));
+
+    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, NeighbourHeuristic>(3, 5));
+    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, SimpleHeightHeuristic, NeighbourHeuristic>(3, 5));
+    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, NeighbourHeuristic>(4, 5));
+    // winners.push(sample_adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, SimpleHeightHeuristic, NeighbourHeuristic>(4, 5));
+
+
+    println!("\n\n\n=== PLAYOUTS DONE ==== \n\n");
+    for winner in winners {
+        println!("{}",winner);
+    }
 }
 
-fn sample_adversarial_playout() {
+fn sample_adversarial_playout<EA, EB, HA, HB>(a_depth: u8, b_depth: u8) -> String where EA : Evaluator, EB : Evaluator, HA: Heuristic, HB: Heuristic {
     let board = StandardBoard::new(ZobristHash::new_unseeded());
     let mut move_number = 0;
-    let (winner, a_info, b_info) = adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, _>(&board, 5, 5,  |state, mve| { 
+
+    let (winner, a_info, b_info) = adversarial_playout::<EA, EB, HA, HB, _>(&board, a_depth, b_depth,  |state, mve| { 
         move_number += 1;
         let score = NeighbourHeuristic::evaluate(&board, state);
         println!("======= MOVE {} =======", move_number);
@@ -43,9 +58,21 @@ fn sample_adversarial_playout() {
         println!("");
     });
 
+    let a_desription = format!("{} ({} depth {})", EA::name(), HA::name(), a_depth);
+    let b_desription = format!("{} ({} depth {})", EB::name(), HB::name(), b_depth);
+
+    let winner_message : String = if winner == Player(0) {
+        format!("Player(0) as {} beat {}", a_desription, b_desription)
+    } else {
+        format!("Player(1) {} beat {}", b_desription, a_desription)
+    };
+
     println!("winner was -> {:?}", winner);
+    println!(" === winner {} ===", winner_message);
     println!("a info -> {:?}", a_info);
     println!("b info -> {:?}", b_info);
+
+    winner_message
 }
 
 fn sample_principal_variant(depth:u8) {

@@ -8,6 +8,10 @@ pub struct MiniMaxAlphaBeta {
 
 impl Evaluator for MiniMaxAlphaBeta {
     type EvaluatorState = ();
+
+    fn name() -> String {
+        "MiniMaxAlphaBeta".into()
+    }
     
     #[allow(unused_variables)]
     fn new_state(board:&StandardBoard) -> () {
