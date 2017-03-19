@@ -15,10 +15,12 @@ pub struct NegaMaxAlphaBeta { }
 impl Evaluator for NegaMaxAlphaBeta {
     type EvaluatorState = ();
     
+    #[allow(unused_variables)]
     fn new_state(board:&StandardBoard) -> () {
         ()
     }
-
+    
+    #[allow(unused_variables)]
     fn evaluate_moves<H>(evaluator_state:  &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, MoveCount) where H: Heuristic {
     	let color = color(state.to_move);
 

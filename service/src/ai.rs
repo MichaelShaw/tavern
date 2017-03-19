@@ -31,7 +31,7 @@ pub struct StateAnalysis {
 }
 
 impl AIService {
-    pub fn new() -> AIService {
+    pub fn new<E>() -> AIService where E: Evaluator {
         use self::Request::*;
 
         let (main_tx, ai_rx) = channel::<Request>();
@@ -40,7 +40,8 @@ impl AIService {
         let join_handle = thread::spawn(move || {
             println!("ai server started");
 
-            let board = StandardBoard::new();
+            let board = StandardBoard::new(ZobristHash::new_unseeded());
+            let mut evaluator_state = E::new_state(&board);
 
             loop {
                 match ai_rx.recv() {
@@ -49,7 +50,7 @@ impl AIService {
                             Analysis(state) => {
                                 // NegaMax
                                 // NegaMaxAlphaBeta
-                                AIService::evaluate::<NegaMaxAlphaBeta, NeighbourHeuristic>(&board, &state, &ai_tx);
+                                AIService::evaluate::<E, NeighbourHeuristic>(&mut evaluator_state, &board, &state, &ai_tx);
                             },
                             Shutdown => {
                                 println!("Ai shutdown requested");
@@ -91,7 +92,7 @@ impl AIService {
         }
     }
 
-    pub fn evaluate<E, H>(board: &StandardBoard, state:&State, send: &Sender<StateAnalysis>) where E: Evaluation, H: Heuristic {
+    pub fn evaluate<E, H>(evaluator_state: &mut E::EvaluatorState, board: &StandardBoard, state:&State, send: &Sender<StateAnalysis>) where E: Evaluator, H: Heuristic {
         println!("AI :: Asked for analysis");
         // println!("{}", board.print(&state));
         let score = SimpleHeightHeuristic::evaluate(board, state) * Self::player_multiplier(state.to_move);
@@ -107,7 +108,7 @@ impl AIService {
 
         for depth in 1..(max_depth+1) {
             let start = time::precise_time_ns();
-            let (moves, move_count) = E::evaluate::<H>(board, state, depth);  
+            let (moves, move_count) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);  
 
             let best_move_score = moves.get(0).map(|&(_, score)| score);
             let winning_player = best_move_score.and_then(|score| AIService::winning_player(score));

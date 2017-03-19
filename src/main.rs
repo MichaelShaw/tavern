@@ -14,10 +14,10 @@ use tavern_core::game::santorini::*;
 use tavern_core::game::util::*; // , Packed, Packed1, Packed2, Slot};
 
 fn main() {
-    let some_numbers = [0,1,2,3,4,5,6,7,8];
-    println!("the numbers {:?}", some_numbers);
-    let the_slice = &some_numbers[0 .. 4];
-    println!("the slice {:?}", the_slice);
+    // let some_numbers = [0,1,2,3,4,5,6,7,8];
+    // println!("the numbers {:?}", some_numbers);
+    // let the_slice = &some_numbers[0 .. 4];
+    // println!("the slice {:?}", the_slice);
 
     // tavern_core::game::santorini::tests::time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMaxAlphaBeta", 6);
     // let (mn, mx) = (std::i16::MIN, std::i16::MAX);
@@ -25,22 +25,22 @@ fn main() {
 
     // count_moves();
     // print_sizes();
-    // tavern::app::run_app();
+    tavern::app::run_app();
     // sample_playout(3);
 }
 
 fn sample_playout(depth:u8) {
-    let board = StandardBoard::new();
+    let board = StandardBoard::new(ZobristHash::new_unseeded());
     let init = State::initial();
     let new_state = board.apply(Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, &init);
     let mut new_state_b = board.apply(Move::PlaceBuilders { a: Slot(23), b: Slot(24) }, &new_state);
     new_state_b.buildings = new_state_b.buildings.set(Slot(5), 1);
 
-    playout::<MiniMax, SimpleHeightHeuristic>(&board, &new_state_b, depth);
+    playout::<MiniMax, SimpleHeightHeuristic>(&mut MiniMax::new_state(&board), &board, &new_state_b, depth);
 }
 
 fn count_moves() {
-    let board = StandardBoard::new();
+    let board = StandardBoard::new(ZobristHash::new_unseeded());
 
     let init = State::initial();
     let new_state = board.apply(Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, &init);
@@ -63,7 +63,7 @@ fn count_moves() {
 }
 
 fn do_stuff() {
-    let board = StandardBoard::new();
+    let board = StandardBoard::new(ZobristHash::new_unseeded());
 
 	print!("{}[2J", 27 as char);
     // let mut threaded_rng = rand::thread_rng();

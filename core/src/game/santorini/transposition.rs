@@ -90,6 +90,10 @@ impl ZobristHash {
     pub fn new_unseeded() -> ZobristHash {
         Self::new(&mut XorShiftRng::new_unseeded())
     }
+    
+    pub fn new_unseeded_secure() -> ZobristHash {
+        Self::new(&mut XorShiftRng::new_unseeded())
+    }
 
     pub fn new<R : Rng>(r: &mut R) -> ZobristHash {
         let mut hash = ZobristHash {

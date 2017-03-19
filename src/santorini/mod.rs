@@ -89,7 +89,7 @@ impl SantoriniGame {
         // let cpu_players = hashset![Player(rng.gen_range(0, 2))]; 
         let cpu_players = hashset![Player(0)]; 
         
-        let board_state = BoardState::new(StandardBoard::new(), State::initial());
+        let board_state = BoardState::new(StandardBoard::new(ZobristHash::new_unseeded()), State::initial());
         let tentative = board_state.tentative(&Vec::new(), None);
 
         let player_game = PlayerGame {
@@ -101,7 +101,7 @@ impl SantoriniGame {
             current_move_positions : Vec::new(),
         };
 
-        let ai_service = AIService::new();
+        let ai_service = AIService::new::<NegaMaxAlphaBetaExp>();
         
 
         match &player_game.interaction_state {
@@ -128,6 +128,7 @@ impl SantoriniGame {
         }
 
         let mut new_interaction_state : Option<StateTransition> = None;
+
 
         match self.game.interaction_state {
             InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => {
@@ -267,7 +268,7 @@ impl SantoriniGame {
 
     pub fn reset(&mut self) {
         let cpu_players = hashset![Player(self.rand.gen_range(0, 2))]; ;
-        let board_state = BoardState::new(StandardBoard::new(), State::initial());
+        let board_state = BoardState::new(StandardBoard::new(ZobristHash::new_unseeded()), State::initial());
         let tentative = board_state.tentative(&Vec::new(), None);
         self.game = PlayerGame {
             interaction_state: InteractionState::awaiting_input(&board_state.state, &cpu_players),
