@@ -23,7 +23,7 @@ pub enum Request {
 pub struct StateAnalysis {
     pub state: State,
     pub depth: u8,
-    pub moves: Vec<(Move, HeuristicValue)>,
+    pub best_move: Option<(Move, HeuristicValue)>,
     pub terminal: bool, 
     pub rollback : bool, // rollback means we discovered we will lose guaranteed ... so we resort to the prior depth to discovering that ... so we still make a reasonable move
 }
@@ -102,15 +102,13 @@ impl AIService {
             6
         };
 
-        let mut best_moves : Vec<(Move, HeuristicValue)> = Vec::new();
-
         for depth in 1..(max_depth+1) {
-            let (moves, info) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);  
+            let (best_move, info) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);  
 
-            let best_move_score = moves.get(0).map(|&(_, score)| score);
+            let best_move_score = best_move.map(|(_, score)| score);
             let winning_player = best_move_score.and_then(|score| AIService::winning_player(score));
 
-            println!("AI :: depth {:?} info {:?} score -> {:?}", depth, info, best_move_score);
+            println!("AI :: depth {:?} info {:?} best_move -> {:?}", depth, info, best_move);
 
             if let Some(player) = winning_player {
                 println!("AI :: at depth {:?} we've established winning player will be {:?}", depth, player);
@@ -121,7 +119,7 @@ impl AIService {
                     send.send(StateAnalysis {
                         state: state.clone(),
                         depth: depth,
-                        moves: best_moves,
+                        best_move: best_move,
                         terminal: true, 
                         rollback: true,
                     }).unwrap();
@@ -129,7 +127,7 @@ impl AIService {
                     send.send(StateAnalysis {
                         state: state.clone(),
                         depth: depth,
-                        moves: moves,
+                        best_move: best_move,
                         terminal: true, 
                         rollback: false,
                     }).unwrap();
@@ -139,12 +137,10 @@ impl AIService {
                 let next_timing_calc = info.time * (info.average_branch_factor() as f64);
                 println!("we're at depth {} time was {:.3} next timing calc is {:.3}", depth, info.time, next_timing_calc);
                 let terminate = depth == max_depth || next_timing_calc > 15.0;
-
-                best_moves = moves.clone();
                 send.send(StateAnalysis {
                     state: state.clone(),
                     depth: depth,
-                    moves: moves,
+                    best_move: best_move,
                     terminal: terminate, 
                     rollback: false,
                 }).unwrap();

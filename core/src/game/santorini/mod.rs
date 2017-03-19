@@ -57,14 +57,14 @@ pub trait Evaluator {
 
     fn name() -> String;
     fn new_state(board:&StandardBoard) -> Self::EvaluatorState;
-    fn evaluate_moves<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
+    fn evaluate_moves<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
         let start_time = time::precise_time_ns();
-        let (mves, mut info) = Self::evaluate_moves_impl::<H>(evaluator_state, board, state, depth);
+        let (best_move, mut info) = Self::evaluate_moves_impl::<H>(evaluator_state, board, state, depth);
         let duration_seconds = (time::precise_time_ns() - start_time) as f64 / 1_000_000_000f64;
         info.time += duration_seconds;
-        (mves, info)
+        (best_move, info)
     }
-    fn evaluate_moves_impl<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic;
+    fn evaluate_moves_impl<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic;
 }
 
 // the manual/crap way
@@ -72,11 +72,9 @@ pub fn principal_variant<E, H>(evaluator_state: &mut E::EvaluatorState, board:&S
     println!("about to playout {}", board.print(state));
     let mut current_state = state.clone();
     for d in (1..(depth+1)).rev() {
-        let (moves, _) = E::evaluate_moves::<H>(evaluator_state, board, &current_state, d);
-
-
-        println!("legal moves -> {:?}", moves);
-        if let Some(&(mve, _)) = moves.first() {
+        let (best_move, _) = E::evaluate_moves::<H>(evaluator_state, board, &current_state, d);
+        println!("best move -> {:?}", best_move);
+        if let Some((mve, _)) = best_move {
             current_state = board.apply(mve, &current_state);
             let h = H::evaluate(board, &current_state);
             println!("depth {:?} playing move {:?} score {:?}", d, mve, h);
@@ -88,34 +86,6 @@ pub fn principal_variant<E, H>(evaluator_state: &mut E::EvaluatorState, board:&S
     // println!("what is shit -> {:?}", shit);
 }
 
-
-
-pub fn select_winner<R>(moves: &Vec<(Move, HeuristicValue)>, r: &mut R) -> Option<(Move, HeuristicValue)> where R: Rng {
-    if let Some(&(_, score)) = moves.first() {
-        println!("\n\nall moves -> {:?}", moves);
-        // HOLY SHIT ARE YOU RETARDED
-        let potential_winners : Vec<(Move, HeuristicValue)> = moves.iter().filter(|&&(_, sc)| {
-            sc == score
-        } ).cloned().collect();
-
-        println!("\n\npotential winners -> {:?}", potential_winners);
-        let move_idx = r.gen_range(0, potential_winners.len()) as usize;
-        println!("\n\nrolled {}", move_idx);
-        potential_winners.get(move_idx).cloned()
-    } else {
-        None
-    }
-}
-
-pub fn winners(moves: &Vec<(Move, HeuristicValue)>) -> Vec<(Move, HeuristicValue)> {
-    if let Some(&(_, score)) = moves.first() {
-        moves.iter().filter(|&&(_, sc)| {
-            sc == score
-        } ).cloned().collect()
-    } else {
-        Vec::new()
-    }
-}
 
 pub fn adversarial_playout<EA, EB, AH, BH, R, F>(board:&StandardBoard, a_depth: u8, b_depth: u8, r: &mut R, mut on_move: F) -> (Player, EvaluatorInfo, EvaluatorInfo) where EA: Evaluator, EB: Evaluator, AH: Heuristic, BH: Heuristic, R: Rng, F: FnMut(&State, &Move, HeuristicValue) -> () {
     let mut a_state = EA::new_state(board);
@@ -136,7 +106,7 @@ pub fn adversarial_playout<EA, EB, AH, BH, R, F>(board:&StandardBoard, a_depth: 
             depth = max(2, depth - 1);
         }
 
-        let (moves_with_heuristics, info) = if state.to_move == Player(0) {
+        let (best_move, info) = if state.to_move == Player(0) {
             EA::evaluate_moves::<AH>(&mut a_state, board, &state, depth)
         } else {
             EB::evaluate_moves::<BH>(&mut b_state, board, &state, depth)
@@ -148,7 +118,7 @@ pub fn adversarial_playout<EA, EB, AH, BH, R, F>(board:&StandardBoard, a_depth: 
             b_info += info;
         }
 
-        winner = if let Some((mve, score)) = select_winner::<R>(&moves_with_heuristics, r) {
+        winner = if let Some((mve, score)) = best_move {
             let is_winning_move = board.ascension_winning_move(&state, mve);
             if is_winning_move {
                 let winner = state.to_move;

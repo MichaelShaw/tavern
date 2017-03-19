@@ -25,7 +25,7 @@ impl Evaluator for NegaMaxAlphaBeta {
     }
     
     #[allow(unused_variables)]
-    fn evaluate_moves_impl<H>(evaluator_state:  &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
+    fn evaluate_moves_impl<H>(evaluator_state:  &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
     	let color = color(state.to_move);
 
         let mut moves = Vec::with_capacity(200);
@@ -60,6 +60,7 @@ impl Evaluator for NegaMaxAlphaBeta {
                 }
             }
         } else {
+            // this is the broken_path
             let mut beta = BEST;
             for &mve in &moves {
                 if board.ascension_winning_move(state, mve) {
@@ -73,6 +74,8 @@ impl Evaluator for NegaMaxAlphaBeta {
                 } else {
                     let new_state = board.apply(mve, state);
 
+
+                    // print!("({}, {})", WORST, beta);
                     let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, WORST, beta, -color);
                     
                     let av = v * -color;
@@ -85,9 +88,11 @@ impl Evaluator for NegaMaxAlphaBeta {
                 }
             }
         }
+
+        // println!("mmab dunzo");
   
         unsorted_moves.sort_by_key(|&(_, hv)| hv * -color);
-        (unsorted_moves, EvaluatorInfo::from_moves_depth(total_moves, depth))
+        (unsorted_moves.first().cloned(), EvaluatorInfo::from_moves_depth(total_moves, depth))
     }
 }
 
@@ -100,13 +105,10 @@ impl NegaMaxAlphaBeta {
             let v = if moves.is_empty() {
                 WORST
             } else {
-               H::evaluate(board, state) * color
+                H::evaluate(board, state) * color
             };
-            // let v = H::evaluate(board, state) * color;
             return (v, 1);
         }
-          // let mut moves = Vec::with_capacity(200); // enough to prevent resizing
-        // board.next_moves(state, &mut moves);
 
         let mut total_moves = 0;
         let mut best_observed = WORST;
@@ -116,10 +118,11 @@ impl NegaMaxAlphaBeta {
                 return (BEST, total_moves + 1);
             } else {
                 let new_state = board.apply(mve, state);
-                let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, -beta, -new_alpha, -color);
+                let (new_v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, -beta, -new_alpha, -color);
+                let v = -new_v;
                 total_moves += move_count;
-                best_observed = max(-v, best_observed);
-                new_alpha = max(new_alpha, -v);
+                best_observed = max(v, best_observed);
+                new_alpha = max(new_alpha, v);
                 if beta <= new_alpha {
                 	break;
                 }

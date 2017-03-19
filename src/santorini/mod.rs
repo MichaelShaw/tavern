@@ -133,9 +133,8 @@ impl SantoriniGame {
             InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => {
                 if let Some(ref analysis) = self.game.analysis.clone() {
                     if analysis.terminal {
-                        println!("move analysis -> {:?}", analysis.moves);
-                        // if let Some(&(mve, h)) = analysis.moves.first() {
-                        if let Some((mve, h)) = select_winner(&analysis.moves, &mut self.rand) {
+                        println!("move analysis -> {:?}", analysis.best_move);
+                        if let Some((mve, h)) = analysis.best_move {
                             if self.game.board_state.next_moves.iter().any(|&m| m == mve) {
                                 println!("playin move with heuristic {:?} -> {:?}", h, mve);
                                 self.play_move(mve);

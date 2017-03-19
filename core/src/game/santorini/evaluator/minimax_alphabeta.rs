@@ -1,6 +1,7 @@
 
 use game::santorini::*;
 use std::cmp::{max, min};
+use rand::{Rng, XorShiftRng, SeedableRng};
 
 pub struct MiniMaxAlphaBeta {
     board: StandardBoard,
@@ -19,17 +20,20 @@ impl Evaluator for MiniMaxAlphaBeta {
     }
 
     #[allow(unused_variables)]
-    fn evaluate_moves_impl<H>(evaluator_state:  &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
+    fn evaluate_moves_impl<H>(evaluator_state:  &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
         let mut moves = Vec::with_capacity(200);
 
         board.next_moves(state, &mut moves);
+
+        let mut rand = XorShiftRng::from_seed([14245525,12,825126,16221]);
+        rand.shuffle(&mut moves);
 
         let mut total_moves = 0;
         let mut unsorted_moves : Vec<(Move, HeuristicValue)> = Vec::with_capacity(200);
 
         let mut alpha = WORST;
         let mut beta = BEST;
-        
+
         for &mve in &moves {
             if board.ascension_winning_move(state, mve) {
                 let v = if state.to_move == Player(0) {
@@ -47,6 +51,7 @@ impl Evaluator for MiniMaxAlphaBeta {
                 total_moves += 1;
             } else {
                 let new_state = board.apply(mve, state);
+
                 let (val, move_count) = Self::eval::<H>(board, &new_state, depth - 1, alpha, beta);
 
                 if state.to_move == Player(0) {
@@ -62,12 +67,15 @@ impl Evaluator for MiniMaxAlphaBeta {
             }
         }
 
+        // println!("mmab dunzo");
+
         if state.to_move == Player(0) {
             unsorted_moves.sort_by_key(|&(_, hv)| -hv); // maximizing player wants biggest first
         } else {
             unsorted_moves.sort_by_key(|&(_, hv)| hv); // minimizing player wants smallest first
         }
-        (unsorted_moves, EvaluatorInfo::from_moves_depth(total_moves, depth))
+
+        (unsorted_moves.first().cloned(), EvaluatorInfo::from_moves_depth(total_moves, depth))
     }
 }
 
@@ -75,6 +83,7 @@ impl MiniMaxAlphaBeta {
     pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8, alpha: HeuristicValue, beta:HeuristicValue) -> (HeuristicValue, MoveCount) where H: Heuristic {
         let mut moves = Vec::with_capacity(200);
         board.next_moves(state, &mut moves);
+        moves.reverse();
 
         if depth == 0 {
             let v = if moves.is_empty() {
@@ -93,19 +102,22 @@ impl MiniMaxAlphaBeta {
         let mut total_moves = 0;
 
         if state.to_move == Player(0) {
+
             let mut new_alpha = alpha;
             let mut best_observed = PLAYER_1_WIN; // assume worst case
+
 
             for &mve in &moves {
                 if board.ascension_winning_move(state, mve) {
                     return (PLAYER_0_WIN, total_moves + 1);
                 } else {
+         
                     let new_state = board.apply(mve, state);
                     let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, new_alpha, beta);
                     new_alpha = max(v, new_alpha);
                     total_moves += move_count;
                     best_observed = max(v, best_observed);
-                    if beta <= alpha {
+                    if beta <= new_alpha { // BETA CUTOFF
                         break;
                     }
                 }
@@ -125,7 +137,7 @@ impl MiniMaxAlphaBeta {
                     best_observed = min(v, best_observed);    
                     new_beta = min(new_beta, v);
                     total_moves += move_count;
-                    if beta <= alpha {
+                    if new_beta <= alpha { // ALPHA CUTOFF
                         break;
                     }
                 }

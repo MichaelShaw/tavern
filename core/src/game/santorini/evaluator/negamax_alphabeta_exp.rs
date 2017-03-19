@@ -25,7 +25,7 @@ impl Evaluator for NegaMaxAlphaBetaExp {
     }
 
     #[allow(unused_variables)]
-    fn evaluate_moves_impl<H>(evaluator_state: &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
+    fn evaluate_moves_impl<H>(evaluator_state: &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
         let color = color(state.to_move);
         let mut moves = Vec::with_capacity(200);
 
@@ -88,7 +88,7 @@ impl Evaluator for NegaMaxAlphaBetaExp {
         }
   
         unsorted_moves.sort_by_key(|&(_, hv)| hv * -color);
-        (unsorted_moves, EvaluatorInfo::from_moves_depth(total_moves, depth))
+        (unsorted_moves.first().cloned(), EvaluatorInfo::from_moves_depth(total_moves, depth))
     }
 }
 
