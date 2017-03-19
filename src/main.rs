@@ -25,18 +25,37 @@ fn main() {
 
     // count_moves();
     // print_sizes();
-    tavern::app::run_app();
+    // tavern::app::run_app();
     // sample_playout(3);
+    sample_adversarial_playout();
 }
 
-fn sample_playout(depth:u8) {
+fn sample_adversarial_playout() {
+    let board = StandardBoard::new(ZobristHash::new_unseeded());
+    let mut move_number = 0;
+    let (winner, a_info, b_info) = adversarial_playout::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, _>(&board, 5, 5,  |state, mve| { 
+        move_number += 1;
+        let score = NeighbourHeuristic::evaluate(&board, state);
+        println!("======= MOVE {} =======", move_number);
+        println!("state makes move {:?}", mve);
+        println!("{}", board.print(state));
+        println!("scored as {}", score);
+        println!("");
+    });
+
+    println!("winner was -> {:?}", winner);
+    println!("a info -> {:?}", a_info);
+    println!("b info -> {:?}", b_info);
+}
+
+fn sample_principal_variant(depth:u8) {
     let board = StandardBoard::new(ZobristHash::new_unseeded());
     let init = State::initial();
     let new_state = board.apply(Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, &init);
     let mut new_state_b = board.apply(Move::PlaceBuilders { a: Slot(23), b: Slot(24) }, &new_state);
     new_state_b.buildings = new_state_b.buildings.set(Slot(5), 1);
 
-    playout::<MiniMax, SimpleHeightHeuristic>(&mut MiniMax::new_state(&board), &board, &new_state_b, depth);
+    principal_variant::<MiniMax, SimpleHeightHeuristic>(&mut MiniMax::new_state(&board), &board, &new_state_b, depth);
 }
 
 fn count_moves() {

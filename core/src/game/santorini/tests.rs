@@ -1,6 +1,5 @@
 
 use game::santorini::*;
-use time;
 use colored::*;
 
 pub fn mild_a_advantage(board:&StandardBoard, to_move: Player) -> State {
@@ -119,12 +118,6 @@ pub fn any_trap_in_1(board:&StandardBoard, to_move: Player) -> State {
     state
 }
 
-
-fn average(arr: &[f64]) -> f64 {
-    let n = arr.len() as f64;
-    arr.iter().fold(0.0, |acc, val| acc + val) / n
-}
-
 pub struct TestCase {
     pub name: String,
     pub state: State,
@@ -173,23 +166,19 @@ pub fn test_cases(board:&StandardBoard) -> Vec<TestCase> {
     ]
 }
 
-pub fn evaluate_state<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, max_depth: u8) -> (Vec<HeuristicValue>, MoveCount, BranchFactor) where E: Evaluator, H:Heuristic {
-    let mut branch_factors = Vec::new();
-    let mut total_moves = 0;
+pub fn evaluate_state<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, max_depth: u8) -> (Vec<HeuristicValue>, EvaluatorInfo) where E: Evaluator, H:Heuristic {
+    let mut info = EvaluatorInfo::new();
     let heuristic_values : Vec<_> = (1..(max_depth+1)).flat_map(|depth| {
-        let (moves, move_count) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);
-        branch_factors.push(branch_factor(move_count, depth));
-        total_moves += move_count;
+        let (moves, new_info) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);
+        info += new_info;
         moves.iter().map(|&(_, sc)| sc).take(1).collect::<Vec<_>>()
     }).collect();
-    (heuristic_values, total_moves, average(&branch_factors))
+    (heuristic_values,info)
 }
 
-pub fn test_all_cases<E, H>(name:&str) -> (u32, MoveCount, BranchFactor) where E: Evaluator, H: Heuristic {
-    let mut total_moves = 0;
-    let mut branch_factors = Vec::new();
-
+pub fn test_all_cases<E, H>(name:&str) -> (u32, EvaluatorInfo) where E: Evaluator, H: Heuristic {
     println!("==== Testing {} all cases =====", name);
+    let mut info = EvaluatorInfo::new();
     let board = StandardBoard::new(ZobristHash::new_unseeded());
     let mut error_cases = 0;
     let cases = test_cases(&board);
@@ -199,15 +188,15 @@ pub fn test_all_cases<E, H>(name:&str) -> (u32, MoveCount, BranchFactor) where E
 
         let mut evaluator_state = E::new_state(&board);
 
-        let (scores, move_count, average_branch_factor) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, case.scores.len() as u8);
-        total_moves += move_count;
-        branch_factors.push(average_branch_factor);
+        let (scores, new_info) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, case.scores.len() as u8);
+        info += new_info.clone();
+
         if scores != case.scores {
             // playout::<E, H>(&board, &case.state, case.scores.len() as u8);
             error_cases += 1;
             println!("{}", format!("test case expected {:?} but got {:?}", case.scores, scores).red());
         } else {
-            println!("{}", format!("ok {} moves {:.2} average branch factor", move_count, average_branch_factor).green());
+            println!("{}", format!("ok -> {:?}", new_info).green());
         }
     }
 
@@ -215,49 +204,40 @@ pub fn test_all_cases<E, H>(name:&str) -> (u32, MoveCount, BranchFactor) where E
         println!("{}", format!("==== {:?} had {}/{} error cases", name, error_cases, cases.len()));
     }
 
-    (error_cases, total_moves, average(&branch_factors))
+    (error_cases, info)
 }
 
 pub fn time_test_cases<E, H>(name: &str) -> bool where E: Evaluator, H: Heuristic {
-    let start = time::precise_time_ns();
-    let (v, move_count, average_branch_factor) = test_all_cases::<E, H>(name);
-    let duration = (time::precise_time_ns() - start) as f64 / 1_000_000_000f64;
+    let (v, info) = test_all_cases::<E, H>(name);
 
     if v > 0 {
-        println!("{}", format!("testing {} took {:.5} seconds", name, duration).red());    
+        println!("{}", format!("testing {} info {:?}", name, info).red());    
     } else {
-        let moves_per_second = move_count as f64 / duration;
-        println!("{}", format!("testing {} took {:.5} seconds {} moves ({:.0}/second) {:.3} average branch factor", name, duration, move_count,  moves_per_second, average_branch_factor).green());    
+        println!("{}", format!("testing {} info -> {:?}", name, info).green());    
     }
     
     v == 0
 }
 
-pub fn time_exploration<E, H>(name:&str, depth:u8) -> MoveCount where E: Evaluator, H: Heuristic  {
-    let mut total_moves = 0;
-    let mut branch_factors = Vec::new();
+pub fn time_exploration<E, H>(name:&str, depth:u8) -> EvaluatorInfo where E: Evaluator, H: Heuristic  {
+    let mut info = EvaluatorInfo::new();
     let board = StandardBoard::new(ZobristHash::new_unseeded());
     let cases = test_cases(&board);
 
-
-
-    let start = time::precise_time_ns();
     for case in &cases {
         let mut evaluator_state = E::new_state(&board);
-        let (_, move_count, average_branch_factor) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, depth);
-        total_moves += move_count;
-        branch_factors.push(average_branch_factor);
+        let (_, new_info) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, depth);
+        info += new_info;
     }
 
-    let duration = (time::precise_time_ns() - start) as f64 / 1_000_000_000f64;
-    let moves_per_second = total_moves as f64 / duration;
-    println!("{}", format!("PERFORMANCE TIMING {} took {:.5} seconds {} moves ({:.1}M/second) {:.3} average branch factor", name, duration, total_moves,  moves_per_second / 1_000_000f64, average(&branch_factors)).green());    
-    total_moves
+    println!("{}", format!("PERFORMANCE TIMING {} info -> {:?}", name, info).green());    
+    info
 }
+
 
 #[cfg(test)]
 mod tests {
-    use game::santorini::*;
+    // use game::santorini::*;
     use super::*;
 
     #[test]
@@ -288,7 +268,7 @@ mod tests {
 
     mod bench {
         use game::santorini::tests::*;
-        use game::santorini::*;
+        // use game::santorini::*;
 
         #[test]
         fn all() {

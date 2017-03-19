@@ -8,8 +8,6 @@ use std::sync::mpsc::{Sender, Receiver};
 use std::thread;
 use std::thread::JoinHandle;
 
-use time;
-
 pub struct AIService {
     send: Sender<Request>,
     pub receive: Receiver<StateAnalysis>,
@@ -107,17 +105,12 @@ impl AIService {
         let mut best_moves : Vec<(Move, HeuristicValue)> = Vec::new();
 
         for depth in 1..(max_depth+1) {
-            let start = time::precise_time_ns();
-            let (moves, move_count) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);  
+            let (moves, info) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);  
 
             let best_move_score = moves.get(0).map(|&(_, score)| score);
             let winning_player = best_move_score.and_then(|score| AIService::winning_player(score));
-           
-            let duration = time::precise_time_ns() - start;
-            let as_seconds = (duration as f64) / 1_000_000_000f64;
 
-            let average_branch_factor = branch_factor(move_count, depth);
-            println!("AI :: depth {:?} evaluated in {:.3}s score -> {:?} total moves evaluationed -> {:?} branch_factor -> {:?}", depth, as_seconds, best_move_score, move_count, average_branch_factor);
+            println!("AI :: depth {:?} info {:?} score -> {:?}", depth, info, best_move_score);
 
             if let Some(player) = winning_player {
                 println!("AI :: at depth {:?} we've established winning player will be {:?}", depth, player);

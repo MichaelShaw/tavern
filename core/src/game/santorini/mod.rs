@@ -15,7 +15,7 @@ pub mod heuristic;
 pub mod board;
 pub mod state;
 pub mod transposition;
-
+pub mod evaluator_info;
 
 pub mod tests;
 
@@ -31,7 +31,9 @@ pub use self::state::*;
 pub use self::transposition::*;
 pub use self::move_stack::*;
 
+pub use self::evaluator_info::*;
 
+use time;
 
 use HashSet;
 use super::util::*;
@@ -45,21 +47,26 @@ pub type BranchFactor = f64;
 
 pub trait Heuristic {
     fn evaluate(board: &StandardBoard, state: &State) -> HeuristicValue;
-
 }
 
 pub trait Evaluator {
     type EvaluatorState;
 
     fn new_state(board:&StandardBoard) -> Self::EvaluatorState;
-    fn evaluate_moves<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, MoveCount) where H: Heuristic;
+    fn evaluate_moves<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
+        let start_time = time::precise_time_ns();
+        let (mves, mut info) = Self::evaluate_moves_impl::<H>(evaluator_state, board, state, depth);
+        let duration_seconds = (time::precise_time_ns() - start_time) as f64 / 1_000_000_000f64;
+        info.time += duration_seconds;
+        (mves, info)
+    }
+    fn evaluate_moves_impl<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic;
 }
 
-pub fn branch_factor(move_count: MoveCount, depth: u8) -> f64 {
-    (move_count as f64).powf(1.0 / (depth as f64))
-}
 
-pub fn playout<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, depth:u8) where E: Evaluator, H: Heuristic {
+
+// the manual/crap way
+pub fn principal_variant<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, depth:u8) where E: Evaluator, H: Heuristic {
     println!("about to playout {}", board.print(state));
     let mut current_state = state.clone();
     for d in (1..(depth+1)).rev() {
@@ -75,6 +82,47 @@ pub fn playout<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoa
         }
     }
     // println!("what is shit -> {:?}", shit);
+}
+
+pub fn adversarial_playout<EA, EB, H, F>(board:&StandardBoard, a_depth: u8, b_depth: u8, mut on_move: F) -> (Player, EvaluatorInfo, EvaluatorInfo) where EA: Evaluator, EB: Evaluator, H: Heuristic, F: FnMut(&State, &Move) -> () {
+    let mut a_state = EA::new_state(board);
+    let mut b_state = EB::new_state(board);
+
+    let mut state = State::initial();
+
+    let mut winner : Option<Player> = None;
+
+    let mut a_info = EvaluatorInfo::new();
+    let mut b_info = EvaluatorInfo::new();
+    
+    while winner == None {
+        let (moves_with_heuristics, info) = if state.to_move == Player(0) {
+            EA::evaluate_moves::<H>(&mut a_state, board, &state, a_depth)
+        } else {
+            EB::evaluate_moves::<H>(&mut b_state, board, &state, b_depth)
+        };
+
+        if state.to_move == Player(0) {
+            a_info += info;
+        } else {
+            b_info += info;
+        }
+
+        winner = if let Some(&(mve, _)) = moves_with_heuristics.first() {
+            let is_winning_move = board.ascension_winning_move(&state, mve);
+            if is_winning_move {
+                Some(state.to_move)
+            } else {
+                state = board.apply(mve, &state);
+                on_move(&state, &mve);
+                None
+            }
+        } else {
+            Some(state.next_player())
+        };
+    }
+
+    (winner.unwrap(), a_info, b_info)
 }
 
 

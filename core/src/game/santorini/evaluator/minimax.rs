@@ -13,7 +13,7 @@ impl Evaluator for MiniMax {
     }
     
     #[allow(unused_variables)]
-    fn evaluate_moves<H>(evaluator_state: &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, MoveCount) where H: Heuristic {
+    fn evaluate_moves_impl<H>(evaluator_state: &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Vec<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
         let mut moves = Vec::with_capacity(200);
         board.next_moves(state, &mut moves);
 
@@ -41,7 +41,7 @@ impl Evaluator for MiniMax {
         } else {
             unsorted_moves.sort_by_key(|&(_, hv)| hv); // minimizing player wants smallest first
         }
-        (unsorted_moves, total_moves)
+        (unsorted_moves, EvaluatorInfo::from_moves_depth(total_moves, depth))
     }
 }
 

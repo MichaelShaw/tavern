@@ -2,23 +2,15 @@
 Board game engine
 
 # Santorini
-- Add Playing a game between two adversarial AIs.
-- Paramaterize Evaluator by State (e.g. transposition table)
-- Make heuristics stateful? Transposition tables etc.
+- Custom pretty print for Evaluator Info.
 - Iterative deepening test harness. Stateful test harness, construct an X with it's persistent state, ask it to run tests on various situations.
-- Add some form of move ordering? (Requires quite a few changes)
-- Change Move to be index based for (from) rather than slot based? Yes/No? Hrm.
-- Add iterative deepening based root move ordering (for alpha beta pruning)
-- Adversarial heuristic testing (play AIs with same search depth against each other 
 - Add something better than lerp for animation.
+- Better bit board move generation
+- Late Move Reduction
 
-## Late Move Reductions
-Search depth 4 in full detail.
 
-After that, reduce depth for shitty looking nodes (fail low) if we had nothing that was too good (fail high).
 
-## Heuristic
-- Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
+
 
 ## Transposition
 - Store if depth is greater (better information about this)
@@ -28,6 +20,11 @@ After that, reduce depth for shitty looking nodes (fail low) if we had nothing t
 - Move up
 - Build on a square one higher than an opponent 
 - Move towards highest opponent
+
+
+## Heuristic
+- Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
+ 
 
 ### Other concerns
 - Principal Variation
