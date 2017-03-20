@@ -6,7 +6,6 @@ Board game engine
 - We need to degenerify stuff, sum types are better than too much genericity. Closed sum types for evaluators + heuristics is fine. EvaluatorDescription, HeuristicDescription. I think degenerify evaluator first. (leave Heuristic generic for now .. it's used in inner loops)
 - Iterative deepening test harness. Stateful test harness, construct an X with it's persistent state, ask it to run tests on various situations.
 - Add something better than lerp for animation.
-- Better bit board move generation (no more builder_locations, seperate maps for each side, & to produce collision maps)
 
 ## Transposition
 - Store if depth is greater (better information about this)

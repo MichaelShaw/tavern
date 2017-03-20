@@ -34,62 +34,24 @@ impl Evaluator for NegaMaxAlphaBeta {
         let mut total_moves = 0;
         let mut unsorted_moves : Vec<(Move, HeuristicValue)> = Vec::with_capacity(200);
 
+    	let mut alpha = WORST;
 
-    	// let mut alpha = WORST;
-        if state.to_move == Player(0) {
-            let mut alpha = WORST;
-            for &mve in &moves {
-                if board.ascension_winning_move(state, mve) {
-                    let av = BEST * color;
-                    unsorted_moves.push((mve, av));
-
-                    alpha = max(alpha, av);
-
-                    total_moves += 1;
-                } else {
-                    let new_state = board.apply(mve, state);
-
-                    let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, WORST, -alpha, -color);
-                    
-                    let av = v * -color;
-
-                    alpha = max(alpha, av);
-
-                    unsorted_moves.push((mve, av));
-                    total_moves += move_count;
-                }
-            }
-        } else {
-            // this is the broken_path
-            let mut beta = BEST;
-            for &mve in &moves {
-                if board.ascension_winning_move(state, mve) {
-                    let av = BEST * color;
-                    unsorted_moves.push((mve, av));
-
-                    // alpha = max(alpha, av);
-                    beta = min(beta, av);
-
-                    total_moves += 1;
-                } else {
-                    let new_state = board.apply(mve, state);
-
-
-                    // print!("({}, {})", WORST, beta);
-                    let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, WORST, beta, -color);
-                    
-                    let av = v * -color;
-
-                    beta = min(beta, av);
-
-                    // alpha = max(alpha, av);
-                    unsorted_moves.push((mve, av));
-                    total_moves += move_count;
-                }
-            }
+        for &mve in &moves {
+            let v = if board.ascension_winning_move(state, mve) {
+                let av = BEST * color;
+                alpha = max(alpha, av);
+                total_moves += 1;
+                av
+            } else {
+                let new_state = board.apply(mve, state);
+                let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, WORST, -alpha, -color); // 
+                let av = v * -color;
+                alpha = max(alpha, -v);
+                total_moves += move_count;
+                av
+            };
+            unsorted_moves.push((mve, v));
         }
-
-        // println!("mmab dunzo");
   
         unsorted_moves.sort_by_key(|&(_, hv)| hv * -color);
         (unsorted_moves.first().cloned(), EvaluatorInfo::from_moves_depth(total_moves, depth))

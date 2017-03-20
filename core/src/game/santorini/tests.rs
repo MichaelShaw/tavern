@@ -134,8 +134,8 @@ pub fn case(name:&str, state:State, scores:Vec<HeuristicValue>) -> TestCase {
 
 pub fn test_cases(board:&StandardBoard) -> Vec<TestCase> {
     vec![
-        case("init_a", initial(board, Player(0)), vec![0,0,0,0,0]),
-        case("init_b", initial(board, Player(1)), vec![0,0,0,0,0]),
+        case("init_a", initial(board, Player(0)), vec![0,0,0,0]),
+        case("init_b", initial(board, Player(1)), vec![0,0,0,0]),
 
         case("mild_a", mild_a_advantage(board, Player(0)), vec![1,1,2,1]),
         case("mild_a", mild_a_advantage(board, Player(1)), vec![0,1,0,1]),
@@ -163,6 +163,15 @@ pub fn test_cases(board:&StandardBoard) -> Vec<TestCase> {
 
         case("any_trap_in_1", any_trap_in_1(board, Player(0)), vec![PLAYER_0_WIN] ),
         case("any_trap_in_1", any_trap_in_1(board, Player(1)), vec![PLAYER_1_WIN] ),
+    ]
+}
+
+pub fn focus_test_cases(board:&StandardBoard) -> Vec<TestCase> {
+    vec![
+        // case("a_in_1", a_in_1(board, Player(0)), vec![PLAYER_0_WIN, PLAYER_0_WIN] ),
+        case("a_in_1", a_in_1(board, Player(1)), vec![2, PLAYER_0_WIN]),
+        // case("a_in_2", a_in_2(board, Player(0)), vec![2,2,PLAYER_0_WIN, PLAYER_0_WIN] ),
+        case("a_in_2", a_in_2(board, Player(1)), vec![1,2,1, PLAYER_0_WIN] ),
     ]
 }
 
@@ -271,7 +280,7 @@ mod tests {
     // use game::santorini::*;
     use super::*;
 
-    #[test]
+    // #[test]
     fn minimax_vs_negamax() {
         let board = StandardBoard::new(ZobristHash::new_unseeded());
         let depth = 4;
@@ -284,30 +293,30 @@ mod tests {
      
     }
 
-    // #[test]
+    #[test]
     fn minimax_alphabeta() {
-        // assert!(time_test_cases::<MiniMaxAlphaBeta, SimpleHeightHeuristic>("MiniMax_AlphaBeta"));
+        assert!(time_test_cases::<MiniMaxAlphaBeta, SimpleHeightHeuristic>("MiniMax_AlphaBeta"));
     }
 
-    // #[test]
+    #[test]
     fn negamax_alphabeta() {
         assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>("NegaMax_AlphaBeta"));
     }   
 
-    // #[test]
+    #[test]
     fn negamax_alphabeta_exp() {
         assert!(time_test_cases::<NegaMaxAlphaBetaExp, SimpleHeightHeuristic>("NegaMax_AlphaBeta_Exp"));
     }
 
     // #[test]
     fn minimax() {
-        // assert!(time_test_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax"));
+        assert!(time_test_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax"));
 
     }
 
     // #[test]
     fn negamax() {
-        // assert!(time_test_cases::<NegaMax, SimpleHeightHeuristic>("NegaMax"));
+        assert!(time_test_cases::<NegaMax, SimpleHeightHeuristic>("NegaMax"));
     } 
 
     mod bench {
