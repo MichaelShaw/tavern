@@ -17,7 +17,14 @@ use tavern_core::HashMap;
 use std::collections::hash_map::Entry::*;
 
 fn main() {
-    tavern::app::run_app();
+    // use tavern_core::group_by;
+
+    // let bullshit = vec![1,3,2,5,6,1,23,5,6,72];
+    // let as_a_map = group_by(bullshit, |e| e % 2);
+
+    // println!("the stuff -> {:?}", as_a_map);
+
+    // tavern::app::run_app();
 
     // SimpleHeightHeuristic
     // NeighbourHeuristic
@@ -25,6 +32,99 @@ fn main() {
     // NegaMaxAlphaBetaExp
     
     // run_playouts();    
+
+    let mut service = ServiceState::new(RunnerDescription::RunnerA);
+    let msg_a = service.runner.run("_mymsg1_".into());
+    println!("msg a -> {}", msg_a);
+    service.reconfigure(RunnerDescription::RunnerB);
+    let msg_b = service.runner.run("_mymsg2_".into());
+    println!("msg b -> {}", msg_b);
+    // service.reconfigure(RunnerDescription::RunnerB);
+}
+
+struct ServiceState {
+    pub description: RunnerDescription,
+    pub runner: Box<Runner>,
+}
+
+impl ServiceState {
+    pub fn new(runner_description: RunnerDescription) -> ServiceState {
+        ServiceState {
+            description: runner_description,
+            runner: runner_for_description(runner_description),
+        }
+    }
+
+    pub fn reconfigure(&mut self, runner_description: RunnerDescription) {
+        if runner_description != self.description {
+            self.runner = runner_for_description(runner_description);
+            self.description = runner_description;
+        } 
+    }
+}
+
+fn runner_for_description(runner_description: RunnerDescription) -> Box<Runner> {
+    match runner_description {
+        RunnerDescription::RunnerA => Box::new(RunnerA {}),
+        RunnerDescription::RunnerB => Box::new(RunnerB::new(24)),
+    }
+}
+
+
+
+pub trait Scorer {
+    fn score() -> u64;
+}
+
+struct BigScorer {}
+impl Scorer for BigScorer {
+    fn score() -> u64 { 24 }
+}
+
+struct SmallScorer {}
+impl Scorer for SmallScorer {
+    fn score() -> u64 { 12 }
+}
+
+pub trait Runner {
+    // fn run<S>(&mut self, msg:String) -> String where S : Scorer;
+    fn run(&mut self, msg:String) -> String ; // where Self:Sized
+}
+
+struct RunnerA {}
+
+impl Runner for RunnerA {
+    // fn run<S>(&mut self, msg:String) -> String where S : Scorer {
+    //     format!("AAA {} -> {}", msg, S::score())
+    // }
+    fn run(&mut self, msg:String) -> String { // where  Self:Sized 
+        format!("AAA {}", msg)
+    }
+}
+
+struct RunnerB {
+    pub count: u64
+}
+impl RunnerB {
+    fn new(use_count: u64) -> Self {
+        RunnerB {
+            count: use_count,
+        }
+    }
+}
+impl Runner for RunnerB {
+    // fn run<S>(&mut self, msg:String) -> String where S : Scorer {
+    //     format!("BBBB {} -> {}", msg, S::score())
+    // }
+    fn run(&mut self, msg:String) -> String { //  where Self:Sized 
+        format!("BBBB {}", msg)
+    }
+}
+
+#[derive(Eq, Debug, Copy, Clone, PartialEq)]
+enum RunnerDescription {
+    RunnerA,
+    RunnerB
 }
 
 fn run_playouts() {
@@ -35,11 +135,10 @@ fn run_playouts() {
 
     let mut rng = XorShiftRng::new_unseeded();
     
-    let (a, b) = aggregate_playouts::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, SimpleHeightHeuristic, NeighbourHeuristic, _>(4, 4, 200, &mut rng, &mut descriptions);    
-    let (a, b) = aggregate_playouts::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, SimpleHeightHeuristic, _>(4, 4, 200, &mut rng, &mut descriptions);    
+    let (a, b) = aggregate_playouts::<NegaMaxAlphaBetaExp, NegaMaxAlphaBetaExp, NeighbourHeuristic, NeighbourHeuristic, _>(5, 5, 1, &mut rng, &mut descriptions);    
 
-    // println!("A info -> {:?}", a);
-    // println!("B info -> {:?}", b);
+    println!("A info -> {:?}", a);
+    println!("B info -> {:?}", b);
 
     println!("\n\n\n=== PLAYOUTS DONE ==== \n\n");
     for (description, count) in descriptions.iter() {
