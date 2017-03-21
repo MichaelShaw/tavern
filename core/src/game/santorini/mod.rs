@@ -53,23 +53,26 @@ pub trait Heuristic {
 }
 
 pub trait Evaluator {
+    type EvaluatorState;
     fn name() -> String;
-    fn evaluate_moves<H>(board:&StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
+    fn new_state() -> Self::EvaluatorState;
+
+    fn evaluate_moves<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
         let start_time = time::precise_time_ns();
-        let (best_move, mut info) = Self::evaluate_moves_impl::<H>(board, state, depth);
+        let (best_move, mut info) = Self::evaluate_moves_impl::<H>(evaluator_state, board, state, depth);
         let duration_seconds = (time::precise_time_ns() - start_time) as f64 / 1_000_000_000f64;
         info.time += duration_seconds;
         (best_move, info)
     }
-    fn evaluate_moves_impl<H>(board:&StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic;
+    fn evaluate_moves_impl<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic;
 }
 
 // the manual/crap way
-pub fn principal_variant<E, H>(board:&StandardBoard, state:&State, depth:u8) where E: Evaluator, H: Heuristic {
+pub fn principal_variant<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, depth:u8) where E: Evaluator, H: Heuristic {
     println!("about to playout {}", board.print(state));
     let mut current_state = state.clone();
     for d in (1..(depth+1)).rev() {
-        let (best_move, _) = E::evaluate_moves::<H>(board, &current_state, d);
+        let (best_move, _) = E::evaluate_moves::<H>(evaluator_state, board, &current_state, d);
         println!("best move -> {:?}", best_move);
         if let Some((mve, _)) = best_move {
             current_state = board.apply(mve, &current_state);
@@ -92,6 +95,9 @@ pub fn adversarial_playout<EA, EB, AH, BH, R, F>(board:&StandardBoard, a_depth: 
     let mut a_info = EvaluatorInfo::new();
     let mut b_info = EvaluatorInfo::new();
 
+    let mut a_state = EA::new_state();
+    let mut b_state = EB::new_state();
+
     let mut move_count = 0;
     
     while winner == None {
@@ -101,9 +107,9 @@ pub fn adversarial_playout<EA, EB, AH, BH, R, F>(board:&StandardBoard, a_depth: 
         }
 
         let (best_move, info) = if state.to_move == Player(0) {
-            EA::evaluate_moves::<AH>(board, &state, depth)
+            EA::evaluate_moves::<AH>(&mut a_state, board, &state, depth)
         } else {
-            EB::evaluate_moves::<BH>(board, &state, depth)
+            EB::evaluate_moves::<BH>(&mut b_state, board, &state, depth)
         };
 
         if state.to_move == Player(0) {

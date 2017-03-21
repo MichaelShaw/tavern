@@ -175,29 +175,28 @@ pub fn focus_test_cases(board:&StandardBoard) -> Vec<TestCase> {
     ]
 }
 
-pub fn evaluate_state<E, H>(board:&StandardBoard, state:&State, max_depth: u8) -> (Vec<HeuristicValue>, EvaluatorInfo) where E: Evaluator, H:Heuristic {
+pub fn evaluate_state<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, max_depth: u8) -> (Vec<HeuristicValue>, EvaluatorInfo) where E: Evaluator, H:Heuristic {
     let mut info = EvaluatorInfo::new();
     let heuristic_values : Vec<_> = (1..(max_depth+1)).flat_map(|depth| {
-        let (moves, new_info) = E::evaluate_moves::<H>(board, state, depth);
+        let (moves, new_info) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);
         info += new_info;
         moves.iter().map(|&(_, sc)| sc).take(1).collect::<Vec<_>>()
     }).collect();
     (heuristic_values,info)
 }
-
-pub fn test_all_cases<E, H>(name:&str) -> (u32, EvaluatorInfo) where E: Evaluator, H: Heuristic {
-    println!("==== Testing {} all cases =====", name);
+pub fn test_all_cases<E, H>() -> (u32, EvaluatorInfo) where E: Evaluator, H: Heuristic {
+    println!("==== Testing {} all cases =====", E::name());
     let mut info = EvaluatorInfo::new();
     let board = StandardBoard::new(ZobristHash::new_unseeded());
     let mut error_cases = 0;
     let cases = test_cases(&board);
+
+    let mut evaluator_state = E::new_state();
     
     for case in &cases {
         println!("Testing {} to move {:?}", case.name, case.state.to_move);
 
-
-
-        let (scores, new_info) = evaluate_state::<E, H>(&board, &case.state, case.scores.len() as u8);
+        let (scores, new_info) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, case.scores.len() as u8);
         info += new_info.clone();
 
 
@@ -211,35 +210,40 @@ pub fn test_all_cases<E, H>(name:&str) -> (u32, EvaluatorInfo) where E: Evaluato
     }
 
     if error_cases > 0 {
-        println!("{}", format!("==== {:?} had {}/{} error cases", name, error_cases, cases.len()));
+        println!("{}", format!("==== {:?} had {}/{} error cases", E::name(), error_cases, cases.len()));
     }
 
     (error_cases, info)
 }
 
-pub fn time_test_cases<E, H>(name: &str) -> bool where E: Evaluator, H: Heuristic {
-    let (v, info) = test_all_cases::<E, H>(name);
+pub fn time_test_cases<E, H>() -> bool where E: Evaluator, H: Heuristic {
+
+    let (v, info) = test_all_cases::<E, H>();
+
+
 
     if v > 0 {
-        println!("{}", format!("testing {} info {:?}", name, info).red());    
+        println!("{}", format!("testing {} info {:?}", E::name(), info).red());    
     } else {
-        println!("{}", format!("testing {} info -> {:?}", name, info).green());    
+        println!("{}", format!("testing {} info -> {:?}", E::name(), info).green());    
     }
     
     v == 0
 }
 
-pub fn time_exploration<E, H>(name:&str, depth:u8) -> EvaluatorInfo where E: Evaluator, H: Heuristic  {
+pub fn time_exploration<E, H>(depth:u8) -> EvaluatorInfo where E: Evaluator, H: Heuristic  {
     let mut info = EvaluatorInfo::new();
     let board = StandardBoard::new(ZobristHash::new_unseeded());
     let cases = test_cases(&board);
 
+    let mut evaluator_state = E::new_state();
+
     for case in &cases {
-        let (_, new_info) = evaluate_state::<E, H>(&board, &case.state, depth);
+        let (_, new_info) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, depth);
         info += new_info;
     }
 
-    println!("{}", format!("PERFORMANCE TIMING {} info -> {:?}", name, info).green());    
+    println!("{}", format!("PERFORMANCE TIMING {} info -> {:?}", E::name(), info).green());    
     info
 }
 
@@ -249,7 +253,7 @@ fn evaluate_cross_state(board: &StandardBoard, state:&State, depth: u8) {
     println!("{}", board.print(&state));
 
 
-    let (minimax_best_move, minimax_info) = MiniMax::evaluate_moves_impl::<SimpleHeightHeuristic>(&board, &state, depth);
+    let (minimax_best_move, minimax_info) = MiniMax::evaluate_moves_impl::<SimpleHeightHeuristic>(&mut (), &board, &state, depth);
 
     println!("\n\n=== MINIMAX ===");
     println!("\nmoves -> {:?}",minimax_best_move);
@@ -261,12 +265,11 @@ fn evaluate_cross_state(board: &StandardBoard, state:&State, depth: u8) {
     // println!("\nmoves -> {:?}", negamax_moves);
     // println!("\ninfo -> {:?}", negamax_info);
 
-    let (minimax_alphabeta_best_move, minimax_alphabeta_info) = MiniMaxAlphaBeta::evaluate_moves_impl::<SimpleHeightHeuristic>(&board, &state, depth);
+    let (minimax_alphabeta_best_move, minimax_alphabeta_info) = MiniMaxAlphaBeta::evaluate_moves_impl::<SimpleHeightHeuristic>(&mut (), &board, &state, depth);
 
     println!("\n\n=== MINIMAX ALPHABETA ===");
-    println!("\nmoves -> {:?}", minimax_alphabeta_best_move, );
-    println!("\ninfo -> {:?}", minimax_info);
-
+    println!("\nmoves -> {:?}", minimax_alphabeta_best_move);
+    println!("\ninfo -> {:?}", minimax_alphabeta_info);
 
     // let (negamax_alphabeta_moves, negamax_alphabeta_info) = NegaMaxAlphaBeta::evaluate_moves_impl::<SimpleHeightHeuristic>(&board, &state, depth);
     // let negamax_alphabeta_winners = winners(&negamax_alphabeta_moves);
@@ -280,43 +283,39 @@ mod tests {
     // use game::santorini::*;
     use super::*;
 
-    // #[test]
+    #[test]
     fn minimax_vs_negamax() {
         let board = StandardBoard::new(ZobristHash::new_unseeded());
         let depth = 4;
         evaluate_cross_state(&board, &a_blockable(&board, Player(1)), depth);
         // evaluate_cross_state(&board, &b_blockable(&board, Player(0)), depth);
         
-        
-        
-
-     
     }
 
     #[test]
     fn minimax_alphabeta() {
-        assert!(time_test_cases::<MiniMaxAlphaBeta, SimpleHeightHeuristic>("MiniMax_AlphaBeta"));
+        assert!(time_test_cases::<MiniMaxAlphaBeta, SimpleHeightHeuristic>());
     }
 
     #[test]
     fn negamax_alphabeta() {
-        assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>("NegaMax_AlphaBeta"));
+        assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>());
     }   
 
     #[test]
     fn negamax_alphabeta_exp() {
-        assert!(time_test_cases::<NegaMaxAlphaBetaExp, SimpleHeightHeuristic>("NegaMax_AlphaBeta_Exp"));
+        assert!(time_test_cases::<NegaMaxAlphaBetaExp, SimpleHeightHeuristic>());
     }
 
-    // #[test]
+    #[test]
     fn minimax() {
-        assert!(time_test_cases::<MiniMax, SimpleHeightHeuristic>("MiniMax"));
+        assert!(time_test_cases::<MiniMax, SimpleHeightHeuristic>());
 
     }
 
-    // #[test]
+    #[test]
     fn negamax() {
-        assert!(time_test_cases::<NegaMax, SimpleHeightHeuristic>("NegaMax"));
+        assert!(time_test_cases::<NegaMax, SimpleHeightHeuristic>());
     } 
 
     mod bench {
@@ -326,11 +325,10 @@ mod tests {
         // #[test]
         fn all() {
            println!("==== PERFORMANCE TESTING =======");
-           // time_exploration::<MiniMax, NeighbourHeuristic>("MiniMax", 3);
-            // time_exploration::<NegaMax, NeighbourHeuristic>("NegaMax", 4);
-           // time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>("NegaMax_AlphaBeta", 4);
-
-           // time_exploration::<NegaMaxAlphaBetaExp, NeighbourHeuristic>("NegaMax_AlphaBeta_Exp", 4);
+           time_exploration::<MiniMax, NeighbourHeuristic>(3);
+           time_exploration::<NegaMax, NeighbourHeuristic>(4);
+           time_exploration::<NegaMaxAlphaBeta, NeighbourHeuristic>(4);
+           time_exploration::<NegaMaxAlphaBetaExp, NeighbourHeuristic>( 4);
         }
     }
 }

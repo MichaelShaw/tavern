@@ -32,7 +32,6 @@ fn main() {
     
     // run_playouts();    
 
-
     // let mut service = ServiceState::new(RunnerDescription::RunnerA);
     // let msg_a = service.runner.run("_mymsg1_".into());
     // println!("msg a -> {}", msg_a);
@@ -203,7 +202,7 @@ fn sample_principal_variant(depth:u8) {
     let mut new_state_b = board.apply(Move::PlaceBuilders { a: Slot(23), b: Slot(24) }, &new_state);
     new_state_b.buildings = new_state_b.buildings.set(Slot(5), 1);
 
-    principal_variant::<MiniMax, SimpleHeightHeuristic>(&board, &new_state_b, depth);
+    principal_variant::<MiniMax, SimpleHeightHeuristic>(&mut (), &board, &new_state_b, depth);
 }
 
 fn count_moves() {
@@ -264,7 +263,6 @@ fn do_stuff() {
 
     return;
     
- 
     
 }
 

@@ -14,12 +14,19 @@ fn color(player:Player) -> HeuristicValue {
 }
 
 impl Evaluator for NegaMax {
+    type EvaluatorState = ();
+
     fn name() -> String {
         "NegaMax".into()
     }
 
+    fn new_state() -> () {
+        ()
+    }
+     
+
     #[allow(unused_variables)]
-    fn evaluate_moves_impl<H>(board: &StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
+    fn evaluate_moves_impl<H>(evaluator_state: &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
         let color = color(state.to_move);
         let mut moves = Vec::with_capacity(200);
 
