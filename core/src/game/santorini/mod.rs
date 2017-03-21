@@ -16,6 +16,7 @@ pub mod board;
 pub mod state;
 pub mod transposition;
 pub mod evaluator_info;
+pub mod playout;
 
 pub mod tests;
 
