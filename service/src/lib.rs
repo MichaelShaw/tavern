@@ -6,3 +6,4 @@ extern crate time;
 extern crate rand;
 
 pub mod ai;
+pub mod play;

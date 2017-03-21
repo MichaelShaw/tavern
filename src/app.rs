@@ -74,7 +74,7 @@ pub fn run_app() {
     let texture_dir = TextureDirectory::for_path(&texture_path, hashset!["png".into()]);
     let font_dir = FontDirectory::for_path(&fonts_path);
 
-    let renderer = Renderer::new(shader_pair, texture_dir, font_dir, (800, 600)).expect("a renderer");
+    let renderer = Renderer::new(shader_pair, texture_dir, font_dir, (800, 600), "tavern".into()).expect("a renderer");
 
     let mut app = App {
         name: "mixalot".into(),
