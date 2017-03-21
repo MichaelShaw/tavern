@@ -175,10 +175,10 @@ pub fn focus_test_cases(board:&StandardBoard) -> Vec<TestCase> {
     ]
 }
 
-pub fn evaluate_state<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, max_depth: u8) -> (Vec<HeuristicValue>, EvaluatorInfo) where E: Evaluator, H:Heuristic {
+pub fn evaluate_state<E, H>(board:&StandardBoard, state:&State, max_depth: u8) -> (Vec<HeuristicValue>, EvaluatorInfo) where E: Evaluator, H:Heuristic {
     let mut info = EvaluatorInfo::new();
     let heuristic_values : Vec<_> = (1..(max_depth+1)).flat_map(|depth| {
-        let (moves, new_info) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);
+        let (moves, new_info) = E::evaluate_moves::<H>(board, state, depth);
         info += new_info;
         moves.iter().map(|&(_, sc)| sc).take(1).collect::<Vec<_>>()
     }).collect();
@@ -195,10 +195,11 @@ pub fn test_all_cases<E, H>(name:&str) -> (u32, EvaluatorInfo) where E: Evaluato
     for case in &cases {
         println!("Testing {} to move {:?}", case.name, case.state.to_move);
 
-        let mut evaluator_state = E::new_state(&board);
 
-        let (scores, new_info) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, case.scores.len() as u8);
+
+        let (scores, new_info) = evaluate_state::<E, H>(&board, &case.state, case.scores.len() as u8);
         info += new_info.clone();
+
 
         if scores != case.scores {
             // playout::<E, H>(&board, &case.state, case.scores.len() as u8);
@@ -234,8 +235,7 @@ pub fn time_exploration<E, H>(name:&str, depth:u8) -> EvaluatorInfo where E: Eva
     let cases = test_cases(&board);
 
     for case in &cases {
-        let mut evaluator_state = E::new_state(&board);
-        let (_, new_info) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, depth);
+        let (_, new_info) = evaluate_state::<E, H>(&board, &case.state, depth);
         info += new_info;
     }
 
@@ -249,26 +249,26 @@ fn evaluate_cross_state(board: &StandardBoard, state:&State, depth: u8) {
     println!("{}", board.print(&state));
 
 
-    let (minimax_best_move, minimax_info) = MiniMax::evaluate_moves_impl::<SimpleHeightHeuristic>(&mut (), &board, &state, depth);
+    let (minimax_best_move, minimax_info) = MiniMax::evaluate_moves_impl::<SimpleHeightHeuristic>(&board, &state, depth);
 
     println!("\n\n=== MINIMAX ===");
     println!("\nmoves -> {:?}",minimax_best_move);
     println!("\ninfo -> {:?}", minimax_info);
 
-    // let (negamax_moves, negamax_info) = NegaMax::evaluate_moves_impl::<SimpleHeightHeuristic>(&mut (), &board, &state, depth);
+    // let (negamax_moves, negamax_info) = NegaMax::evaluate_moves_impl::<SimpleHeightHeuristic>(&board, &state, depth);
     // let negamax_winners = winners(&negamax_moves);
     // println!("\n\n=== NEGAMAX ===");
     // println!("\nmoves -> {:?}", negamax_moves);
     // println!("\ninfo -> {:?}", negamax_info);
 
-    let (minimax_alphabeta_best_move, minimax_alphabeta_info) = MiniMaxAlphaBeta::evaluate_moves_impl::<SimpleHeightHeuristic>(&mut (), &board, &state, depth);
+    let (minimax_alphabeta_best_move, minimax_alphabeta_info) = MiniMaxAlphaBeta::evaluate_moves_impl::<SimpleHeightHeuristic>(&board, &state, depth);
 
     println!("\n\n=== MINIMAX ALPHABETA ===");
     println!("\nmoves -> {:?}", minimax_alphabeta_best_move, );
     println!("\ninfo -> {:?}", minimax_info);
 
 
-    // let (negamax_alphabeta_moves, negamax_alphabeta_info) = NegaMaxAlphaBeta::evaluate_moves_impl::<SimpleHeightHeuristic>(&mut (), &board, &state, depth);
+    // let (negamax_alphabeta_moves, negamax_alphabeta_info) = NegaMaxAlphaBeta::evaluate_moves_impl::<SimpleHeightHeuristic>(&board, &state, depth);
     // let negamax_alphabeta_winners = winners(&negamax_alphabeta_moves);
     // println!("\n\n=== NEGAMAX ALPHABETA ===");
     // println!("\ninfo -> {:?}", negamax_alphabeta_info);

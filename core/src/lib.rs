@@ -21,6 +21,8 @@ use std::collections::hash_map::Entry::*;
 pub type HashMap<K, V> = StdHashMap<K, V, BuildHasherDefault<FnvHasher>>;
 pub type HashSet<V> = StdHashSet<V, BuildHasherDefault<FnvHasher>>;
 
+// let bullshit = vec![1,3,2,5,6,1,23,5,6,72];
+// let as_a_map = group_by(bullshit, |e| e % 2);
 pub fn group_by<T, K, F>(items: Vec<T>, f: F) -> HashMap<K, Vec<T>> where F : Fn(&T) -> K, K : Eq + Hash {
 	let mut map : HashMap<K, Vec<T>> = HashMap::default();
 

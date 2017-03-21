@@ -32,6 +32,7 @@ impl AIService {
     pub fn new<E>() -> AIService where E: Evaluator {
         use self::Request::*;
 
+
         let (main_tx, ai_rx) = channel::<Request>();
         let (ai_tx, main_rx) = channel::<StateAnalysis>();
 
@@ -39,27 +40,18 @@ impl AIService {
             println!("ai server started");
 
             let board = StandardBoard::new(ZobristHash::new_unseeded());
-            let mut evaluator_state = E::new_state(&board);
 
-            loop {
-                match ai_rx.recv() {
-                    Ok(event) => {
-                        match event {
-                            Analysis(state) => {
-                                // NegaMax
-                                // NegaMaxAlphaBeta
-                                AIService::evaluate::<E, NeighbourHeuristic>(&mut evaluator_state, &board, &state, &ai_tx);
-                            },
-                            Shutdown => {
-                                println!("Ai shutdown requested");
-                                break;  
-                            }
-                        }
-                    }
-                    Err(recv_error) => {
-                        println!("Sound worker received error when reading from channel {:?}", recv_error);
-                        break;
+            while let Some(event) = ai_rx.recv().ok() {
+                match event {
+                    Analysis(state) => {
+                        // NegaMax
+                        // NegaMaxAlphaBeta
+                        AIService::evaluate::<E, NeighbourHeuristic>(&board, &state, &ai_tx);
                     },
+                    Shutdown => {
+                        println!("Ai shutdown requested");
+                        break;  
+                    }
                 }
             }
         });
@@ -90,7 +82,7 @@ impl AIService {
         }
     }
 
-    pub fn evaluate<E, H>(evaluator_state: &mut E::EvaluatorState, board: &StandardBoard, state:&State, send: &Sender<StateAnalysis>) where E: Evaluator, H: Heuristic {
+    pub fn evaluate<E, H>(board: &StandardBoard, state:&State, send: &Sender<StateAnalysis>) where E: Evaluator, H: Heuristic {
         println!("AI :: Asked for analysis");
         // println!("{}", board.print(&state));
         let score = SimpleHeightHeuristic::evaluate(board, state) * Self::player_multiplier(state.to_move);
@@ -103,7 +95,7 @@ impl AIService {
         };
 
         for depth in 1..(max_depth+1) {
-            let (best_move, info) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);  
+            let (best_move, info) = E::evaluate_moves::<H>(board, state, depth);  
 
             let best_move_score = best_move.map(|(_, score)| score);
             let winning_player = best_move_score.and_then(|score| AIService::winning_player(score));

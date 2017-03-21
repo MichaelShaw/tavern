@@ -18,13 +18,12 @@ use std::collections::hash_map::Entry::*;
 
 fn main() {
     // use tavern_core::group_by;
-
     // let bullshit = vec![1,3,2,5,6,1,23,5,6,72];
     // let as_a_map = group_by(bullshit, |e| e % 2);
 
     // println!("the stuff -> {:?}", as_a_map);
 
-    // tavern::app::run_app();
+    tavern::app::run_app();
 
     // SimpleHeightHeuristic
     // NeighbourHeuristic
@@ -33,12 +32,13 @@ fn main() {
     
     // run_playouts();    
 
-    let mut service = ServiceState::new(RunnerDescription::RunnerA);
-    let msg_a = service.runner.run("_mymsg1_".into());
-    println!("msg a -> {}", msg_a);
-    service.reconfigure(RunnerDescription::RunnerB);
-    let msg_b = service.runner.run("_mymsg2_".into());
-    println!("msg b -> {}", msg_b);
+
+    // let mut service = ServiceState::new(RunnerDescription::RunnerA);
+    // let msg_a = service.runner.run("_mymsg1_".into());
+    // println!("msg a -> {}", msg_a);
+    // service.reconfigure(RunnerDescription::RunnerB);
+    // let msg_b = service.runner.run("_mymsg2_".into());
+    // println!("msg b -> {}", msg_b);
     // service.reconfigure(RunnerDescription::RunnerB);
 }
 
@@ -203,7 +203,7 @@ fn sample_principal_variant(depth:u8) {
     let mut new_state_b = board.apply(Move::PlaceBuilders { a: Slot(23), b: Slot(24) }, &new_state);
     new_state_b.buildings = new_state_b.buildings.set(Slot(5), 1);
 
-    principal_variant::<MiniMax, SimpleHeightHeuristic>(&mut MiniMax::new_state(&board), &board, &new_state_b, depth);
+    principal_variant::<MiniMax, SimpleHeightHeuristic>(&board, &new_state_b, depth);
 }
 
 fn count_moves() {

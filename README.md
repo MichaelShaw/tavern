@@ -2,9 +2,10 @@
 Board game engine
 
 # Santorini
-- Degenerify things, trait objects have complex restrictions :-( No generics.
-- Iterative deepening test harness. Stateful test harness, construct an X with it's persistent state, ask it to run tests on various situations.
+- Degenerify things? Trait objects have complex restrictions :-( No generics. Hrm, not quite sure what to do.
+- What about the concept a description and a closed sum type of the evaluators. Shit, you could do away with any genericism whatsoever. 
 - Add something better than lerp for animation.
+- Request for RNG could be part of the AnalysisRequest ...
 
 ## Transposition
 - Store if depth is greater (better information about this)
