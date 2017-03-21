@@ -101,11 +101,11 @@ impl SantoriniGame {
             current_move_positions : Vec::new(),
         };
 
-        let ai_service = AIService::new::<NegaMaxAlphaBetaExp>();
+        let ai_service = AIService::new();
         
         match &player_game.interaction_state {
             &InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => {
-                ai_service.request_analysis(&player_game.board_state.state);   
+                ai_service.request_analysis(player_game.board_state.state.clone(), SearchMethod::NegaMaxAlphaBetaExp, 6, Some(30.0));   
             }
             _ => (),
         }
@@ -261,7 +261,7 @@ impl SantoriniGame {
         self.game.current_move_positions.clear();
         self.game.analysis = None;
         if self.game.cpu_players.contains(&self.game.board_state.state.player()) {
-            self.ai_service.request_analysis(&self.game.board_state.state);    
+            self.ai_service.request_analysis(self.game.board_state.state.clone(), SearchMethod::NegaMaxAlphaBetaExp, 6, Some(30.0));   
         }
         match_status
     }
@@ -280,7 +280,7 @@ impl SantoriniGame {
         };
 
         if self.game.cpu_players.contains(&self.game.board_state.state.player()) {
-            self.ai_service.request_analysis(&self.game.board_state.state);    
+            self.ai_service.request_analysis(self.game.board_state.state.clone(), SearchMethod::NegaMaxAlphaBetaExp, 6, Some(30.0));   
         }
     }
 

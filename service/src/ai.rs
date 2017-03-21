@@ -14,8 +14,14 @@ pub struct AIService {
     join_handle: JoinHandle<()>,
 }
 
+#[derive(Clone, Copy)]
+pub enum SearchMethod {
+    NegaMaxAlphaBetaExp
+}
+
+#[derive(Clone)]
 pub enum Request {
-    Analysis(State),
+    Analysis { state: State, search_method: SearchMethod, depth: u8, time_limit : Option<f64> },
     Shutdown,
 }
 
@@ -29,7 +35,7 @@ pub struct StateAnalysis {
 }
 
 impl AIService {
-    pub fn new<E>() -> AIService where E: Evaluator {
+    pub fn new() -> AIService {
         use self::Request::*;
 
         let (main_tx, ai_rx) = channel::<Request>();
@@ -40,14 +46,14 @@ impl AIService {
 
             let board = StandardBoard::new(ZobristHash::new_unseeded());
 
-            let mut evaluator_state = E::new_state();
+            let mut evaluator_state = NegaMaxAlphaBetaExp::new_state();
 
             while let Some(event) = ai_rx.recv().ok() {
                 match event {
-                    Analysis(state) => {
-                        // NegaMax
-                        // NegaMaxAlphaBeta
-                        AIService::evaluate::<E, NeighbourHeuristic>(&mut evaluator_state, &board, &state, &ai_tx);
+                    Analysis { state, search_method, depth, time_limit } => {
+                        match search_method {
+                            SearchMethod::NegaMaxAlphaBetaExp => AIService::evaluate::<NegaMaxAlphaBetaExp, NeighbourHeuristic>(&mut evaluator_state, &board, &state, depth, time_limit, &ai_tx),
+                        }
                     },
                     Shutdown => {
                         println!("Ai shutdown requested");
@@ -83,16 +89,16 @@ impl AIService {
         }
     }
 
-    pub fn evaluate<E, H>(evaluator_state: &mut E::EvaluatorState, board: &StandardBoard, state:&State, send: &Sender<StateAnalysis>) where E: Evaluator, H: Heuristic {
+    pub fn evaluate<E, H>(evaluator_state: &mut E::EvaluatorState, board: &StandardBoard, state:&State, depth:u8, time_limit: Option<f64>, send: &Sender<StateAnalysis>) where E: Evaluator, H: Heuristic {
         println!("AI :: Asked for analysis");
         // println!("{}", board.print(&state));
         let score = SimpleHeightHeuristic::evaluate(board, state) * Self::player_multiplier(state.to_move);
         println!("AI :: current score it as -> {:?} with {:?} to move", score, state.to_move);
 
         let max_depth = if state.builders_to_place() {
-            5
+            depth - 1
         }  else {
-            6
+            depth
         };
 
         for depth in 1..(max_depth+1) {
@@ -129,7 +135,7 @@ impl AIService {
             } else {
                 let next_timing_calc = info.time * (info.average_branch_factor() as f64);
                 println!("we're at depth {} time was {:.3} next timing calc is {:.3}", depth, info.time, next_timing_calc);
-                let terminate = depth == max_depth || next_timing_calc > 30.0;
+                let terminate = depth == max_depth || time_limit.iter().any(|&tl| next_timing_calc > tl);
                 send.send(StateAnalysis {
                     state: state.clone(),
                     depth: depth,
@@ -146,8 +152,14 @@ impl AIService {
         println!("AI :: Evaluation over");
     }
 
-    pub fn request_analysis(&self, state: &State) {
-        self.send.send(Request::Analysis(state.clone())).expect("can send analysis request to ai worker");
+    pub fn request_analysis(&self, state: State, search_method: SearchMethod, depth: u8, time_limit : Option<f64>) {
+        let request = Request::Analysis {
+            state: state,
+            search_method: search_method,
+            depth: depth,
+            time_limit: time_limit,
+        };
+        self.send.send(request).expect("can send analysis request to ai worker");
     }
 
     pub fn shutdown(self) {
