@@ -2,10 +2,12 @@
 Board game engine
 
 # Santorini
-- Degenerify things? Trait objects have complex restrictions :-( No generics. Hrm, not quite sure what to do.
-- What about the concept a description and a closed sum type of the evaluators. Shit, you could do away with any genericism whatsoever. 
+- Measure PV occurrences.
+- Build our first transpotition table + pv storage.
+- Easiest way to test storage is to search twice and count the nodes/check the PV TT retrieval count.
 - Add something better than lerp for animation.
 - Request for RNG could be part of the AnalysisRequest ...
+- Split off productivity library with group_by, contains etc? Hard to tell if this is a good idea or not.
 
 ## Transposition
 - Store if depth is greater (better information about this)
@@ -18,6 +20,7 @@ Board game engine
 
 ## Heuristic
 - Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
+- Remove trapped checking .... NeighbourHeuristic already scores trapped positions horifically.
  
 ### Bit board improvements
 - For each slot store a mask of it's adjacencies. Produce moves through intersection of masks.

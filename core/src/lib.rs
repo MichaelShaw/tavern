@@ -40,3 +40,7 @@ pub fn group_by<T, K, F>(items: Vec<T>, f: F) -> HashMap<K, Vec<T>> where F : Fn
 
 	map
 }
+
+pub fn contains<T, F>(opt: Option<T>, f: F) -> bool where F: Fn(&T) -> bool {
+	opt.iter().any(f)
+}

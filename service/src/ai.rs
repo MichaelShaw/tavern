@@ -1,6 +1,7 @@
 
 use tavern_core::game::santorini::*;
 use tavern_core::game::util::*;
+use tavern_core::*;
 
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Sender, Receiver};
@@ -135,7 +136,7 @@ impl AIService {
             } else {
                 let next_timing_calc = info.time * (info.average_branch_factor() as f64);
                 println!("we're at depth {} time was {:.3} next timing calc is {:.3}", depth, info.time, next_timing_calc);
-                let terminate = depth == max_depth || time_limit.iter().any(|&tl| next_timing_calc > tl);
+                let terminate = depth == max_depth || contains(time_limit, |&tl| next_timing_calc > tl);
                 send.send(StateAnalysis {
                     state: state.clone(),
                     depth: depth,
