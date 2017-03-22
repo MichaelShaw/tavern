@@ -19,6 +19,7 @@ Board game engine
 - Move towards highest opponent
 
 ## Heuristic
+- Some notion of how many moveable squares are you closer to. So if they're in file 3, and you're in file 4, they get recognition for being closer to file 1.
 - Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
 - Remove trapped checking .... NeighbourHeuristic already scores trapped positions horifically.
  

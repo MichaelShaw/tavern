@@ -84,10 +84,10 @@ const ANIMATION_WAIT : f64 = 1.0;
 
 impl SantoriniGame {
     pub fn new() -> SantoriniGame {
-        let rng = unseeded_rng();
+        let mut rng = unseeded_rng();
 
-        // let cpu_players = hashset![Player(rng.gen_range(0, 2))]; 
-        let cpu_players = hashset![Player(0)]; 
+        let cpu_players = hashset![Player(rng.gen_range(0, 2))]; 
+        // let cpu_players = hashset![Player(0)]; 
         
         let board_state = BoardState::new(StandardBoard::new(ZobristHash::new_unseeded()), State::initial());
         let tentative = board_state.tentative(&Vec::new(), None);
@@ -103,20 +103,22 @@ impl SantoriniGame {
 
         let ai_service = AIService::new();
         
-        match &player_game.interaction_state {
-            &InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => {
-                ai_service.request_analysis(player_game.board_state.state.clone(), SearchMethod::NegaMaxAlphaBetaExp, 6, Some(30.0));   
-            }
-            _ => (),
-        }
-
-        SantoriniGame {
+        let game = SantoriniGame {
             game: player_game,
             mouse_over_slot: None,
             atlas: SantoriniAtlas::build(),
             rand: rng,
             ai_service: ai_service,
+        };
+
+        match &game.game.interaction_state {
+            &InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => {
+                game.requiest_ai_analysis();
+            }
+            _ => (),
         }
+
+        game
     }
 
     pub fn update(&mut self, intersection: Option<Vec3>, input_state: &InputState, sound_event_sink: &mut Vec<SoundEvent>, delta_time: Seconds) {
@@ -235,9 +237,9 @@ impl SantoriniGame {
         }
     }
 
-    // pub fn handle_human_interaction(&mut self) {
-
-    // }
+    pub fn requiest_ai_analysis(&self) {
+        self.ai_service.request_analysis(self.game.board_state.state.clone(), SearchMethod::NegaMaxAlphaBetaExp, 4, 10, Some(30.0));   
+    }
 
     pub fn play_move(&mut self, mve: Move) -> MatchStatus {
         println!("PLAY MOVE");
@@ -261,7 +263,7 @@ impl SantoriniGame {
         self.game.current_move_positions.clear();
         self.game.analysis = None;
         if self.game.cpu_players.contains(&self.game.board_state.state.player()) {
-            self.ai_service.request_analysis(self.game.board_state.state.clone(), SearchMethod::NegaMaxAlphaBetaExp, 6, Some(30.0));   
+            self.requiest_ai_analysis();
         }
         match_status
     }
@@ -280,7 +282,7 @@ impl SantoriniGame {
         };
 
         if self.game.cpu_players.contains(&self.game.board_state.state.player()) {
-            self.ai_service.request_analysis(self.game.board_state.state.clone(), SearchMethod::NegaMaxAlphaBetaExp, 6, Some(30.0));   
+            self.requiest_ai_analysis();
         }
     }
 
