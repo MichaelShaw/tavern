@@ -288,8 +288,9 @@ mod tests {
 
     #[test]
     fn test_adverserial_playout() {
-        let board = StandardBoard::new(ZobristHash::new_unseeded());
-        let depth = 5;
+        let board = StandardBoard::new(ZobristHash::new_unseeded_secure());
+        // let board = StandardBoard::new(ZobristHash::new_unseeded());
+        let depth = 6;
 
         let mut move_number = 0;
 
@@ -306,7 +307,33 @@ mod tests {
             println!("");
         });
 
-        println!("winenr -> {:?}", winner);
+        println!("winner -> {:?}", winner);
+        println!("a info -> {:?}", a_info);
+        println!("b info -> {:?}", b_info);
+    }
+
+    // #[test]
+    fn test_adverserial_playout_old() {
+        let board = StandardBoard::new(ZobristHash::new_unseeded());
+        let depth = 5;
+
+        let mut move_number = 0;
+
+        println!("===== OLD starting negamax_ab ORIG adversarial playout =====");
+
+        let (winner, a_info, b_info) = iterative_adversarial_playout::<NegaMaxAlphaBeta, NeighbourHeuristic, _>(&board, depth, |state, mve, score| {
+            move_number += 1;
+
+            let h = NeighbourHeuristic::evaluate(&board, state);
+            println!("======= OLD MOVE {} =======", move_number);
+            println!("{:?} makes {:?} with expected score {}", state.next_player(), mve, score);
+            println!("{}", board.print(state));
+            println!("heuristic current state -> {}", h);
+            println!("");
+        });
+
+        println!("==== OLD =====");
+        println!("winner -> {:?}", winner);
         println!("a info -> {:?}", a_info);
         println!("b info -> {:?}", b_info);
     }

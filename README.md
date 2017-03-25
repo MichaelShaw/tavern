@@ -1,6 +1,9 @@
 # tavern
 Board game engine
 
+Check repeated hit rate for a given depth, how many exacts do we get.
+Check if iterative deepending helps.
+
 # Santorini
 - Measure PV occurrences.
 - Build our first transpotition table + pv storage.

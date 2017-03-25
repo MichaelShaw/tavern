@@ -334,7 +334,7 @@ impl StandardBoard {
 
                let build_at = build.0 as usize;
 
-               self.hash.switch_move + self.hash.builders[to_move][from.0 as usize] + self.hash.builders[to_move][to.0 as usize] + 
+                self.hash.switch_move + self.hash.builders[to_move][from.0 as usize] + self.hash.builders[to_move][to.0 as usize] + 
                 self.hash.buildings[build_at][original_height] + self.hash.buildings[build_at][original_height + 1]
             },
         }

@@ -8,6 +8,9 @@ pub struct EvaluatorInfo {
     pub pv_count : MoveCount,
     pub branch_factors : Vec<f64>,
     pub time : f64,
+    pub tt_valid : u64,
+    pub tt_suggest: u64,
+    pub tt_miss : u64,
 }
 
 impl EvaluatorInfo {
@@ -17,6 +20,9 @@ impl EvaluatorInfo {
             pv_count: 0,
             branch_factors: Vec::new(),
             time: 0.0,
+            tt_valid : 0,
+            tt_suggest: 0,
+            tt_miss : 0,
         }
     }
 
@@ -30,6 +36,9 @@ impl EvaluatorInfo {
             pv_count: 0,
             branch_factors : vec![branch_factor(move_count, depth)],
             time : 0.0_f64,
+            tt_valid : 0,
+            tt_suggest: 0,
+            tt_miss : 0,
         }
     }
 
@@ -47,7 +56,12 @@ impl fmt::Debug for EvaluatorInfo {
         let average_branch_factor = average(&self.branch_factors);
         let moves_per_second = self.move_count as f64 / self.time / 1000000.0;
         let pv_percentage = self.pv_count as f64 / (self.move_count as f64);
-        write!(f, "EvaluatorInfo {{ moves: {} ({:.2}M/second) pv nodes: {} ({:.2}%) average branch factor: {:.1} time: {:0.2}s }}", self.move_count, moves_per_second, self.pv_count, pv_percentage, average_branch_factor, self.time)
+        write!(f, "EvaluatorInfo {{ moves: {} ({:.2}M/second) pv nodes: {} ({:.2}%) average branch factor: {:.1} time: {:0.2}s transpotition (valid {} sugg {} miss {})}}", 
+            self.move_count, moves_per_second, self.pv_count, pv_percentage, average_branch_factor, self.time,
+            self.tt_valid,
+            self.tt_suggest,
+            self.tt_miss,
+        )
     }
 }
 
@@ -62,6 +76,9 @@ impl Add for EvaluatorInfo {
             pv_count: self.pv_count + other.pv_count,
             branch_factors : self_branch,
             time : self.time + other.time,
+            tt_valid : self.tt_valid + other.tt_valid,
+            tt_suggest: self.tt_suggest + other.tt_suggest,
+            tt_miss : self.tt_miss + other.tt_miss,
         }
     }
 }
@@ -72,6 +89,9 @@ impl AddAssign for EvaluatorInfo {
         self.pv_count += other.pv_count;
         self.branch_factors.extend_from_slice(&other.branch_factors);
         self.time += other.time;
+        self.tt_valid += other.tt_valid;
+        self.tt_suggest += other.tt_suggest;
+        self.tt_miss += other.tt_miss;
     }
 }
 

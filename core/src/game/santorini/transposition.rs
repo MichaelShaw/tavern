@@ -45,11 +45,29 @@ impl Add for StateHash {
 
 #[derive(Clone)]
 pub struct TranspositionTable {
-    pub mask: usize,
+    pub mask: u64,
     pub entries : Vec<TranspositionEntry>,
 }
 
 impl TranspositionTable {
+    pub fn location_for(&self, hash:StateHash) -> usize {
+        (hash.0 & self.mask) as usize
+    }
+
+    pub fn get(&self, hash:StateHash) -> Option<&TranspositionEntry> {
+        let loc = self.location_for(hash);
+        let entry = &self.entries[loc];
+        if entry.hash == hash {
+            Some(entry)
+        } else {
+            None    
+        }
+    }
+
+    pub fn put(&mut self, entry: TranspositionEntry) {
+        let loc = self.location_for(entry.hash);
+        self.entries[loc] = entry;
+    }
 
     pub fn approx_size_bytes(&self) -> usize {
         mem::size_of::<TranspositionEntry>() * self.entries.capacity()
@@ -67,7 +85,7 @@ impl TranspositionTable {
 
 
         TranspositionTable {
-            mask: mask,
+            mask: mask as u64,
             entries: entries,
         }
     }
@@ -84,7 +102,7 @@ pub struct ZobristHash {
 }
 
 use rand::Rng;
-use rand::XorShiftRng;
+use rand::{XorShiftRng, ChaChaRng};
 
 impl ZobristHash {
     pub fn new_unseeded() -> ZobristHash {
@@ -92,7 +110,7 @@ impl ZobristHash {
     }
     
     pub fn new_unseeded_secure() -> ZobristHash {
-        Self::new(&mut XorShiftRng::new_unseeded())
+        Self::new(&mut ChaChaRng::new_unseeded())
     }
 
     pub fn new<R : Rng>(r: &mut R) -> ZobristHash {
