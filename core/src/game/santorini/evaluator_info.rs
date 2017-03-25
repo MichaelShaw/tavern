@@ -46,7 +46,8 @@ impl fmt::Debug for EvaluatorInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let average_branch_factor = average(&self.branch_factors);
         let moves_per_second = self.move_count as f64 / self.time / 1000000.0;
-        write!(f, "EvaluatorInfo {{ moves: {} ({:.2}M/second) pv nodes: {} average branch factor: {:.1} time: {:0.2}s }}", self.move_count, moves_per_second, self.pv_count, average_branch_factor, self.time)
+        let pv_percentage = self.pv_count as f64 / (self.move_count as f64);
+        write!(f, "EvaluatorInfo {{ moves: {} ({:.2}M/second) pv nodes: {} ({:.2}%) average branch factor: {:.1} time: {:0.2}s }}", self.move_count, moves_per_second, self.pv_count, pv_percentage, average_branch_factor, self.time)
     }
 }
 

@@ -31,37 +31,50 @@ impl Evaluator for NegaMaxAlphaBetaExp {
 
         board.next_moves(state, &mut moves);
 
-        let mut total_moves = 0;
         let mut unsorted_moves : Vec<(Move, HeuristicValue)> = Vec::with_capacity(200);
 
         let mut move_stack = MoveStack::new();
 
         let mut alpha = WORST;
 
+        let mut info = EvaluatorInfo::new();
+
         for &mve in &moves {
-            let v = if board.ascension_winning_move(state, mve) {
+            let (v, count) = if board.ascension_winning_move(state, mve) {
                 let av = BEST * color;
-                alpha = max(alpha, av);
-                total_moves += 1;
-                av
+                if av > alpha {
+                    alpha = av;
+                    info.pv_count += 1;
+                }
+                // info.move_count += 1;
+                (av, 1)
             } else {
                 let new_state = board.apply(mve, state);
-                let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, WORST, -alpha, -color, &mut move_stack); // 
+                let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, WORST, -alpha, -color, &mut move_stack, &mut info); // 
                 let av = v * -color;
-                alpha = max(alpha, -v);
-                total_moves += move_count;
-                av
+                if -v > alpha {
+                    alpha = -v;
+                    info.pv_count += 1;
+                }
+                // alpha = max(alpha, -v);
+                (av, move_count)
             };
+            info.move_count += count;
             unsorted_moves.push((mve, v));
         }
+
+        
   
         unsorted_moves.sort_by_key(|&(_, hv)| hv * -color);
-        (unsorted_moves.first().cloned(), EvaluatorInfo::from_moves_depth(total_moves, depth))
+
+        info.branch_factors.push(branch_factor(info.move_count, depth));
+        
+        (unsorted_moves.first().cloned(), info)
     }
 }
 
 impl NegaMaxAlphaBetaExp {
-    pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8, alpha:HeuristicValue, beta:HeuristicValue, color: HeuristicValue, move_stack: &mut MoveStack) -> (HeuristicValue, MoveCount) where H: Heuristic {
+    pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8, alpha:HeuristicValue, beta:HeuristicValue, color: HeuristicValue, move_stack: &mut MoveStack, info: &mut EvaluatorInfo) -> (HeuristicValue, MoveCount) where H: Heuristic {
         let mut new_alpha = alpha;
         let mut new_beta = beta;
 
@@ -71,7 +84,7 @@ impl NegaMaxAlphaBetaExp {
 
         if depth == 0 {
             let v = if stack_begin == stack_end {
-                WORST
+               WORST
             } else {
                H::evaluate(board, state) * color
             };
@@ -82,6 +95,7 @@ impl NegaMaxAlphaBetaExp {
        
         let mut total_moves = 0;
         let mut best_observed = WORST;
+        let mut best_move : Option<Move> = None;
         
         for idx in stack_begin..stack_end {
             let mve = move_stack.moves[idx];
@@ -91,17 +105,33 @@ impl NegaMaxAlphaBetaExp {
                 (BEST, 1) // VICTORY
             } else {
                 let new_state = board.apply(mve, state);
-                let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, -beta, -new_alpha, -color, move_stack);
+                let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, -beta, -new_alpha, -color, move_stack, info);
                 (-v, move_count)
             };
-                
-            best_observed = max(score, best_observed);
+
+            if score > best_observed {
+                best_move = Some(mve);
+                best_observed = score;
+            }
+
+            // best_observed = max(score, best_observed);
             new_alpha = max(new_alpha, score);
+            total_moves += count;
             if beta <= new_alpha {
                 break;
             }
-            total_moves += count;
         }
+
+        let score_type = if best_observed <= alpha {
+            EntryType::Upper
+        } else if best_observed >= beta {
+            EntryType::Lower
+        } else {
+            info.pv_count += 1;
+            // println!("PV NODE mve {:?} depth {:?}", best_move,  depth);
+            EntryType::Exact
+        };
+
 
         move_stack.next = stack_begin;
         (best_observed, total_moves)

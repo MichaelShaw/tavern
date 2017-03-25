@@ -21,7 +21,7 @@ Board game engine
 ## Value sooner victories more valuable
 Perhaps we should reward faster victories than slower ones? Basically add remaining depth from to show how great it is?
 
-The problem with this is it murders the transpotition table, as various states will be evaluated differently based on 
+The problem with this is it murders the transpotition table, as various states will be evaluated differently based on how far they are away .... the effects of which I'm not confident in.
 
 ## Heuristic
 

@@ -289,7 +289,7 @@ mod tests {
     #[test]
     fn test_adverserial_playout() {
         let board = StandardBoard::new(ZobristHash::new_unseeded());
-        let depth = 4;
+        let depth = 5;
 
         let mut move_number = 0;
 
@@ -330,7 +330,7 @@ mod tests {
         assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>());
     }   
 
-    // #[test]
+    #[test]
     fn negamax_alphabeta_exp() {
         assert!(time_test_cases::<NegaMaxAlphaBetaExp, SimpleHeightHeuristic>());
     }
