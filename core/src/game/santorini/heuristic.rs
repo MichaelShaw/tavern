@@ -1,6 +1,8 @@
 use game::santorini::*;
 use std;
 
+pub const VICTORY : HeuristicValue = 32_000;
+
 pub const BEST : HeuristicValue = std::i16::MAX;
 pub const WORST : HeuristicValue = -std::i16::MAX; // to prevent overflow on negation
 

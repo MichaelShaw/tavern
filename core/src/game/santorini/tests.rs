@@ -278,12 +278,40 @@ fn evaluate_cross_state(board: &StandardBoard, state:&State, depth: u8) {
     
 }
 
+
+
+
 #[cfg(test)]
 mod tests {
     // use game::santorini::*;
     use super::*;
 
     #[test]
+    fn test_adverserial_playout() {
+        let board = StandardBoard::new(ZobristHash::new_unseeded());
+        let depth = 4;
+
+        let mut move_number = 0;
+
+        println!("starting negamax_ab_exp adversarial playout");
+
+        let (winner, a_info, b_info) = iterative_adversarial_playout::<NegaMaxAlphaBetaExp, NeighbourHeuristic, _>(&board, depth, |state, mve, score| {
+            move_number += 1;
+
+            let h = NeighbourHeuristic::evaluate(&board, state);
+            println!("======= MOVE {} =======", move_number);
+            println!("{:?} makes {:?} with expected score {}", state.next_player(), mve, score);
+            println!("{}", board.print(state));
+            println!("heuristic current state -> {}", h);
+            println!("");
+        });
+
+        println!("winenr -> {:?}", winner);
+        println!("a info -> {:?}", a_info);
+        println!("b info -> {:?}", b_info);
+    }
+
+    // #[test]
     fn minimax_vs_negamax() {
         let board = StandardBoard::new(ZobristHash::new_unseeded());
         let depth = 4;
@@ -292,28 +320,28 @@ mod tests {
         
     }
 
-    #[test]
+    // #[test]
     fn minimax_alphabeta() {
         assert!(time_test_cases::<MiniMaxAlphaBeta, SimpleHeightHeuristic>());
     }
 
-    #[test]
+    // #[test]
     fn negamax_alphabeta() {
         assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>());
     }   
 
-    #[test]
+    // #[test]
     fn negamax_alphabeta_exp() {
         assert!(time_test_cases::<NegaMaxAlphaBetaExp, SimpleHeightHeuristic>());
     }
 
-    #[test]
+    // #[test]
     fn minimax() {
         assert!(time_test_cases::<MiniMax, SimpleHeightHeuristic>());
 
     }
 
-    #[test]
+    // #[test]
     fn negamax() {
         assert!(time_test_cases::<NegaMax, SimpleHeightHeuristic>());
     } 

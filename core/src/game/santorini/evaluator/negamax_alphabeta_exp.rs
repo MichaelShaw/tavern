@@ -83,22 +83,24 @@ impl NegaMaxAlphaBetaExp {
         let mut total_moves = 0;
         let mut best_observed = WORST;
         
-        
         for idx in stack_begin..stack_end {
             let mve = move_stack.moves[idx];
-            if board.ascension_winning_move(state, mve) {
-                move_stack.next = stack_begin;
-                return (BEST, total_moves + 1);
+            let (score, count) = if board.ascension_winning_move(state, mve) {
+                // adding depth prioritizes close victories (forces ai to play smart, drag it out)
+                // I see this as more a teaching point rather than being rude
+                (BEST, 1) // VICTORY
             } else {
                 let new_state = board.apply(mve, state);
                 let (v, move_count) = Self::eval::<H>(board, &new_state, depth - 1, -beta, -new_alpha, -color, move_stack);
-                total_moves += move_count;
-                best_observed = max(-v, best_observed);
-                new_alpha = max(new_alpha, -v);
-                if beta <= new_alpha {
-                	break;
-                }
+                (-v, move_count)
+            };
+                
+            best_observed = max(score, best_observed);
+            new_alpha = max(new_alpha, score);
+            if beta <= new_alpha {
+                break;
             }
+            total_moves += count;
         }
 
         move_stack.next = stack_begin;

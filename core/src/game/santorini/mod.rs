@@ -31,6 +31,7 @@ pub use self::board::*;
 pub use self::state::*;
 pub use self::transposition::*;
 pub use self::move_stack::*;
+pub use self::playout::*;
 
 pub use self::evaluator_info::*;
 
@@ -88,57 +89,6 @@ pub fn principal_variant<E, H>(evaluator_state: &mut E::EvaluatorState, board:&S
 }
 
 
-pub fn adversarial_playout<EA, EB, AH, BH, R, F>(board:&StandardBoard, a_depth: u8, b_depth: u8, r: &mut R, mut on_move: F) -> (Player, EvaluatorInfo, EvaluatorInfo) where EA: Evaluator, EB: Evaluator, AH: Heuristic, BH: Heuristic, R: Rng, F: FnMut(&State, &Move, HeuristicValue) -> () {
-    let mut state = State::initial();
-
-    let mut winner : Option<Player> = None;
-
-    let mut a_info = EvaluatorInfo::new();
-    let mut b_info = EvaluatorInfo::new();
-
-    let mut a_state = EA::new_state();
-    let mut b_state = EB::new_state();
-
-    let mut move_count = 0;
-    
-    while winner == None {
-        let mut depth = if state.to_move == Player(0) { a_depth } else { b_depth }; 
-        if move_count < 2 {
-            depth = max(2, depth - 1);
-        }
-
-        let (best_move, info) = if state.to_move == Player(0) {
-            EA::evaluate_moves::<AH>(&mut a_state, board, &state, depth)
-        } else {
-            EB::evaluate_moves::<BH>(&mut b_state, board, &state, depth)
-        };
-
-        if state.to_move == Player(0) {
-            a_info += info;
-        } else {
-            b_info += info;
-        }
-
-        winner = if let Some((mve, score)) = best_move {
-            let is_winning_move = board.ascension_winning_move(&state, mve);
-            if is_winning_move {
-                let winner = state.to_move;
-                state = board.apply(mve, &state);
-                on_move(&state, &mve, score);
-                Some(winner) // swap it back
-            } else {
-                state = board.apply(mve, &state);
-                on_move(&state, &mve, score);
-                None
-            }
-        } else {
-            Some(state.next_player())
-        };
-        move_count += 1;
-    }
-
-    (winner.unwrap(), a_info, b_info)
-}
 
 
 // magics

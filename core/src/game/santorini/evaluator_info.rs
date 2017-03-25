@@ -5,6 +5,7 @@ use std::fmt;
 #[derive(Clone)]
 pub struct EvaluatorInfo {
     pub move_count : MoveCount,
+    pub pv_count : MoveCount,
     pub branch_factors : Vec<f64>,
     pub time : f64,
 }
@@ -13,6 +14,7 @@ impl EvaluatorInfo {
     pub fn new() -> EvaluatorInfo {
         EvaluatorInfo {
             move_count: 0,
+            pv_count: 0,
             branch_factors: Vec::new(),
             time: 0.0,
         }
@@ -25,6 +27,7 @@ impl EvaluatorInfo {
     pub fn from_moves_depth(move_count: MoveCount, depth: u8) -> EvaluatorInfo {
         EvaluatorInfo {
             move_count : move_count,
+            pv_count: 0,
             branch_factors : vec![branch_factor(move_count, depth)],
             time : 0.0_f64,
         }
@@ -43,7 +46,7 @@ impl fmt::Debug for EvaluatorInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let average_branch_factor = average(&self.branch_factors);
         let moves_per_second = self.move_count as f64 / self.time / 1000000.0;
-        write!(f, "EvaluatorInfo {{ moves: {} ({:.2}M/second) average branch factor: {:.1} time: {:0.2}s }}", self.move_count, moves_per_second, average_branch_factor, self.time)
+        write!(f, "EvaluatorInfo {{ moves: {} ({:.2}M/second) pv nodes: {} average branch factor: {:.1} time: {:0.2}s }}", self.move_count, moves_per_second, self.pv_count, average_branch_factor, self.time)
     }
 }
 
@@ -55,6 +58,7 @@ impl Add for EvaluatorInfo {
         self_branch.extend_from_slice(&other.branch_factors);
         EvaluatorInfo {
             move_count : self.move_count + other.move_count,
+            pv_count: self.pv_count + other.pv_count,
             branch_factors : self_branch,
             time : self.time + other.time,
         }
@@ -64,6 +68,7 @@ impl Add for EvaluatorInfo {
 impl AddAssign for EvaluatorInfo {
     fn add_assign(&mut self, other: EvaluatorInfo) {
         self.move_count += other.move_count;
+        self.pv_count += other.pv_count;
         self.branch_factors.extend_from_slice(&other.branch_factors);
         self.time += other.time;
     }

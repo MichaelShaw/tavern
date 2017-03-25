@@ -18,7 +18,13 @@ Board game engine
 - Build on a square one higher than an opponent 
 - Move towards highest opponent
 
+## Value sooner victories more valuable
+Perhaps we should reward faster victories than slower ones? Basically add remaining depth from to show how great it is?
+
+The problem with this is it murders the transpotition table, as various states will be evaluated differently based on 
+
 ## Heuristic
+
 - Some notion of how many moveable squares are you closer to. So if they're in file 3, and you're in file 4, they get recognition for being closer to file 1.
 - Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
 - Remove trapped checking .... NeighbourHeuristic already scores trapped positions horifically.
