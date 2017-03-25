@@ -238,7 +238,7 @@ impl SantoriniGame {
     }
 
     pub fn requiest_ai_analysis(&self) {
-        self.ai_service.request_analysis(self.game.board_state.state.clone(), SearchMethod::NegaMaxAlphaBetaExp, 4, 10, Some(30.0));   
+        self.ai_service.request_analysis(self.game.board_state.state.clone(), SearchMethod::NegaMaxAlphaBetaExp, 4, 16, Some(30.0));   
     }
 
     pub fn play_move(&mut self, mve: Move) -> MatchStatus {

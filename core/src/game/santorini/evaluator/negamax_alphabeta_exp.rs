@@ -13,9 +13,12 @@ fn color(player:Player) -> HeuristicValue {
 
 pub struct NegaMaxAlphaBetaExp { }
 
+use rand::Rng;
+use rand::{XorShiftRng, ChaChaRng};
 
 pub struct EvState {
     transposition: TranspositionTable,
+    pv_nodes : Vec<TranspositionEntry>,
 }
 
 impl Evaluator for NegaMaxAlphaBetaExp {
@@ -27,7 +30,8 @@ impl Evaluator for NegaMaxAlphaBetaExp {
 
     fn new_state() -> EvState {
         let state = EvState {
-            transposition : TranspositionTable::new(20)
+            transposition : TranspositionTable::new(24),
+            pv_nodes : Vec::new(),
         };
         println!("constructed state with size -> {} ({} bytes)", state.transposition.entries.len(), state.transposition.approx_size_bytes());
         state
@@ -60,7 +64,21 @@ impl Evaluator for NegaMaxAlphaBetaExp {
         let mut tt_best_move : Option<Move> = None;
         {
             if let Some(entry) = evaluator_state.transposition.get(hash)  {
-                if entry.depth > depth {
+                // let ok = &entry.state == state;
+                // if !ok {
+                //     println!("FUCK WE GOT A STATE MISMATCH!!!!");
+
+
+                //     println!("CURRENT {:?} state -> {}", hash, board.print(state));
+                //     println!("cur hash -> {:?}", board.hash(&state));
+                //     println!("ENTRY {:?} state -> {}", entry.hash, board.print(&entry.state));
+                //     println!("entry hash -> {:?}", board.hash(&entry.state));
+
+
+                //     panic!("FUCK THIS SHIT IM OUTTY");
+                // }
+                // println!("WE ROOT DID WE GET HIT -> {:?}", entry);
+                if entry.depth >= depth {
                     info.tt_valid += 1;
                     match entry.entry_type {
                         EntryType::Exact => {
@@ -92,9 +110,20 @@ impl Evaluator for NegaMaxAlphaBetaExp {
         }
 
         if let Some(mve) = tt_best_move {
+            // println!("we have a best move {:?} stack begin {} end {}", mve, stack_begin, stack_end);
             for idx in stack_begin..stack_end {
                 if move_stack.moves[idx] == mve {
+                    // println!("PREEEEE");
+                    // println!("ok we're at {} move is {:?}", idx, move_stack.moves[idx]);
+                    // println!("start is {:?}", move_stack.moves[stack_begin]);
+
                     move_stack.moves.swap(stack_begin, idx);
+                    // move_stack.moves.swap(stack_begin, idx);
+
+                    // println!("POST");
+                    // println!("ok we're at {} move is {:?}", idx, move_stack.moves[idx]);
+                    // println!("start is {:?}", move_stack.moves[stack_begin]);
+
                     break;
                 }
             }    
@@ -103,7 +132,7 @@ impl Evaluator for NegaMaxAlphaBetaExp {
         let mut best_move : Option<Move> = None;
         let mut best_observed = WORST;
 
-        for idx in 0..stack_end {
+        for idx in stack_begin..stack_end {
             let mve = move_stack.moves[idx];
             // get the fuckin move
             let (v, count) = if board.ascension_winning_move(state, mve) {
@@ -134,26 +163,33 @@ impl Evaluator for NegaMaxAlphaBetaExp {
             unsorted_moves.push((mve, v));
         }
 
+        for entry in &evaluator_state.pv_nodes {
+            evaluator_state.transposition.put(entry.clone());
+        }
+        evaluator_state.pv_nodes.clear();
 
-        let score_type = if best_observed <= alpha {
-            EntryType::Upper
-        } else if best_observed >= beta { // unsure if this should be beta
-            EntryType::Lower
-        } else {
-            info.pv_count += 1;
-            // println!("PV NODE mve {:?} depth {:?}", best_move,  depth);
-            EntryType::Exact
-        };
-
+        // let score_type = if best_observed <= alpha {
+        //     EntryType::Upper
+        // } else if best_observed >= beta { // unsure if this should be beta
+        //     EntryType::Lower
+        // } else {
+            
+        //     // println!("PV NODE mve {:?} depth {:?}", best_move,  depth);
+            
+        // };
+        info.pv_count += 1;
+        // put ROOT PV
         let entry = TranspositionEntry {
+            // state: state.clone(),
             hash: hash,
             value: best_observed,
-            entry_type: score_type,
+            entry_type: EntryType::Exact,
             depth: depth,
             best_move: best_move,
         };
         evaluator_state.transposition.put(entry);
         
+     
   
         unsorted_moves.sort_by_key(|&(_, hv)| hv * -color);
 
@@ -168,21 +204,37 @@ impl NegaMaxAlphaBetaExp {
         let mut new_alpha = alpha;
         let mut new_beta = beta;
 
+
         let mut tt_best_move : Option<Move> = None;
 
         {
             if let Some(entry) = ev_state.transposition.get(hash)  {
-                if entry.depth > depth {
+                // let ok = &entry.state == state;
+                // if !ok {
+                //     println!("FUCK WE GOT A STATE MISMATCH!!!!");
+
+
+                //     println!("CURRENT {:?} state -> {}", hash, board.print(state));
+                //     println!("cur hash -> {:?}", board.hash(&state));
+                //     println!("ENTRY {:?} state -> {}", entry.hash, board.print(&entry.state));
+                //     println!("entry hash -> {:?}", board.hash(&entry.state));
+
+
+                //     panic!("FUCK THIS SHIT IM OUTTY");
+                // }
+
+
+                if entry.depth >= depth {
                     info.tt_valid += 1;
                     match entry.entry_type {
                         EntryType::Exact => {
-                            return (entry.value, 0)
+                            return (entry.value, 0);
                         },
                         EntryType::Lower => {
                             new_alpha = max(new_alpha, entry.value);
                         },
                         EntryType::Upper => {
-                            new_beta = min(new_beta, entry.value)
+                            new_beta = min(new_beta, entry.value);
                         },
                     }
                     if new_alpha >= new_beta {
@@ -267,15 +319,17 @@ impl NegaMaxAlphaBetaExp {
         };
 
         let entry = TranspositionEntry {
+            // state: state.clone(),
             hash: hash,
             value: best_observed,
             entry_type: score_type,
             depth: depth,
             best_move: best_move,
         };
+        if score_type == EntryType::Exact {
+            ev_state.pv_nodes.push(entry.clone());
+        }
         ev_state.transposition.put(entry);
-
-
 
         move_stack.next = stack_begin;
         (best_observed, total_moves)

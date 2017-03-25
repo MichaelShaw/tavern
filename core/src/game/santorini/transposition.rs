@@ -9,8 +9,9 @@ pub enum EntryType {
     Upper,
 }
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 pub struct TranspositionEntry {
+    // pub state: State,
     pub hash: StateHash,
     pub value: HeuristicValue,
     pub entry_type: EntryType,
@@ -20,7 +21,8 @@ pub struct TranspositionEntry {
 }
 
 pub const NULL_ENTRY : TranspositionEntry = TranspositionEntry {
-    hash : StateHash(0),
+    // state: INITIAL_STATE,
+    hash: StateHash(0),
     value: 0,
     entry_type: EntryType::Exact,
     depth: 0, 
@@ -125,9 +127,17 @@ impl ZobristHash {
             *to_move = StateHash(r.next_u64());
         }
 
+        hash.switch_move = hash.to_move[0] + hash.to_move[1];
+
         for builder_hashes in &mut hash.builders {
-            for i in 1..5 { // leave first one null
-                builder_hashes[i] = StateHash(r.next_u64());
+            // for i in 1..5 { // leave first one null
+            //     builder_hashes[i] = StateHash(r.next_u64());
+            // }
+            // for i in 1..5 { // leave first one null
+            //     builder_hashes[i] = StateHash(r.next_u64());
+            // }
+            for i in builder_hashes {
+                *i = StateHash(r.next_u64());
             }
         }
 
@@ -136,8 +146,6 @@ impl ZobristHash {
                 *height = StateHash(r.next_u64());    
             }
         }
-
-        hash.switch_move = hash.to_move[0] + hash.to_move[1];
 
         hash
     }
@@ -148,6 +156,25 @@ mod tests {
     use game::santorini::*;
     use std::mem;
     use super::*;
+
+    // #[test]
+    fn my_zobist() {
+        use super::Move::*;
+
+        let hsh = ZobristHash::new_unseeded();
+        println!("hash -> {:?}", hsh);
+        let board = StandardBoard::new(hsh);
+
+        let state = INITIAL_STATE;
+
+        let a_state = board.apply(PlaceBuilders { a: Slot(0), b: Slot(6)}, &state);
+        let a_hash = board.hash(&a_state);
+        let b_state = board.apply(PlaceBuilders { a: Slot(0), b: Slot(7)}, &state);
+        let b_hash = board.hash(&b_state);
+
+        println!("a {:?} b {:?}", a_hash, b_hash);
+
+    }
 
     // #[test]
     fn sizes() {
@@ -163,6 +190,7 @@ mod tests {
     }
 
     pub const MAH_CAP : usize = 200_000_000;
+
 
     // #[test]
     fn hash() {

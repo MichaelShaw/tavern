@@ -126,6 +126,9 @@ pub trait Packed where Self: std::marker::Sized {
 
 pub const ONE_MASK : u32 = 1;
 
+pub const PACKED1_EMPTY : Packed1 = Packed1(0);
+pub const PACKED2_EMPTY : Packed2 = Packed2(0);
+
 impl Packed for Packed1 {
     fn empty() -> Packed1 {
         Packed1(0)

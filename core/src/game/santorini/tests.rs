@@ -288,7 +288,7 @@ mod tests {
 
     #[test]
     fn test_adverserial_playout() {
-        let board = StandardBoard::new(ZobristHash::new_unseeded_secure());
+        let board = StandardBoard::new(ZobristHash::new_unseeded());
         // let board = StandardBoard::new(ZobristHash::new_unseeded());
         let depth = 6;
 
@@ -313,9 +313,29 @@ mod tests {
     }
 
     // #[test]
+    fn test_repeat_depth() {
+        let board = StandardBoard::new(ZobristHash::new_unseeded_secure());
+        let mut state = State::initial();
+        state = board.apply(Move::PlaceBuilders { a: Slot(1), b: Slot(11) }, &state);
+        state = board.apply(Move::PlaceBuilders { a: Slot(2), b: Slot(12) }, &state);
+
+        let mut ev_state = NegaMaxAlphaBetaExp::new_state();
+        let depth = 4;
+
+        let (res_a, a_info) = NegaMaxAlphaBetaExp::evaluate_moves::<NeighbourHeuristic>(&mut ev_state, &board, &state, depth);
+        println!("res a -> {:?}", res_a);
+        println!("a info -> {:?}", a_info);
+        let (res_b, b_info) = NegaMaxAlphaBetaExp::evaluate_moves::<NeighbourHeuristic>(&mut ev_state, &board, &state, depth);
+        println!("res b -> {:?}", res_b);
+        
+        println!("b info -> {:?}", b_info);
+        
+    }
+
+    // #[test]
     fn test_adverserial_playout_old() {
         let board = StandardBoard::new(ZobristHash::new_unseeded());
-        let depth = 5;
+        let depth = 4;
 
         let mut move_number = 0;
 

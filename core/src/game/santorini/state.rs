@@ -10,6 +10,14 @@ pub struct State {
     pub to_move : Player,
 }
 
+pub const INITIAL_STATE : State =  State {
+    builder_locations: [[UNPLACED_BUILDER, UNPLACED_BUILDER], [UNPLACED_BUILDER, UNPLACED_BUILDER]],
+    buildings: PACKED2_EMPTY,
+    domes: PACKED1_EMPTY,
+    collision: PACKED1_EMPTY,
+    to_move: Player(0),
+};
+
 impl State {
     pub fn hash_height(&self, slot:Slot) -> usize { // should output 0-4
         if self.domes.get(slot) == 1 {

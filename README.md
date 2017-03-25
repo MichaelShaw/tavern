@@ -5,21 +5,22 @@ Check repeated hit rate for a given depth, how many exacts do we get.
 Check if iterative deepending helps.
 
 # Santorini
-- Measure PV occurrences.
-- Build our first transpotition table + pv storage.
-- Easiest way to test storage is to search twice and count the nodes/check the PV TT retrieval count.
+- Termination Cell (seriously)
+- Move ordering
+- Better board representation (all maps/masks)
 - Add something better than lerp for animation.
 - Request for RNG could be part of the AnalysisRequest ...
 - Split off productivity library with group_by, contains etc? Hard to tell if this is a good idea or not.
 
 ## Transposition
-- Store if depth is greater (better information about this)
 - Staleness/pass flag, one byte, which iteration it's found on? some notion of age?
 
 ## Move Ordering
 - Move up
+- Build adjacency/height
 - Build on a square one higher than an opponent 
 - Move towards highest opponent
+
 
 ## Value sooner victories more valuable
 Perhaps we should reward faster victories than slower ones? Basically add remaining depth from to show how great it is?
@@ -27,7 +28,6 @@ Perhaps we should reward faster victories than slower ones? Basically add remain
 The problem with this is it murders the transpotition table, as various states will be evaluated differently based on how far they are away .... the effects of which I'm not confident in.
 
 ## Heuristic
-
 - Some notion of how many moveable squares are you closer to. So if they're in file 3, and you're in file 4, they get recognition for being closer to file 1.
 - Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
 - Remove trapped checking .... NeighbourHeuristic already scores trapped positions horifically.
@@ -38,7 +38,6 @@ The problem with this is it murders the transpotition table, as various states w
 ### Other concerns
 - Principal Variation
 - Aspiration windows (alpha beta) based on last iterative deepening pass?
-- Transposition tables
 - Late Move Reduction
 - "Quiet" moves, quinesence search.
 
