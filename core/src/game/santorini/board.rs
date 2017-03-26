@@ -1,6 +1,7 @@
 
 use pad::PadStr;
 use game::santorini::*;
+use game::*;
 
 pub const SLOT_COUNT : usize = 25;
 
@@ -8,6 +9,7 @@ pub const SLOT_COUNT : usize = 25;
 pub struct StandardBoard {
     pub slots : [Slot; SLOT_COUNT],
     pub adjacencies : [[Slot ; 8] ; SLOT_COUNT],
+    pub packed_adjacencies : [Packed1 ; SLOT_COUNT],
     pub transforms : [SlotTransform; 7],
     pub hash : ZobristHash,
 }
@@ -82,6 +84,8 @@ impl StandardBoard {
         let mut slots = [Slot(0) ; 25];
         let mut adjacencies = [[NONE ; 8] ; 25];
 
+        let mut packed_adjacencies = [PACKED1_EMPTY ; SLOT_COUNT];
+
         for i in 0..25 {
             let slot = Slot(i as i8);
             slots[i] = slot;
@@ -92,20 +96,29 @@ impl StandardBoard {
 
             let mut j = 0;
 
+
+            let mut packed = PACKED1_EMPTY;
+
             for nx in (x-1)..(x+2) {
                 for ny in (y-1)..(y+2) {
                     let adjacent_position = Position { x: nx, y : ny };
                     if !(nx == x && ny == y) && nx >= 0 && nx < (BOARD_SIZE as i8) && ny >= 0 && ny < (BOARD_SIZE as i8) {
-                        adjacencies[i][j] = StandardBoard::slot(adjacent_position);
+                        let slot = StandardBoard::slot(adjacent_position);
+                        adjacencies[i][j] = slot;
                         j += 1;
+
+                        packed.0 |= (1 << slot.0);
                     }
                 }
             }
+
+            packed_adjacencies[i] = packed;
         }
 
         let mut board = StandardBoard {
             slots: slots,
             adjacencies: adjacencies,
+            packed_adjacencies: packed_adjacencies,
             transforms: [EMPTY_SLOT_TRANSFORM; 7],
             hash: hash,
         };

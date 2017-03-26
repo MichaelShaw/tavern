@@ -66,7 +66,44 @@ impl StandardBoard {
 
 
     pub fn new_next_moves<T : MoveSink>(&self, state:&NewState, move_sink: &mut T) {
+        let player_to_move = state.to_move;
+        let builders = state.builders[player_to_move.0 as usize];
+        let builders_to_place = builders.0 == 0;
 
+
+        let collision = state.collision;
+
+        if builders_to_place {
+            let mut seen : HashSet<Packed1> = HashSet::default();
+
+            // place them
+            for a in 0..25 {
+                let a_mask = 1 << a;
+                if a_mask & collision.0 == 0 {
+                    for b in (a+1)..25 {
+                        let b_mask = 1 << b;
+                        if b_mask & collision.0 == 0 {
+                            let both_placed = Packed1(a_mask | b_mask);
+                            let mut dupe = false;
+
+                            // PERFORM TRANSFORM/ROTATION HERE
+
+                            if !dupe {
+                                move_sink.sink(Move::PlaceBuilders { a: Slot(a), b:Slot(b) });    
+                                seen.insert(both_placed);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            for builder_location in builders.iter() {
+                // let moveable_adjacencies = board.packed_adjacencies[builder_location.0 as usize] & (!collision);
+
+
+
+            }
+        }
     }
 
     pub fn new_ascension_winning_move(&self, state:&NewState, mve: Move) -> bool {
@@ -77,7 +114,7 @@ impl StandardBoard {
     }
 
     pub fn new_perft(&self, state: &NewState, depth: usize, move_stack : &mut MoveStack) -> u64 {
-         if depth == 0 {
+        if depth == 0 {
             return 1;
         }
 
@@ -140,11 +177,14 @@ mod tests {
     // use game::santorini::*;
     use super::*;
 
-    #[test]
+    // #[test]
     fn test_perft() {
         let mut move_stack = MoveStack::new();
 
         let board = StandardBoard::new(ZobristHash::new_unseeded());
+
+        
+
         let state = State::initial();
         let depth = 4;
         let start = time::precise_time_ns();
@@ -162,6 +202,10 @@ mod tests {
         let mut move_stack = MoveStack::new();
 
         let board = StandardBoard::new(ZobristHash::new_unseeded());
+
+        println!("adjacencies -> {:?}", board.adjacencies);
+        println!("packed adjacencies -> {:?}", board.packed_adjacencies);
+
         let state = INITIAL_NEW_STATE;
         let depth = 4;
         let start = time::precise_time_ns();
