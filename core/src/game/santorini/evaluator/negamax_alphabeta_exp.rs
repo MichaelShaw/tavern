@@ -42,9 +42,6 @@ impl Evaluator for NegaMaxAlphaBetaExp {
     fn evaluate_moves_impl<H>(evaluator_state: &mut EvState, board: &StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
         let color = color(state.to_move);
 
-
-        
-
         let mut unsorted_moves : Vec<(Move, HeuristicValue)> = Vec::with_capacity(200);
 
         let mut move_stack = MoveStack::new();
@@ -148,7 +145,7 @@ impl Evaluator for NegaMaxAlphaBetaExp {
             } else {
                 let new_state = board.apply(mve, state);
                 let delta_hash = board.delta_hash(state, mve);
-                let (v, move_count) = Self::eval::<H>(board, &new_state, hash + delta_hash, depth - 1, -beta, -alpha, -color, &mut move_stack, &mut info, evaluator_state); // 
+                let (v, move_count) = Self::eval::<H>(board, &new_state, hash ^ delta_hash, depth - 1, -beta, -alpha, -color, &mut move_stack, &mut info, evaluator_state); // 
                 let av = v * -color;
                 if -v > alpha {
                     alpha = -v;
@@ -291,7 +288,7 @@ impl NegaMaxAlphaBetaExp {
             } else {
                 let new_state = board.apply(mve, state);
                 let delta_hash = board.delta_hash(state, mve);
-                let (v, move_count) = Self::eval::<H>(board, &new_state, hash + delta_hash, depth - 1, -new_beta, -new_alpha, -color, move_stack, info, ev_state);
+                let (v, move_count) = Self::eval::<H>(board, &new_state, hash ^ delta_hash, depth - 1, -new_beta, -new_alpha, -color, move_stack, info, ev_state);
                 (-v, move_count)
             };
 

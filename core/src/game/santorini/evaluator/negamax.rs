@@ -23,7 +23,6 @@ impl Evaluator for NegaMax {
     fn new_state() -> () {
         ()
     }
-     
 
     #[allow(unused_variables)]
     fn evaluate_moves_impl<H>(evaluator_state: &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {

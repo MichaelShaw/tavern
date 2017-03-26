@@ -9,9 +9,6 @@ pub struct Player(pub i8);
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Slot(pub i8);
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
-pub struct Packed1(pub u32);
-
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct SlotTransform {
     pub slots : [Slot; 25]
@@ -118,46 +115,12 @@ pub const ROTATE_180 : Transform = Transform { m00: -1, m01: 0, m10: 0, m11: -1}
 pub const ROTATE_270 : Transform = Transform { m00: 0, m01: -1, m10: 1, m11: 0};
 
 
-pub trait Packed where Self: std::marker::Sized {
-    fn empty() -> Self;
-    fn get(&self, slot: Slot) -> u8;
-    fn set(&self, slot: Slot, value: u8) -> Self;
-}
 
 pub const ONE_MASK : u32 = 1;
 
-pub const PACKED1_EMPTY : Packed1 = Packed1(0);
+
 pub const PACKED2_EMPTY : Packed2 = Packed2(0);
 
-impl Packed for Packed1 {
-    fn empty() -> Packed1 {
-        Packed1(0)
-    }
-
-    fn get(&self, slot : Slot) -> u8 {
-        ((self.0 >> slot.0) & ONE_MASK) as u8
-    }
-
-    fn set(&self, slot : Slot, value: u8) -> Packed1 {
-        let remove_mask : u32 = (1 << slot.0) ^ ALL_MASK_32;
-        Packed1((self.0 & remove_mask) | ((value as u32) << slot.0))
-    }
-}
-
-impl fmt::Debug for Packed1 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str("Packed1(\n").unwrap();
-        for y in 0..5 {
-            f.write_str("  ").unwrap();
-            for x in 0..5 {
-                let on = self.get(Slot(y * 5 + x ));
-                write!(f, "{}", on).unwrap();
-            }
-            f.write_str("\n").unwrap();
-        }
-        f.write_str(")\n")
-    }
-}
 
 pub const TWO_MASK : u64 = 3;
 pub const ALL_MASK_64 : u64 = 0xffffffffffffffff;

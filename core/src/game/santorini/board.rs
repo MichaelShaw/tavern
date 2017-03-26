@@ -22,7 +22,6 @@ impl MoveSink for Vec<Move> {
     }
 }
 
-
 impl StandardBoard {
     pub fn transform<F>(&self, f: F) -> SlotTransform where F: Fn(Position) -> Position {
         let mut transform = SlotTransform { slots: [Slot(0); 25] };
@@ -264,13 +263,13 @@ impl StandardBoard {
         for i in 0..BUILDERS {
             for &bl in &state.builder_locations[i] {
                 if Self::valid(bl) {
-                    hash = hash + self.hash.builders[i as usize][bl.0 as usize];
+                    hash = hash ^ self.hash.builders[i as usize][bl.0 as usize];
                 }
             }
         }
 
         for &sl in &self.slots {
-            hash = hash + self.hash.buildings[sl.0 as usize][state.hash_height(sl)];
+            hash = hash ^ self.hash.buildings[sl.0 as usize][state.hash_height(sl)];
         }
 
         hash
@@ -325,7 +324,7 @@ impl StandardBoard {
         match mve {
             Move::PlaceBuilders { a, b } => {
                let to_move = state.to_move.0 as usize;
-               self.hash.switch_move + self.hash.builders[to_move][a.0 as usize] + self.hash.builders[to_move][b.0 as usize]
+               self.hash.switch_move ^ self.hash.builders[to_move][a.0 as usize] ^ self.hash.builders[to_move][b.0 as usize]
             },
             Move::Move { from, to, build } => {
                let to_move = state.to_move.0 as usize;
@@ -334,8 +333,8 @@ impl StandardBoard {
 
                let build_at = build.0 as usize;
 
-                self.hash.switch_move + self.hash.builders[to_move][from.0 as usize] + self.hash.builders[to_move][to.0 as usize] + 
-                self.hash.buildings[build_at][original_height] + self.hash.buildings[build_at][original_height + 1]
+                self.hash.switch_move ^ self.hash.builders[to_move][from.0 as usize] ^ self.hash.builders[to_move][to.0 as usize] ^ 
+                self.hash.buildings[build_at][original_height] ^ self.hash.buildings[build_at][original_height + 1]
             },
         }
     }

@@ -5,7 +5,7 @@ Check repeated hit rate for a given depth, how many exacts do we get.
 Check if iterative deepending helps.
 
 # Santorini
-- Termination Cell (seriously)
+- Termination Cell + request tracking (seriously)
 - Move ordering
 - Better board representation (all maps/masks)
 - Add something better than lerp for animation.

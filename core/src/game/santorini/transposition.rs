@@ -35,12 +35,12 @@ pub struct StateHash(pub u64);
 
 pub const STATE_HASH_ZERO : StateHash = StateHash(0);
 
-use std::ops::Add;
+use std::ops::BitXor;
 
-impl Add for StateHash {
+impl BitXor for StateHash {
     type Output = StateHash;
 
-    fn add(self, other: StateHash) -> StateHash {
+    fn bitxor(self, other: StateHash) -> StateHash {
         StateHash(self.0 ^ other.0)
     }
 }
@@ -127,7 +127,7 @@ impl ZobristHash {
             *to_move = StateHash(r.next_u64());
         }
 
-        hash.switch_move = hash.to_move[0] + hash.to_move[1];
+        hash.switch_move = hash.to_move[0] ^ hash.to_move[1];
 
         for builder_hashes in &mut hash.builders {
             // for i in 1..5 { // leave first one null
@@ -173,7 +173,6 @@ mod tests {
         let b_hash = board.hash(&b_state);
 
         println!("a {:?} b {:?}", a_hash, b_hash);
-
     }
 
     // #[test]
@@ -281,7 +280,7 @@ mod tests {
         let mut new_state = state.clone();
         let mut new_hash = hash;
         for &mve in moves {
-            new_hash = new_hash + board.delta_hash(&new_state, mve);
+            new_hash = new_hash ^ board.delta_hash(&new_state, mve);
             new_state = board.apply(mve, &new_state);
             println!("post {:?} hash is {:?}", mve, new_hash );
         }

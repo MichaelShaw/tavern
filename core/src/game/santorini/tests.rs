@@ -286,7 +286,7 @@ mod tests {
     // use game::santorini::*;
     use super::*;
 
-    #[test]
+    // #[test]
     fn test_adverserial_playout() {
         let board = StandardBoard::new(ZobristHash::new_unseeded());
         // let board = StandardBoard::new(ZobristHash::new_unseeded());
@@ -377,7 +377,7 @@ mod tests {
         assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>());
     }   
 
-    #[test]
+    // #[test]
     fn negamax_alphabeta_exp() {
         assert!(time_test_cases::<NegaMaxAlphaBetaExp, SimpleHeightHeuristic>());
     }
