@@ -8,19 +8,15 @@ Check if iterative deepending helps.
 - Termination Cell + request tracking (seriously)
 - Move ordering
 - Better board representation (all maps/masks)
-- Add something better than lerp for animation.
+- Add something better than lerp for animation? Would a spring or bias curve be that much better?
 - Request for RNG could be part of the AnalysisRequest ...
 - Split off productivity library with group_by, contains etc? Hard to tell if this is a good idea or not.
-
-## Transposition
-- Staleness/pass flag, one byte, which iteration it's found on? some notion of age?
 
 ## Move Ordering
 - Move up
 - Build adjacency/height
 - Build on a square one higher than an opponent 
 - Move towards highest opponent
-
 
 ## Value sooner victories more valuable
 Perhaps we should reward faster victories than slower ones? Basically add remaining depth from to show how great it is?
@@ -31,9 +27,6 @@ The problem with this is it murders the transpotition table, as various states w
 - Some notion of how many moveable squares are you closer to. So if they're in file 3, and you're in file 4, they get recognition for being closer to file 1.
 - Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
 - Remove trapped checking .... NeighbourHeuristic already scores trapped positions horifically.
- 
-### Bit board improvements
-- For each slot store a mask of it's adjacencies. Produce moves through intersection of masks.
 
 ### Other concerns
 - Principal Variation
