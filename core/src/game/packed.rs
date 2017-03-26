@@ -30,7 +30,11 @@ impl Packed for Packed1 {
 }
 
 impl Packed1 {
-     #[inline]
+    fn count(&self) -> u32 {
+        self.0.count_ones()
+    }
+
+    #[inline]
     pub fn bitscan(&self) -> Slot {
         Slot(self.0.trailing_zeros() as i8)
     }

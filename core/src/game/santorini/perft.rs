@@ -41,7 +41,7 @@ impl StandardBoard {
                 let new_builder_mask = Packed1(1 << a.0 | 1 << b.0);
 
                 new_state.builders[player_to_move.0 as usize] |= new_builder_mask;
-                new_state.collision |= new_builder_mask;
+                // new_state.collision |= new_builder_mask;
 
                 new_state.to_move = new_state.next_player();                
 
@@ -54,7 +54,7 @@ impl StandardBoard {
                 let movement_mask = Packed1(1 << from.0 | 1 << to.0);
 
                 new_state.builders[player_to_move.0 as usize] ^= movement_mask;
-                new_state.collision ^= movement_mask;
+                // new_state.collision ^= movement_mask;
                
                 new_state.build_at(build);
           
@@ -93,13 +93,12 @@ impl StandardBoard {
         let builders = state.builders[player_to_move.0 as usize];
         let builders_to_place = builders.0 == 0;
 
-
-        let collision = state.collision;
+        let collision = state.builders[0] | state.builders[1] | state.domes;
+        let available = !collision;
 
         if builders_to_place {
             let mut seen : HashSet<[Packed1; 2]> = HashSet::default();
 
-            // place them
             for a in 0..25 {
                 let a_mask = 1 << a;
                 if a_mask & collision.0 == 0 {
@@ -111,24 +110,15 @@ impl StandardBoard {
 
                             let mut new_builders = state.builders;
                             new_builders[player_to_move.0 as usize] = both_placed;
-                            //  = StandardBoard::transform_packed(slot_transform, both_placed);
-
-                            // println!("new testing -> {:?}", both_placed);
 
                             for slot_transform in &self.transforms {
-                                
                                 let transformed_builders = StandardBoard::transform_packed2(slot_transform, new_builders);
-
-                                // let new_packed = 
-                                // println!("out -> {:?}", new_packed);
                                 if seen.contains(&transformed_builders) {
-                                    // println!(" -> {:?} rejected due to {:?} ({:?} {:?})", both_placed, transformed_builders, Slot(a), Slot(b));
                                     dupe = true;
                                     break;
                                 }
                             }
 
-                            // PERFORM TRANSFORM/ROTATION HERE
                             if !dupe {
                                 move_sink.sink(Move::PlaceBuilders { a: Slot(a), b:Slot(b) });    
                                 seen.insert(new_builders);
@@ -140,11 +130,11 @@ impl StandardBoard {
         } else {
             for move_from in builders.iter() {
                 let current_height = state.buildings.get(move_from);
-                let moveable_adjacencies = self.packed_adjacencies[move_from.0 as usize] & (!collision);
+                let moveable_adjacencies = self.packed_adjacencies[move_from.0 as usize] & available;
                 for move_to in moveable_adjacencies.iter() {
                     if state.buildings.get(move_to) <= current_height + 1 {
                         // add non collideables, then flip our original movement location
-                        let buildable_adjacencies = self.packed_adjacencies[move_to.0 as usize] & (!collision) ^ Packed1(1 << move_from.0); // remove from
+                        let buildable_adjacencies = self.packed_adjacencies[move_to.0 as usize] & available ^ Packed1(1 << move_from.0); // remove from
                         for build_at in buildable_adjacencies.iter() {
                             move_sink.sink(Move::Move { from: move_from, to:move_to, build: build_at });
                         }
@@ -194,7 +184,6 @@ pub struct NewState {
     pub builders: [Packed1; 2],
     pub buildings : Packed2, 
     pub domes : Packed1,
-    pub collision : Packed1,
     pub to_move : Player,
 }
 
@@ -208,7 +197,7 @@ impl NewState {
         let build_dome = height == 3;
         if build_dome {
             self.domes = self.domes.set(slot, 1);
-            self.collision = self.collision.set(slot, 1);
+            // self.collision = self.collision.set(slot, 1);
         } else {
             self.buildings = self.buildings.set(slot, self.buildings.get(slot) + 1);
         }
@@ -219,7 +208,7 @@ pub const INITIAL_NEW_STATE : NewState =  NewState {
     builders: [PACKED1_EMPTY; 2],
     buildings: PACKED2_EMPTY,
     domes: PACKED1_EMPTY,
-    collision: PACKED1_EMPTY,
+    // collision: PACKED1_EMPTY,
     to_move: Player(0),
 };
 
@@ -259,7 +248,7 @@ mod tests {
         
 
         let state = State::initial();
-        let depth = 4;
+        let depth = 5;
         let start = time::precise_time_ns();
         let moves = board.perft(&state, depth, &mut move_stack);
         let duration = time::precise_time_ns() - start;
@@ -276,7 +265,7 @@ mod tests {
         let mut move_stack = MoveStack::new();
 
         let state = INITIAL_NEW_STATE;
-        let depth = 4;
+        let depth = 5;
         let start = time::precise_time_ns();
         let moves = board.new_perft(&state, depth, &mut move_stack);
         let duration = time::precise_time_ns() - start;
