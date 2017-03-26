@@ -3,7 +3,7 @@ use game::util::*;
 // use std;
 use std::fmt;
 
-use std::ops::{BitOr, BitOrAssign, BitAnd, BitAndAssign, BitXor, BitXorAssign};
+use std::ops::{BitOr, BitOrAssign, BitAnd, BitAndAssign, BitXor, BitXorAssign, Not};
   
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Packed1(pub u32);
@@ -102,6 +102,14 @@ impl BitOrAssign for Packed1 {
     }
 }
 
+impl Not for Packed1 {
+    type Output = Packed1;
+
+    fn not(self) -> Packed1 {
+        Packed1(!self.0)
+    }
+}
+
 impl BitXorAssign for Packed1 {
     fn bitxor_assign(&mut self, other: Packed1) {
         self.0 ^= other.0;
@@ -131,7 +139,7 @@ mod tests {
     
     use super::*;
 
-    #[test]
+    // #[test]
     fn test_iter() {
         let slots = vec![Slot(2), Slot(4), Slot(13), Slot(15)];
         let mut p = PACKED1_EMPTY;

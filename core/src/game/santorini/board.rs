@@ -173,7 +173,9 @@ impl StandardBoard {
                             let mut dupe = false;
 
                             for slot_transform in &self.transforms {
-                                let new_slots = StandardBoard::transform_slots(slot_transform, slots);
+                                let mut new_slots = StandardBoard::transform_slots(slot_transform, slots);
+                                new_slots[0].sort();
+                                new_slots[1].sort();
                                 if seen.contains(&new_slots) {
                                     dupe = true;
                                     break;

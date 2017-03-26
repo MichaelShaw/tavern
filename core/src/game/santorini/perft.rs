@@ -1,6 +1,6 @@
 
 use game::santorini::*;
-use time;
+// use time;
 use game::*;
 
 impl StandardBoard {
@@ -64,6 +64,29 @@ impl StandardBoard {
         }
     }
 
+    pub fn transform_packed(transform: &SlotTransform, packed:Packed1) -> Packed1 {
+        let mut out = PACKED1_EMPTY;
+
+        for slot in packed.iter() {
+            // println!("slot -> {:?}", slot);
+            out.0 |= 1 << transform.slots[slot.0 as usize].0;
+        }
+
+        out
+    }
+
+    pub fn transform_packed2(transform: &SlotTransform, packed:[Packed1; 2]) -> [Packed1; 2] {
+        let mut out = [PACKED1_EMPTY; 2];
+
+        for i in 0..2 {
+            for slot in packed[i as usize].iter() {
+                // println!("slot -> {:?}", slot);
+                out[i as usize].0 |= 1 << transform.slots[slot.0 as usize].0;
+            }    
+        }
+
+        out
+    }
 
     pub fn new_next_moves<T : MoveSink>(&self, state:&NewState, move_sink: &mut T) {
         let player_to_move = state.to_move;
@@ -74,7 +97,7 @@ impl StandardBoard {
         let collision = state.collision;
 
         if builders_to_place {
-            let mut seen : HashSet<Packed1> = HashSet::default();
+            let mut seen : HashSet<[Packed1; 2]> = HashSet::default();
 
             // place them
             for a in 0..25 {
@@ -86,22 +109,47 @@ impl StandardBoard {
                             let both_placed = Packed1(a_mask | b_mask);
                             let mut dupe = false;
 
-                            // PERFORM TRANSFORM/ROTATION HERE
+                            let mut new_builders = state.builders;
+                            new_builders[player_to_move.0 as usize] = both_placed;
+                            //  = StandardBoard::transform_packed(slot_transform, both_placed);
 
+                            // println!("new testing -> {:?}", both_placed);
+
+                            for slot_transform in &self.transforms {
+                                
+                                let transformed_builders = StandardBoard::transform_packed2(slot_transform, new_builders);
+
+                                // let new_packed = 
+                                // println!("out -> {:?}", new_packed);
+                                if seen.contains(&transformed_builders) {
+                                    // println!(" -> {:?} rejected due to {:?} ({:?} {:?})", both_placed, transformed_builders, Slot(a), Slot(b));
+                                    dupe = true;
+                                    break;
+                                }
+                            }
+
+                            // PERFORM TRANSFORM/ROTATION HERE
                             if !dupe {
                                 move_sink.sink(Move::PlaceBuilders { a: Slot(a), b:Slot(b) });    
-                                seen.insert(both_placed);
+                                seen.insert(new_builders);
                             }
                         }
                     }
                 }
             }
         } else {
-            for builder_location in builders.iter() {
-                // let moveable_adjacencies = board.packed_adjacencies[builder_location.0 as usize] & (!collision);
-
-
-
+            for move_from in builders.iter() {
+                let current_height = state.buildings.get(move_from);
+                let moveable_adjacencies = self.packed_adjacencies[move_from.0 as usize] & (!collision);
+                for move_to in moveable_adjacencies.iter() {
+                    if state.buildings.get(move_to) <= current_height + 1 {
+                        // add non collideables, then flip our original movement location
+                        let buildable_adjacencies = self.packed_adjacencies[move_to.0 as usize] & (!collision) ^ Packed1(1 << move_from.0); // remove from
+                        for build_at in buildable_adjacencies.iter() {
+                            move_sink.sink(Move::Move { from: move_from, to:move_to, build: build_at });
+                        }
+                    }
+                }
             }
         }
     }
@@ -121,7 +169,7 @@ impl StandardBoard {
         let mut n = 0;
 
         let stack_begin = move_stack.next;
-
+        self.new_next_moves(state, move_stack);
         let stack_end = move_stack.next;
 
         for idx in stack_begin..stack_end {
@@ -134,6 +182,9 @@ impl StandardBoard {
                 n += self.new_perft(&new_state, depth - 1, move_stack);
             }
         }
+
+        move_stack.next = stack_begin;
+
         n
     }
 }
@@ -178,6 +229,28 @@ mod tests {
     use super::*;
 
     // #[test]
+    fn compare_moves() {
+        let board = StandardBoard::new(ZobristHash::new_unseeded());
+        let mut a_moves = Vec::new();
+        let a_state = INITIAL_STATE;
+        let mut b_moves = Vec::new();
+        let b_state = INITIAL_NEW_STATE;
+        board.next_moves(&a_state, &mut a_moves);
+        board.new_next_moves(&b_state, &mut b_moves);
+
+        println!("===== OLD ({}) ==== ", a_moves.len());
+        for mve in a_moves {
+            // println!(" -> {:?}", mve);
+
+        }
+        println!("====== NEW ({}) =====", b_moves.len());
+        for mve in b_moves {
+            // println!(" -> {:?}", mve);
+
+        }
+    }
+
+    #[test]
     fn test_perft() {
         let mut move_stack = MoveStack::new();
 
@@ -198,13 +271,9 @@ mod tests {
 
     #[test]
     fn new_test_perft() {
-
-        let mut move_stack = MoveStack::new();
-
         let board = StandardBoard::new(ZobristHash::new_unseeded());
 
-        println!("adjacencies -> {:?}", board.adjacencies);
-        println!("packed adjacencies -> {:?}", board.packed_adjacencies);
+        let mut move_stack = MoveStack::new();
 
         let state = INITIAL_NEW_STATE;
         let depth = 4;

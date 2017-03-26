@@ -1,5 +1,5 @@
 
-use HashMap;
+// use HashMap;
 use game::santorini::*;
 use std::cmp::{max, min};
 
@@ -13,8 +13,8 @@ fn color(player:Player) -> HeuristicValue {
 
 pub struct NegaMaxAlphaBetaExp { }
 
-use rand::Rng;
-use rand::{XorShiftRng, ChaChaRng};
+// use rand::Rng;
+// use rand::{XorShiftRng, ChaChaRng};
 
 pub struct EvState {
     transposition: TranspositionTable,
