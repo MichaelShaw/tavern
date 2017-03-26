@@ -1,0 +1,1 @@
+old :: perft 3841150351 moves (53.88M/second) in 71.29 seconds

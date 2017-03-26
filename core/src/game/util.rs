@@ -24,6 +24,12 @@ impl SlotTransform {
     }
 }
 
+pub trait Packed where Self: std::marker::Sized {
+    fn empty() -> Self;
+    fn get(&self, slot: Slot) -> u8;
+    fn set(&self, slot: Slot, value: u8) -> Self;
+}
+
 pub const EMPTY_SLOT_TRANSFORM : SlotTransform = SlotTransform { slots: [Slot(0) ; 25] };
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -115,16 +121,10 @@ pub const ROTATE_180 : Transform = Transform { m00: -1, m01: 0, m10: 0, m11: -1}
 pub const ROTATE_270 : Transform = Transform { m00: 0, m01: -1, m10: 1, m11: 0};
 
 
-
-pub const ONE_MASK : u32 = 1;
-
-
 pub const PACKED2_EMPTY : Packed2 = Packed2(0);
-
 
 pub const TWO_MASK : u64 = 3;
 pub const ALL_MASK_64 : u64 = 0xffffffffffffffff;
-pub const ALL_MASK_32 : u32 = 0xffffffff;
 
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]

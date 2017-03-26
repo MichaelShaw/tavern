@@ -1,4 +1,6 @@
 use game::santorini::*;
+use game::*;
+use game::util::Packed;
 use std;
 
 pub const VICTORY : HeuristicValue = 32_000;

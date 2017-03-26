@@ -1,5 +1,6 @@
 
 use game::santorini::*;
+use game::*;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub struct State {
