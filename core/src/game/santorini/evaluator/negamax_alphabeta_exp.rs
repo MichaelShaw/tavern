@@ -174,21 +174,9 @@ impl Evaluator for NegaMaxAlphaBetaExp {
             unsorted_moves.push((mve, v));
         }
 
-        // let score_type = if best_observed <= alpha {
-        //     EntryType::Upper
-        // } else if best_observed >= beta { // unsure if this should be beta
-        //     EntryType::Lower
-        // } else {
-            
-        //     // println!("PV NODE mve {:?} depth {:?}", best_move,  depth);
-            
-        // };
         info.pv_count += 1;
 
-        // println!("BEST OBSERVED -> {:?}", best_observed);
-        // put ROOT PV
         let entry = TranspositionEntry {
-            // state: state.clone(),
             hash: hash,
             value: best_observed,
             entry_type: EntryType::Exact,
@@ -196,8 +184,6 @@ impl Evaluator for NegaMaxAlphaBetaExp {
             best_move: best_move,
         };
         evaluator_state.transposition.put(entry);
-        
-     
   
         unsorted_moves.sort_by_key(|&(_, hv)| hv * -color);
 
