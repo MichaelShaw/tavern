@@ -57,6 +57,10 @@ impl Packed1 {
         let remove_mask : u32 = (1 << slot.0) ^ ALL_MASK_32;
         self.0 = (self.0 & remove_mask) | ((value as u32) << slot.0);
     }
+
+    pub fn any(&self) -> bool {
+        self.0 > 0
+    }
 }
 
 impl fmt::Debug for Packed1 {

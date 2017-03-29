@@ -29,6 +29,8 @@ pub enum StateTransition {
     NewInteractionState(InteractionState),
 }
 
+
+
 // stuff relevant to the current game in action
 pub struct PlayerGame {
     pub interaction_state: InteractionState,
@@ -89,7 +91,7 @@ impl SantoriniGame {
         let cpu_players = hashset![Player(rng.gen_range(0, 2))]; 
         // let cpu_players = hashset![Player(0)]; 
         
-        let board_state = BoardState::new(StandardBoard::new(ZobristHash::new_unseeded()), State::initial());
+        let board_state = BoardState::new(StandardBoard::new(ZobristHash::new_unseeded()), INITIAL_STATE);
         let tentative = board_state.tentative(&Vec::new(), None);
 
         let player_game = PlayerGame {
@@ -238,7 +240,7 @@ impl SantoriniGame {
     }
 
     pub fn requiest_ai_analysis(&self) {
-        self.ai_service.request_analysis(self.game.board_state.state.clone(), SearchMethod::NegaMaxAlphaBetaExp, 4, 16, Some(30.0));   
+        self.ai_service.request_analysis(self.game.board_state.state.clone(), SearchMethod::NegaMaxAlphaBetaExp, 4, 16, Some(10.0));   
     }
 
     pub fn play_move(&mut self, mve: Move) -> MatchStatus {
@@ -270,7 +272,7 @@ impl SantoriniGame {
 
     pub fn reset(&mut self) {
         let cpu_players = hashset![Player(self.rand.gen_range(0, 2))]; ;
-        let board_state = BoardState::new(StandardBoard::new(ZobristHash::new_unseeded()), State::initial());
+        let board_state = BoardState::new(StandardBoard::new(ZobristHash::new_unseeded()), INITIAL_STATE);
         let tentative = board_state.tentative(&Vec::new(), None);
         self.game = PlayerGame {
             interaction_state: InteractionState::awaiting_input(&board_state.state, &cpu_players),
@@ -317,7 +319,7 @@ impl SantoriniGame {
 
                         // progress for fading in building
                         trans.color = [1.0, 1.0, 1.0, progress as f32];
-                        let building_height = subtracted_state.buildings.get(build);
+                        let building_height = subtracted_state.get_building_height(build);
                         let is_dome = building_height == 3;
 
                         let pos = StandardBoard::position(build);
@@ -366,7 +368,7 @@ impl SantoriniGame {
     pub fn exact_position(state:&State, slot:Slot, units_per_point: f64) -> Vec3 {
         let pos = StandardBoard::position(slot);
         let mut v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
-        let building_height = state.buildings.get(slot);
+        let building_height = state.get_building_height(slot);
         v.y += (BUILDING_PIXEL_OFFSETS[building_height as usize] as f64) * units_per_point;
         v
     }
@@ -377,7 +379,7 @@ impl SantoriniGame {
             let pos = StandardBoard::position(slot);
             let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
 
-            let building_height = state.buildings.get(slot);
+            let building_height = state.get_building_height(slot);
             let dome = state.domes.get(slot) == 1;
 
             // RENDER THE BUILDING
@@ -393,8 +395,8 @@ impl SantoriniGame {
         }
 
         // DRAW THE GUYS
-        for (player_id, locations) in state.builder_locations.iter().enumerate() {
-            for &slot in locations {
+        for (player_id, builders) in state.builders.iter().enumerate() {
+            for slot in builders.iter() {
                 if slot != UNPLACED_BUILDER {
                     let v = Self::exact_position(state, slot, units_per_point);
                     opaque.draw_floor_tile_at(&self.atlas.players[player_id as usize], 0, v, 0.15, false );

@@ -1,5 +1,5 @@
 use super::*;
-
+use game::*;
 
 use HashSet;
 
@@ -30,6 +30,7 @@ impl BoardState {
             next_moves : next_moves,
         }
     }
+
 
     pub fn make_move(&mut self, mve:Move) -> MatchStatus {
         let is_winning_move = self.board.ascension_winning_move(&self.state, mve);
@@ -94,19 +95,29 @@ pub struct TentativeState {
     pub move_count : usize,
 }
 
+
+
+// fuck, I don't really get this at all :-/
 fn modify_state(base_state:&State, slots:&Vec<Slot>) -> State {
     let mut new_state = base_state.clone();
-    if new_state.builders_to_place() {
-        for (i, slot) in slots.iter().enumerate() {
-            new_state.builder_locations[new_state.to_move.0 as usize][i] = *slot;
+
+    // println!("modify state with slots {:?}", slots);
+
+    let current_builders = new_state.current_builders();
+
+    if !current_builders.any() {
+        for slot in slots {
+            new_state.builders[new_state.to_move.0 as usize].0 |= 1 << slot.0;
         }
     } else {
-        for i in 0..2 {
-            let builder_location = new_state.builder_locations[new_state.to_move.0 as usize][i];
+        for bl in new_state.builders[new_state.to_move.0 as usize].iter() {
             if let Some(from) = slots.get(0) {
-                if builder_location == *from {
+                if bl == *from {
                     if let Some(to) = slots.get(1) {
-                        new_state.builder_locations[new_state.to_move.0 as usize][i] = *to;
+                        let movement_mask = Packed1((1 << from.0) | (1 << to.0));
+
+                        new_state.builders[new_state.to_move.0 as usize] ^= movement_mask;
+
                         if let Some(build) = slots.get(2) {
                             new_state.build_at(*build);
                         }
@@ -114,7 +125,7 @@ fn modify_state(base_state:&State, slots:&Vec<Slot>) -> State {
                 }
             }
         }
-
     }
+
     new_state
 }

@@ -190,7 +190,6 @@ mod tests {
 
     pub const MAH_CAP : usize = 200_000_000;
 
-
     // #[test]
     fn hash() {
         let new_hash = ZobristHash::new_unseeded();
@@ -242,7 +241,7 @@ mod tests {
         ];
 
         let board = StandardBoard::new(ZobristHash::new_unseeded());
-        let state = State::initial();
+        let state = INITIAL_STATE;
         let init_hash = board.hash(&state);
 
         let playout_a = play_moves(&board, &state, &moves_a);

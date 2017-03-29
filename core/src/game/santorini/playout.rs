@@ -23,8 +23,9 @@ use game::santorini::*;
 //     }
 // }
 
+
 pub fn iterative_adversarial_playout<E, H, F>(board: &StandardBoard, depth: u8, mut on_move: F) -> (Player, EvaluatorInfo, EvaluatorInfo)  where E : Evaluator, H : Heuristic, F: FnMut(&State, &Move, HeuristicValue) -> () {
-    let mut state = State::initial();
+    let mut state = INITIAL_STATE;
 
     let mut winner : Option<Player> = None;
 
@@ -188,10 +189,10 @@ pub fn iterative_adversarial_playout<E, H, F>(board: &StandardBoard, depth: u8, 
 
 fn sample_principal_variant(depth:u8) {
     let board = StandardBoard::new(ZobristHash::new_unseeded());
-    let init = State::initial();
+    let init = INITIAL_STATE;
     let new_state = board.apply(Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, &init);
     let mut new_state_b = board.apply(Move::PlaceBuilders { a: Slot(23), b: Slot(24) }, &new_state);
-    new_state_b.buildings.set(Slot(5), 1);
+    new_state_b.set_building_height(Slot(5), 1);
 
     principal_variant::<MiniMax, SimpleHeightHeuristic>(&mut (), &board, &new_state_b, depth);
 }
@@ -199,7 +200,7 @@ fn sample_principal_variant(depth:u8) {
 fn count_moves() {
     let board = StandardBoard::new(ZobristHash::new_unseeded());
 
-    let init = State::initial();
+    let init = INITIAL_STATE;
     let new_state = board.apply(Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, &init);
     let new_state_b = board.apply(Move::PlaceBuilders { a: Slot(3), b: Slot(4) }, &new_state);
 

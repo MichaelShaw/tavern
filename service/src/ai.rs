@@ -71,15 +71,6 @@ impl AIService {
         }
     }
 
-    pub fn player_multiplier(player:Player) -> HeuristicValue {
-        match player {
-            Player(0) => 1,
-            Player(1) => -1,
-            _ => -128,
-        }
-    }
-
-
     pub fn winning_player(heuristic_value:HeuristicValue) -> Option<Player> {
         if heuristic_value == PLAYER_0_WIN {
             Some(Player(0))
@@ -91,11 +82,9 @@ impl AIService {
     }
 
     pub fn evaluate<E, H>(evaluator_state: &mut E::EvaluatorState, board: &StandardBoard, state:&State, min_depth: u8, max_depth:u8, time_limit: Option<f64>, send: &Sender<StateAnalysis>) where E: Evaluator, H: Heuristic {
-        println!("AI :: Asked for analysis");
-        // println!("{}", board.print(&state));
-        let score = SimpleHeightHeuristic::evaluate(board, state) * Self::player_multiplier(state.to_move);
-        println!("AI :: current score it as -> {:?} with {:?} to move", score, state.to_move);
-
+        let score = H::evaluate(board, state);
+        println!("AI :: Asked for analysis, current score {:?} with {:?} to move", score, state.to_move);
+        
         for depth in 1..(max_depth+1) {
             let (best_move, info) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);  
 
@@ -128,7 +117,7 @@ impl AIService {
                 }
                 break;
             } else {
-                let next_timing_calc = info.time * (info.average_branch_factor() as f64) * 3.0;
+                let next_timing_calc = info.time * (info.average_branch_factor() as f64); 
                 println!("we're at depth {} time was {:.3} next timing calc is {:.3}", depth, info.time, next_timing_calc);
                 let terminate = depth >= min_depth && (depth >= max_depth || contains(time_limit, |&tl| next_timing_calc > tl));
                 println!("depth is {:?} min {} max {} terminate? {:?}", depth, min_depth, max_depth, terminate);

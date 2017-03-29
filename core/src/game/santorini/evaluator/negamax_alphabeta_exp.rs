@@ -80,7 +80,7 @@ impl Evaluator for NegaMaxAlphaBetaExp {
                     match entry.entry_type {
                         EntryType::Exact => {
                             if let Some(mv) = entry.best_move {
-                                return (Some((mv, entry.value)), info)    
+                                return (Some((mv, -entry.value)), info)  // unsure about this negation   
                             } 
                             // return (Some((entry.best_move.unwrap(), entry.value)), info)
                             // return (entry.value, 0)
@@ -94,7 +94,7 @@ impl Evaluator for NegaMaxAlphaBetaExp {
                     }
                     if alpha >= beta {
                         if let Some(mv) = entry.best_move {
-                            return (Some((mv, entry.value)), info)    
+                            return (Some((mv, -entry.value)), info)  // unsure about this negation
                         } 
                     }
                 } else {

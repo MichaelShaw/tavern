@@ -3,6 +3,8 @@ use pad::PadStr;
 use game::santorini::*;
 use game::*;
 
+use std::cmp::min;
+
 pub const SLOT_COUNT : usize = 25;
 
 #[derive(Debug, Clone)]
@@ -25,6 +27,7 @@ impl MoveSink for Vec<Move> {
 }
 
 
+
 impl StandardBoard {
     pub fn transform<F>(&self, f: F) -> SlotTransform where F: Fn(Position) -> Position {
         let mut transform = SlotTransform { slots: [Slot(0); 25] };
@@ -40,6 +43,17 @@ impl StandardBoard {
         transform
     }
 
+    pub fn transform_packed(transform: &SlotTransform, packed:Packed1) -> Packed1 {
+        let mut out = PACKED1_EMPTY;
+
+        for slot in packed.iter() {
+            // println!("slot -> {:?}", slot);
+            out.0 |= 1 << transform.slots[slot.0 as usize].0;
+        }
+
+        out
+    }
+
     pub fn transform_state(&self, state: &State, slot_transform: &SlotTransform) -> State {
         let mut new_state = state.clone();
 
@@ -47,23 +61,14 @@ impl StandardBoard {
             let from = Slot(i);
             let to = slot_transform.slots[i as usize];
 
-            new_state.buildings.set(to, state.buildings.get(from));
+            new_state.set_building_height(to, state.get_building_height(from));
             new_state.domes.set(to, state.domes.get(from));
-            new_state.collision.set(to, state.collision.get(from));
         }
 
-        for player_id in 0..2 {
-            for builder_id in 0..2 {
-                let builder_location = state.builder_locations[player_id][builder_id];
-                if Self::valid(builder_location) {
-                    new_state.builder_locations[player_id][builder_id] = slot_transform.slots[builder_location.0 as usize];
-                }
-            }
-        }
+        new_state.builders[0] = StandardBoard::transform_packed(slot_transform, new_state.builders[0]);
+        new_state.builders[1] = StandardBoard::transform_packed(slot_transform, new_state.builders[1]);
 
-        new_state.ensure_ordered(Player(0));
-        new_state.ensure_ordered(Player(1));
-      
+ 
         new_state
     }
 
@@ -155,106 +160,138 @@ impl StandardBoard {
     }
 
     pub fn next_moves<T : MoveSink>(&self, state:&State, move_sink: &mut T) {
-        let builders_to_move = state.builder_locations[state.to_move.0 as usize];
-        let builders_to_place = builders_to_move.iter().any(|&pl| pl == UNPLACED_BUILDER );
+        let player_to_move = state.to_move;
+        let builders = state.builders[player_to_move.0 as usize];
+        let in_placement_phase = builders.0 == 0;
 
-        if builders_to_place {
-            // 25 * 25 is 625 base
-            let mut seen : HashSet<BuilderLocations> = HashSet::default();
+        let collision = state.builders[0] | state.builders[1] | state.domes;
+        let available = !collision;
+
+        if in_placement_phase {
+            let mut seen : HashSet<[Packed1; 2]> = HashSet::default();
 
             for a in 0..25 {
-                let slot_a = Slot(a);
-                if state.collision.get(slot_a) == 0 {
+                let a_mask = 1 << a;
+                if a_mask & collision.0 == 0 {
                     for b in (a+1)..25 {
-                        let slot_b = Slot(b);
-                        if state.collision.get(slot_b) == 0 {
-                            let mut slots = state.builder_locations;
-                            slots[state.to_move.0 as usize] = [slot_a, slot_b];
-
+                        let b_mask = 1 << b;
+                        if b_mask & collision.0 == 0 {
+                            let both_placed = Packed1(a_mask | b_mask);
                             let mut dupe = false;
 
+                            let mut new_builders = state.builders;
+                            new_builders[player_to_move.0 as usize] = both_placed;
+
                             for slot_transform in &self.transforms {
-                                let mut new_slots = StandardBoard::transform_slots(slot_transform, slots);
-                                new_slots[0].sort();
-                                new_slots[1].sort();
-                                if seen.contains(&new_slots) {
+                                let transformed_builders = StandardBoard::transform_packed2(slot_transform, new_builders);
+                                if seen.contains(&transformed_builders) {
                                     dupe = true;
                                     break;
                                 }
                             }
 
                             if !dupe {
-                                move_sink.sink(Move::PlaceBuilders { a: slot_a, b:slot_b });    
-                                seen.insert(slots);
-                            }
-                        }
-                    }    
-                }
-            }
-        } else {
-            // iterate both
-            for &builder_location in builders_to_move.iter() {
-                if Self::valid(builder_location) {
-                    // attempt all moves with this guy
-                    let current_height = state.buildings.get(builder_location);
-                    for &move_to in self.adjacencies[builder_location.0 as usize].iter() {
-                        if move_to == NONE { // we've reached end of adjacencies
-                            break;
-                        }
-                        // no dome/person there, and height is at most 1 up
-                        if state.collision.get(move_to) == 0 && state.buildings.get(move_to) <= current_height + 1 {
-                            for &build_at in self.adjacencies[move_to.0 as usize].iter() {
-                                if build_at == NONE {
-                                    break;
-                                }
-                                if state.collision.get(build_at) == 0 || build_at == builder_location {
-                                    move_sink.sink(Move::Move { from: builder_location, to:move_to, build: build_at });
-                                }
+                                move_sink.sink(Move::PlaceBuilders { a: Slot(a), b:Slot(b) });    
+                                seen.insert(new_builders);
                             }
                         }
                     }
                 }
             }
+        } else {
+            let heights : [Packed1; 4] = [
+                !state.building_major & !state.building_minor,
+                !state.building_major & state.building_minor,
+                state.building_major & !state.building_minor,
+                state.building_major & state.building_minor,
+            ];
+
+            let mut available_builders = [
+                builders, // anyone can move to height 0
+                builders, // anyone can move to height 1
+                PACKED1_EMPTY,
+                PACKED1_EMPTY,
+            ];
+
+            for bl in builders.iter() {
+                let height = state.get_building_height(bl);
+                let max_height = min(height + 1, 3);
+                for h in 2..(max_height+1) {
+                    available_builders[h as usize].0 |= 1 << bl.0;
+                }
+            }
+
+            // these are really any mutually exclusive masks ..... as long as they're mutually exclusive we can do whatever
+
+            // this is dual height based
+
+           
+            let mut h = 3_usize; 
+            loop {
+                let receive = heights[h] & available;
+
+                if available_builders[h].any() {
+                    for move_from in available_builders[h].iter() {
+                        let move_tos = receive & self.packed_adjacencies[move_from.0 as usize];
+                        if move_tos.any() {
+                            for move_to in move_tos.iter() {
+                                let buildable_adjacencies = self.packed_adjacencies[move_to.0 as usize] & available ^ Packed1(1 << move_from.0); 
+                                // there's always buildabl adjacencies ... or you couldnt have moved
+                                for &build_height in &HEIGHT_BUILDER_ORDER {
+                                    let buildings_of_height = buildable_adjacencies & heights[build_height];
+                                    if buildings_of_height.any() {
+                                        for build_at in buildings_of_height.iter() {
+                                            move_sink.sink(Move::Move { from: move_from, to:move_to, build: build_at });
+                                        }    
+                                    }
+                                }
+                            }    
+                        }
+                    }    
+                }
+                
+
+                if h == 0 {
+                    break;
+                }
+
+                h -= 1;
+            }
         }
     }
 
     pub fn next_moves_for_player(&self, state:&State, move_sink: &mut Vec<Move>) {
-        let builders_to_move = state.builder_locations[state.to_move.0 as usize];
-        let builders_to_place = builders_to_move.iter().any(|&pl| pl == UNPLACED_BUILDER );
+        let player_to_move = state.to_move;
+        let builders = state.builders[player_to_move.0 as usize];
+        let in_placement_phase = builders.0 == 0;
 
-        if builders_to_place {
-            // 25 * 25 is 625 base
+        let collision = state.builders[0] | state.builders[1] | state.domes;
+        let available = !collision;
+
+        if in_placement_phase {
             for a in 0..25 {
+                let a_mask = 1 << a;
                 let slot_a = Slot(a);
-                if state.collision.get(slot_a) == 0 {
+                if a_mask & collision.0 == 0 {
                     for b in 0..25 {
+                        let b_mask = 1 << b;
                         let slot_b = Slot(b);
-                        if a != b && state.collision.get(slot_b) == 0 {
+                        if a != b && b_mask & collision.0 == 0 {
                              move_sink.push(Move::PlaceBuilders { a: slot_a, b:slot_b });    
                         }
                     }    
                 }
             }
         } else {
-            // iterate both
-            for &builder_location in builders_to_move.iter() {
-                if Self::valid(builder_location) {
-                    // attempt all moves with this guy
-                    let current_height = state.buildings.get(builder_location);
-                    for &move_to in self.adjacencies[builder_location.0 as usize].iter() {
-                        if move_to == NONE { // we've reached end of adjacencies
-                            break;
-                        }
-                        // no dome/person there, and height is at most 1 up
-                        if state.collision.get(move_to) == 0 && state.buildings.get(move_to) <= current_height + 1 {
-                            for &build_at in self.adjacencies[move_to.0 as usize].iter() {
-                                if build_at == NONE {
-                                    break;
-                                }
-                                if state.collision.get(build_at) == 0 || build_at == builder_location {
-                                    move_sink.push(Move::Move { from: builder_location, to:move_to, build: build_at });
-                                }
-                            }
+            for move_from in builders.iter() {
+                let current_height = state.get_building_height(move_from);
+                let moveable_adjacencies = self.packed_adjacencies[move_from.0 as usize] & available;
+                for move_to in moveable_adjacencies.iter() {
+                    if state.get_building_height(move_to) <= current_height + 1 {
+                        // add non collideables, then flip our original movement location
+                        let buildable_adjacencies = self.packed_adjacencies[move_to.0 as usize] & available ^ Packed1(1 << move_from.0); // remove from
+                        for build_at in buildable_adjacencies.iter() {
+                            move_sink.sink(Move::Move { from: move_from, to:move_to, build: build_at });
                         }
                     }
                 }
@@ -276,11 +313,9 @@ impl StandardBoard {
     pub fn hash(&self, state: &State) -> StateHash {
         let mut hash = self.hash.to_move[state.to_move.0 as usize];
 
-        for i in 0..BUILDERS {
-            for &bl in &state.builder_locations[i] {
-                if Self::valid(bl) {
-                    hash = hash ^ self.hash.builders[i as usize][bl.0 as usize];
-                }
+        for i in 0..PLAYERS {
+            for bl in state.builders[i as usize].iter() {
+                hash = hash ^ self.hash.builders[i as usize][bl.0 as usize];
             }
         }
 
@@ -291,18 +326,17 @@ impl StandardBoard {
         hash
     }
 
-    pub fn apply(&self, mve:Move, state:&State) -> State { // this implicitly destroys the state atm.
+    pub fn apply(&self, mve:Move, state:&State) -> State {
         match mve {
             Move::PlaceBuilders { a, b } => {
                 let player_to_move = state.to_move;
+
                 let mut new_state = state.clone();
 
-                new_state.builder_locations[player_to_move.0 as usize][0] = a;
-                new_state.collision.set(a, 1);
-                new_state.builder_locations[player_to_move.0 as usize][1] = b;
-                new_state.collision.set(b, 1);
+                let new_builder_mask = Packed1(1 << a.0 | 1 << b.0);
 
-                new_state.ensure_ordered(player_to_move);
+                new_state.builders[player_to_move.0 as usize] |= new_builder_mask;
+                // new_state.collision |= new_builder_mask;
 
                 new_state.to_move = new_state.next_player();                
 
@@ -311,25 +345,14 @@ impl StandardBoard {
             Move::Move { from, to, build } => {
                 let player_to_move = state.to_move;
                 let mut new_state = state.clone();
-                // update builder collision
-                
-                // assign updated builder location
-                for i in 0..BUILDERS {
-                    let builder_location = new_state.builder_locations[player_to_move.0 as usize][i];    
-                    if builder_location == from {
-                        new_state.collision.set(from, 0);
-                        new_state.collision.set(to, 1);
-                        new_state.builder_locations[player_to_move.0 as usize][i] = to; // place this builder
-                        break;
-                    }
-                }
 
-                new_state.ensure_ordered(player_to_move);
+                let movement_mask = Packed1(1 << from.0 | 1 << to.0);
+
+                new_state.builders[player_to_move.0 as usize] ^= movement_mask;
+                // new_state.collision ^= movement_mask;
                
-                // perform build
                 new_state.build_at(build);
           
-                // alternate player
                 new_state.to_move = new_state.next_player();
                 new_state
             },
@@ -343,11 +366,10 @@ impl StandardBoard {
                self.hash.switch_move ^ self.hash.builders[to_move][a.0 as usize] ^ self.hash.builders[to_move][b.0 as usize]
             },
             Move::Move { from, to, build } => {
-               let to_move = state.to_move.0 as usize;
-               let original_height = state.hash_height(build);
+                let to_move = state.to_move.0 as usize;
+                let original_height = state.hash_height(build);
 
-
-               let build_at = build.0 as usize;
+                let build_at = build.0 as usize;
 
                 self.hash.switch_move ^ self.hash.builders[to_move][from.0 as usize] ^ self.hash.builders[to_move][to.0 as usize] ^ 
                 self.hash.buildings[build_at][original_height] ^ self.hash.buildings[build_at][original_height + 1]
@@ -363,7 +385,7 @@ impl StandardBoard {
     pub fn ascension_winning_move(&self, state:&State, mve: Move) -> bool {
           match mve {
             Move::PlaceBuilders { .. } => false,
-            Move::Move { to, .. } => state.buildings.get(to) == 3,
+            Move::Move { to, .. } => state.get_building_height(to) == 3,
         }
     }
 
@@ -384,16 +406,15 @@ impl StandardBoard {
                 // terrain
                 if state.domes.get(slot) > 0 {
                     terrain.push("D".into());
-                } else if state.buildings.get(slot) > 0 {
-                    terrain.push(state.buildings.get(slot).to_string());
+                } else if state.get_building_height(slot) > 0 {
+                    terrain.push(state.get_building_height(slot).to_string());
                 } else {
                     terrain.push(" ".into());
                 }
                 // players
                 let mut found = false;
                 for i in 0..PLAYERS {
-                    let player_locations = state.builder_locations[i];
-                    for &pl in player_locations.iter() {
+                    for pl in state.builders[i as usize].iter() {
                         if pl == slot {
                             players.push(format!("P{}",i));
                             found = true;

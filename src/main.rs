@@ -35,7 +35,7 @@ fn do_stuff() {
         println!("is transform {:?} ok -> {:?}", trans, ok);
     }
 
-    let state = State::initial();
+    let state = INITIAL_STATE;
     let new_state = board.apply(Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, &state);
 
     println!("{}", board.print(&new_state));

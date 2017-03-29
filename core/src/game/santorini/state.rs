@@ -2,70 +2,35 @@
 use game::santorini::*;
 use game::*;
 
-#[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub struct State {
-    pub builder_locations: BuilderLocations,
-    pub buildings : Packed2, 
-    pub domes : Packed1,
-    pub collision : Packed1,
-    pub to_move : Player,
-}
+
+// pub const HEIGHT_BUILDER_ORDER : [usize; 4] = [2,3,1,0];
+pub const HEIGHT_BUILDER_ORDER : [usize; 4] = [3,2,1,0];
 
 pub const INITIAL_STATE : State =  State {
-    builder_locations: [[UNPLACED_BUILDER, UNPLACED_BUILDER], [UNPLACED_BUILDER, UNPLACED_BUILDER]],
-    buildings: PACKED2_EMPTY,
+    builders: [PACKED1_EMPTY; 2],
+    building_major: PACKED1_EMPTY,
+    building_minor: PACKED1_EMPTY,
     domes: PACKED1_EMPTY,
-    collision: PACKED1_EMPTY,
     to_move: Player(0),
 };
 
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
+pub struct State {
+    pub builders: [Packed1; 2],
+    pub building_major : Packed1, 
+    pub building_minor : Packed1,
+    pub domes : Packed1,
+    pub to_move : Player,
+}
+
 impl State {
-    pub fn hash_height(&self, slot:Slot) -> usize { // should output 0-4
-        if self.domes.get(slot) == 1 {
-            4
-        } else {
-            self.buildings.get(slot) as usize
-        }
+    pub fn current_builders(&self) -> Packed1 {
+        self.builders[self.to_move.0 as usize]
     }
 
-    pub fn without_builder_at(&self, slot:Slot) -> State {
-        let mut new_state = self.clone();
-        for player_id in 0..2 {
-            for builder_id in 0..2 {
-                if new_state.builder_locations[player_id][builder_id] == slot {
-                    new_state.builder_locations[player_id][builder_id] = UNPLACED_BUILDER;
-                }
-            }
-        }
-        new_state
+    pub fn collision(&self) -> Packed1 {
+        self.builders[0] | self.builders[1] | self.domes
     }
-
-    pub fn is_ordered(&self) -> bool {
-        self.builder_locations[0][0] <= self.builder_locations[0][1] && self.builder_locations[1][0] <= self.builder_locations[1][1]
-    }
-
-    pub fn ensure_ordered(&mut self, player:Player) {
-        let builder_locations = &mut self.builder_locations[player.0 as usize];
-        if builder_locations[1] < builder_locations[0] {
-            builder_locations.swap(0, 1);
-        }
-     }       
-
-    pub fn builders_to_place(&self) -> bool {
-        let builders_to_move = self.builder_locations[self.to_move.0 as usize];
-        builders_to_move.iter().any(|&pl| pl == UNPLACED_BUILDER )
-    }
-
-    pub fn initial() -> State {
-        State {
-            builder_locations: [[UNPLACED_BUILDER, UNPLACED_BUILDER], [UNPLACED_BUILDER, UNPLACED_BUILDER]],
-            buildings: Packed2::empty(),
-            domes: Packed1::empty(),
-            collision: Packed1::empty(),
-            to_move: Player(0),
-        }
-    }
-
 
     pub fn player(&self) -> Player {
         self.to_move
@@ -75,15 +40,40 @@ impl State {
         Player((self.to_move.0 + 1) % 2)
     }
 
+    pub fn hash_height(&self, slot:Slot) -> usize { // should output 0-4
+        if self.domes.get(slot) == 1 {
+            4
+        } else {
+            self.get_building_height(slot) as usize
+        }
+    }
+
+    pub fn without_builder_at(&self, slot:Slot) -> State {
+        let mut new_state = self.clone();
+        let mask = (1 << slot.0) ^ ALL_MASK_32;
+        new_state.builders[0].0 &= mask;
+        new_state.builders[1].0 &= mask;
+        new_state
+    }
+
+    pub fn get_building_height(&self, slot:Slot) -> u8 {
+        self.building_major.get(slot) * 2 + self.building_minor.get(slot)
+    }
+
+    pub fn set_building_height(&mut self, slot:Slot, height: u8) {
+        self.building_major.set(slot, (height >> 1) & 1); // that is ... not at all write
+        self.building_minor.set(slot, height & 1);
+    }
+
     pub fn build_at(&mut self, slot:Slot) {
-        let height = self.buildings.get(slot);
+        let height = self.get_building_height(slot);
         let build_dome = height == 3;
         if build_dome {
-            self.domes.set(slot, 1);
-            self.collision.set(slot, 1);
+            self.domes.toggle(slot);
+            // self.collision = self.collision.set(slot, 1);
         } else {
-            let new_height = self.buildings.get(slot) + 1;
-            self.buildings.set(slot, new_height);
+            self.set_building_height(slot, height + 1);
         }
     }
 }
+

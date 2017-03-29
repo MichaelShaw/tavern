@@ -4,13 +4,13 @@ use colored::*;
 
 pub fn mild_a_advantage(board:&StandardBoard, to_move: Player) -> State {
     let mut state = distant_state(board);
-    state.buildings.set(Slot(5), 1);
+    state.set_building_height(Slot(5), 1);
     state.to_move = to_move;
     state
 }
 
 pub fn distant_state(board:&StandardBoard) -> State {
-    let mut state = State::initial();
+    let mut state = INITIAL_STATE;
     for &mve in &vec![Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, 
                      Move::PlaceBuilders { a: Slot(23), b: Slot(24) }] {
         state = board.apply(mve, &state);
@@ -19,7 +19,7 @@ pub fn distant_state(board:&StandardBoard) -> State {
 }
 
 pub fn initial(board: &StandardBoard, to_move:Player) -> State {
-    let mut state = State::initial();
+    let mut state = INITIAL_STATE;
     state.to_move = to_move;
     state
 }
@@ -27,8 +27,8 @@ pub fn initial(board: &StandardBoard, to_move:Player) -> State {
 pub fn a_in_1(board:&StandardBoard, to_move: Player) -> State {
     let mut state = distant_state(board);
     // staircase for player 0
-    state.buildings.set(Slot(1), 2);
-    state.buildings.set(Slot(2), 3);
+    state.set_building_height(Slot(1), 2);
+    state.set_building_height(Slot(2), 3);
     state.to_move = to_move;
     state
 }
@@ -36,9 +36,9 @@ pub fn a_in_1(board:&StandardBoard, to_move: Player) -> State {
 pub fn a_in_2(board:&StandardBoard, to_move: Player) -> State {
     let mut state = distant_state(board);
     // staircase for player 0
-    state.buildings.set(Slot(1), 1);
-    state.buildings.set(Slot(2), 2);
-    state.buildings.set(Slot(3), 3);
+    state.set_building_height(Slot(1), 1);
+    state.set_building_height(Slot(2), 2);
+    state.set_building_height(Slot(3), 3);
     state.to_move = to_move;
     state
 }
@@ -46,8 +46,8 @@ pub fn a_in_2(board:&StandardBoard, to_move: Player) -> State {
 pub fn b_in_1(board: &StandardBoard, to_move: Player) -> State {
     let mut state = distant_state(board);
     // staircase for player 1
-    state.buildings.set(Slot(23), 2);
-    state.buildings.set(Slot(22), 3);
+    state.set_building_height(Slot(23), 2);
+    state.set_building_height(Slot(22), 3);
 
     state.to_move = to_move;
     state
@@ -56,64 +56,64 @@ pub fn b_in_1(board: &StandardBoard, to_move: Player) -> State {
 pub fn b_in_2(board: &StandardBoard, to_move: Player) -> State {
     let mut state = distant_state(board);
     // staircase for player 1
-    state.buildings.set(Slot(23), 1);
-    state.buildings.set(Slot(22), 2);
-    state.buildings.set(Slot(21), 3);
+    state.set_building_height(Slot(23), 1);
+    state.set_building_height(Slot(22), 2);
+    state.set_building_height(Slot(21), 3);
     state.to_move = to_move;
     state
 }
 
 pub fn a_blockable(board: &StandardBoard, to_move: Player) -> State {
-    let mut state = State::initial();
+    let mut state = INITIAL_STATE;
     for &mve in &vec![Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, 
                      Move::PlaceBuilders { a: Slot(3), b: Slot(4) }] {
         state = board.apply(mve, &state);
     }
-    state.buildings.set(Slot(1), 2);
-    state.buildings.set(Slot(2), 3);
-    state.buildings.set(Slot(3), 1); // we put the B player up a bit so it must move down to sacrifice
+    state.set_building_height(Slot(1), 2);
+    state.set_building_height(Slot(2), 3);
+    state.set_building_height(Slot(3), 1); // we put the B player up a bit so it must move down to sacrifice
     state.to_move = to_move;
     state
 }
 
 pub fn b_blockable(board: &StandardBoard, to_move: Player) -> State {
-    let mut state = State::initial();
+    let mut state = INITIAL_STATE;
     for &mve in &vec![Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, 
                      Move::PlaceBuilders { a: Slot(3), b: Slot(4) }] {
         state = board.apply(mve, &state);
     }
-    state.buildings.set(Slot(1), 1);
-    state.buildings.set(Slot(2), 3);
-    state.buildings.set(Slot(3), 2); // we put the B player up a bit so it must move down to sacrifice
+    state.set_building_height(Slot(1), 1);
+    state.set_building_height(Slot(2), 3);
+    state.set_building_height(Slot(3), 2); // we put the B player up a bit so it must move down to sacrifice
     state.to_move = to_move;
     state
 }
 
 pub fn any_in_1(board:&StandardBoard, to_move: Player) -> State {
-    let mut state = State::initial();
+    let mut state = INITIAL_STATE;
     for &mve in &vec![Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, 
                      Move::PlaceBuilders { a: Slot(3), b: Slot(4) }] {
         state = board.apply(mve, &state);
     }
-    state.buildings.set(Slot(1), 2);
-    state.buildings.set(Slot(2), 3);
-    state.buildings.set(Slot(3), 2); // we put the B player up a bit so it must move down to sacrifice
+    state.set_building_height(Slot(1), 2);
+    state.set_building_height(Slot(2), 3);
+    state.set_building_height(Slot(3), 2); // we put the B player up a bit so it must move down to sacrifice
     state.to_move = to_move;
     state
 }
 
 pub fn any_trap_in_1(board:&StandardBoard, to_move: Player) -> State {
- let mut state = State::initial();
+    let mut state = INITIAL_STATE;
     for &mve in &vec![Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, 
                      Move::PlaceBuilders { a: Slot(3), b: Slot(4) }] {
         state = board.apply(mve, &state);
     }
-    state.buildings.set(Slot(2), 1); // in between, so can build on top of this to block in 1
-    state.buildings.set(Slot(5), 2); 
-    state.buildings.set(Slot(6), 2); 
-    state.buildings.set(Slot(7), 1); // escape route
-    state.buildings.set(Slot(8), 2); 
-    state.buildings.set(Slot(9), 2); 
+    state.set_building_height(Slot(2), 1); // in between, so can build on top of this to block in 1
+    state.set_building_height(Slot(5), 2); 
+    state.set_building_height(Slot(6), 2); 
+    state.set_building_height(Slot(7), 1); // escape route
+    state.set_building_height(Slot(8), 2); 
+    state.set_building_height(Slot(9), 2); 
     state.to_move = to_move;
     state
 }
@@ -206,7 +206,7 @@ pub fn test_all_cases<E, H>() -> (u32, EvaluatorInfo) where E: Evaluator, H: Heu
             error_cases += 1;
             println!("{}", format!("test case expected {:?} but got {:?}", case.scores, scores).red());
         } else {
-            println!("{}", format!("ok -> {:?}", new_info).green());
+            println!("{}", format!("ok -> {:?} -> {:?}", scores, new_info).green());
         }
     }
 
@@ -316,7 +316,8 @@ mod tests {
     // #[test]
     fn test_repeat_depth() {
         let board = StandardBoard::new(ZobristHash::new_unseeded_secure());
-        let mut state = State::initial();
+        let mut state = INITIAL_STATE;
+        
         state = board.apply(Move::PlaceBuilders { a: Slot(1), b: Slot(11) }, &state);
         state = board.apply(Move::PlaceBuilders { a: Slot(2), b: Slot(12) }, &state);
 
@@ -365,7 +366,6 @@ mod tests {
         let depth = 4;
         evaluate_cross_state(&board, &a_blockable(&board, Player(1)), depth);
         // evaluate_cross_state(&board, &b_blockable(&board, Player(0)), depth);
-        
     }
 
     // #[test]
@@ -378,7 +378,7 @@ mod tests {
         assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>());
     }   
 
-    // #[test]
+    #[test]
     fn negamax_alphabeta_exp() {
         assert!(time_test_cases::<NegaMaxAlphaBetaExp, SimpleHeightHeuristic>());
     }
@@ -386,7 +386,6 @@ mod tests {
     // #[test]
     fn minimax() {
         assert!(time_test_cases::<MiniMax, SimpleHeightHeuristic>());
-
     }
 
     // #[test]

@@ -6,23 +6,15 @@ Check if iterative deepending helps.
 
 # Santorini
 - Termination Cell + request tracking (seriously)
-- Move ordering
+- Better move ordering (domes adjacent to enemies etc.)
+- Mask based heuristic 
 - Bucketing in trasposition table (that's what Stockfish uses)
-- Better board representation (all maps/masks)
-- Add something better than lerp for animation? Would a spring or bias curve be that much better?
-- Request for RNG could be part of the AnalysisRequest ...
 - Split off productivity library with group_by, contains etc? Hard to tell if this is a good idea or not.
 
 ## Stockfish transposition table
 Buckets of 3 (kinda funny). 
 
 The replace value of an entry is calculated as its depth minus 8 times its relative age. 
-
-## Move Ordering
-- Move up
-- Build adjacency/height
-- Build on a square one higher than an opponent 
-- Move towards highest opponent
 
 ## Value sooner victories more valuable
 Perhaps we should reward faster victories than slower ones? Basically add remaining depth from to show how great it is?
@@ -35,7 +27,6 @@ The problem with this is it murders the transpotition table, as various states w
 - Remove trapped checking .... NeighbourHeuristic already scores trapped positions horifically.
 
 ### Other concerns
-- Principal Variation
 - Aspiration windows (alpha beta) based on last iterative deepening pass?
 - Late Move Reduction
 - "Quiet" moves, quinesence search.

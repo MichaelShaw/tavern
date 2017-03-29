@@ -22,18 +22,18 @@ impl Heuristic for SimpleHeightHeuristic {
     fn evaluate(board: &StandardBoard, state: &State) -> HeuristicValue {
         let mut n : HeuristicValue = 0;
 
-        for &bl in &state.builder_locations[0] {
+        for bl in state.builders[0].iter() {
             if StandardBoard::valid(bl) {
-                let h = state.buildings.get(bl) as HeuristicValue;
+                let h = state.get_building_height(bl) as HeuristicValue;
                 n += h;
             } else {
                 return 0;
             }
         }
 
-        for &bl in &state.builder_locations[1] {
+        for bl in state.builders[1].iter() {
             if StandardBoard::valid(bl) {
-                let h = state.buildings.get(bl) as HeuristicValue;
+                let h = state.get_building_height(bl) as HeuristicValue;
                 n -= h;
             } else {
                 return 0;
@@ -60,16 +60,22 @@ impl NeighbourHeuristic {
     fn freedom_for(board: &StandardBoard, state: &State, player:Player) -> HeuristicValue {
         let mut n : HeuristicValue = 0;
 
-        for &bl in &state.builder_locations[player.0 as usize] {
+        let collision = state.collision();
+
+        // we can do this better with height maps and counting zeroes
+
+        for bl in state.builders[player.0 as usize].iter() {
             if StandardBoard::valid(bl) {
-                let current_height = state.buildings.get(bl);
+                let current_height = state.get_building_height(bl);
                 n += (current_height + 1) as HeuristicValue;
                 for &move_to in board.adjacencies[bl.0 as usize].iter() {
                     if move_to == NONE { // we've reached end of adjacencies
                         break;
                     }
-                    let target_height = state.buildings.get(move_to);
-                    if state.collision.get(move_to) == 0 && target_height <= current_height + 1 {
+                    let target_height = state.get_building_height(move_to);
+
+
+                    if collision.get(move_to) == 0 && target_height <= current_height + 1 {
                         n += (target_height + 1) as HeuristicValue;
                     }
                 }
