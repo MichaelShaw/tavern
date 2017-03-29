@@ -57,6 +57,8 @@ impl Evaluator for NegaMaxAlphaBetaExp {
 
         let hash = board.hash(state);
 
+        // println!("== starting depth {:?}", depth);
+
         // TT TABLE READ
         let mut tt_best_move : Option<Move> = None;
         {
@@ -74,13 +76,15 @@ impl Evaluator for NegaMaxAlphaBetaExp {
 
                 //     panic!("FUCK THIS SHIT IM OUTTY");
                 // }
-                // println!("WE ROOT DID WE GET HIT -> {:?}", entry);
+                // println!("WE ROOT DID WE GET HIT -> {:?} desired depth {:?}", entry, depth);
                 if entry.depth >= depth {
                     info.tt_valid += 1;
                     match entry.entry_type {
                         EntryType::Exact => {
+                            // println!("valid exact!");
                             if let Some(mv) = entry.best_move {
-                                return (Some((mv, -entry.value)), info)  // unsure about this negation   
+                                // println!("it has a best move ... returning");
+                                return (Some((mv, entry.value)), info)  // unsure about this negation   
                             } 
                             // return (Some((entry.best_move.unwrap(), entry.value)), info)
                             // return (entry.value, 0)
@@ -94,7 +98,7 @@ impl Evaluator for NegaMaxAlphaBetaExp {
                     }
                     if alpha >= beta {
                         if let Some(mv) = entry.best_move {
-                            return (Some((mv, -entry.value)), info)  // unsure about this negation
+                            return (Some((mv, entry.value)), info)  // unsure about this negation
                         } 
                     }
                 } else {
@@ -146,13 +150,23 @@ impl Evaluator for NegaMaxAlphaBetaExp {
                 let new_state = board.apply(mve, state);
                 let delta_hash = board.delta_hash(state, mve);
                 let (v, move_count) = Self::eval::<H>(board, &new_state, hash ^ delta_hash, depth - 1, -beta, -alpha, -color, &mut move_stack, &mut info, evaluator_state); // 
+
+                // println!("move has value {:?}", v);
                 let av = v * -color;
                 if -v > alpha {
+
                     alpha = -v;
+                    // println!("its better! alpha is now {:?}", alpha);
                     best_move = Some(mve);
-                    best_observed = -v; // FUCK, WHAT DO WE DO HERE
+                    best_observed = av; // FUCK, WHAT DO WE DO HERE
                     info.pv_count += 1;
                 }
+                // if av > alpha {
+                //     alpha = av;
+                //     best_move = Some(mve);
+                //     best_observed = av; // FUCK, WHAT DO WE DO HERE
+                //     info.pv_count += 1;
+                // }
                 // alpha = max(alpha, -v);
                 (av, move_count)
             };
@@ -170,6 +184,8 @@ impl Evaluator for NegaMaxAlphaBetaExp {
             
         // };
         info.pv_count += 1;
+
+        // println!("BEST OBSERVED -> {:?}", best_observed);
         // put ROOT PV
         let entry = TranspositionEntry {
             // state: state.clone(),

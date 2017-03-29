@@ -169,9 +169,10 @@ pub fn test_cases(board:&StandardBoard) -> Vec<TestCase> {
 pub fn focus_test_cases(board:&StandardBoard) -> Vec<TestCase> {
     vec![
         // case("a_in_1", a_in_1(board, Player(0)), vec![PLAYER_0_WIN, PLAYER_0_WIN] ),
-        case("a_in_1", a_in_1(board, Player(1)), vec![2, PLAYER_0_WIN]),
+        // case("a_in_1", a_in_1(board, Player(1)), vec![2, PLAYER_0_WIN]),
         // case("a_in_2", a_in_2(board, Player(0)), vec![2,2,PLAYER_0_WIN, PLAYER_0_WIN] ),
         case("a_in_2", a_in_2(board, Player(1)), vec![1,2,1, PLAYER_0_WIN] ),
+        case("b_in_2", b_in_2(board, Player(0)), vec![-1,-2,-1, PLAYER_1_WIN] ),
     ]
 }
 
@@ -190,23 +191,26 @@ pub fn test_all_cases<E, H>() -> (u32, EvaluatorInfo) where E: Evaluator, H: Heu
     let mut info = EvaluatorInfo::new();
     let board = StandardBoard::new(ZobristHash::new_unseeded());
     let mut error_cases = 0;
-    let cases = test_cases(&board);
+    // let cases = test_cases(&board);
+    let cases = focus_test_cases(&board);
 
     let mut evaluator_state = E::new_state();
     
+    
     for case in &cases {
-        println!("Testing {} to move {:?}", case.name, case.state.to_move);
+        for _ in 0..2 {
+            println!("Testing {} to move {:?}", case.name, case.state.to_move);
 
-        let (scores, new_info) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, case.scores.len() as u8);
-        info += new_info.clone();
+            let (scores, new_info) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, case.scores.len() as u8);
+            info += new_info.clone();
 
-
-        if scores != case.scores {
-            // playout::<E, H>(&board, &case.state, case.scores.len() as u8);
-            error_cases += 1;
-            println!("{}", format!("test case expected {:?} but got {:?}", case.scores, scores).red());
-        } else {
-            println!("{}", format!("ok -> {:?} -> {:?}", scores, new_info).green());
+            if scores != case.scores {
+                // playout::<E, H>(&board, &case.state, case.scores.len() as u8);
+                error_cases += 1;
+                println!("{}", format!("test case expected {:?} but got {:?}", case.scores, scores).red());
+            } else {
+                println!("{}", format!("ok -> {:?} -> {:?}", scores, new_info).green());
+            }
         }
     }
 

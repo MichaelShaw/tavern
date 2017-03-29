@@ -54,7 +54,7 @@ mod tests {
     // use game::santorini::*;
     use super::*;
 
-    #[test]
+    // #[test]
     fn test_perft() {
         let mut move_stack = MoveStack::new();
         let board = StandardBoard::new(ZobristHash::new_unseeded());
