@@ -27,7 +27,7 @@ impl SlotTransform {
 pub trait Packed where Self: std::marker::Sized {
     fn empty() -> Self;
     fn get(&self, slot: Slot) -> u8;
-    fn set(&self, slot: Slot, value: u8) -> Self;
+    fn set(&mut self, slot: Slot, value: u8);
 }
 
 pub const EMPTY_SLOT_TRANSFORM : SlotTransform = SlotTransform { slots: [Slot(0) ; 25] };
@@ -139,9 +139,9 @@ impl Packed for Packed2 {
         ((self.0 >> (slot.0 * 2)) & TWO_MASK) as u8
     }
 
-    fn set(&self, slot:Slot, value: u8) -> Packed2 {
+    fn set(&mut self, slot:Slot, value: u8) {
         let remove_mask : u64 = (3 << (slot.0 * 2)) ^ ALL_MASK_64;
-        Packed2((self.0 & remove_mask) | ((value as u64) << (slot.0*2)))
+        self.0 = (self.0 & remove_mask) | ((value as u64) << (slot.0*2)) 
     }
 }
 

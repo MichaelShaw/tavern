@@ -191,7 +191,7 @@ fn sample_principal_variant(depth:u8) {
     let init = State::initial();
     let new_state = board.apply(Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, &init);
     let mut new_state_b = board.apply(Move::PlaceBuilders { a: Slot(23), b: Slot(24) }, &new_state);
-    new_state_b.buildings = new_state_b.buildings.set(Slot(5), 1);
+    new_state_b.buildings.set(Slot(5), 1);
 
     principal_variant::<MiniMax, SimpleHeightHeuristic>(&mut (), &board, &new_state_b, depth);
 }

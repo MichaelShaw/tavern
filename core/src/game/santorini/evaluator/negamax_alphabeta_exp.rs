@@ -18,7 +18,7 @@ pub struct NegaMaxAlphaBetaExp { }
 
 pub struct EvState {
     transposition: TranspositionTable,
-    pv_nodes : Vec<TranspositionEntry>,
+    // pv_nodes : Vec<TranspositionEntry>,
 }
 
 impl Evaluator for NegaMaxAlphaBetaExp {
@@ -31,7 +31,7 @@ impl Evaluator for NegaMaxAlphaBetaExp {
     fn new_state() -> EvState {
         let state = EvState {
             transposition : TranspositionTable::new(24),
-            pv_nodes : Vec::new(),
+            // pv_nodes : Vec::new(),
         };
         println!("constructed state with size -> {} ({} bytes)", state.transposition.entries.len(), state.transposition.approx_size_bytes());
         state
@@ -159,11 +159,6 @@ impl Evaluator for NegaMaxAlphaBetaExp {
             info.move_count += count;
             unsorted_moves.push((mve, v));
         }
-
-        for entry in &evaluator_state.pv_nodes {
-            evaluator_state.transposition.put(entry.clone());
-        }
-        evaluator_state.pv_nodes.clear();
 
         // let score_type = if best_observed <= alpha {
         //     EntryType::Upper
@@ -323,9 +318,9 @@ impl NegaMaxAlphaBetaExp {
             depth: depth,
             best_move: best_move,
         };
-        if score_type == EntryType::Exact {
-            ev_state.pv_nodes.push(entry.clone());
-        }
+        // if score_type == EntryType::Exact {
+        //     ev_state.pv_nodes.push(entry.clone());
+        // }
         ev_state.transposition.put(entry);
 
         move_stack.next = stack_begin;

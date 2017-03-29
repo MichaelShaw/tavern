@@ -7,10 +7,16 @@ Check if iterative deepending helps.
 # Santorini
 - Termination Cell + request tracking (seriously)
 - Move ordering
+- Bucketing in trasposition table (that's what Stockfish uses)
 - Better board representation (all maps/masks)
 - Add something better than lerp for animation? Would a spring or bias curve be that much better?
 - Request for RNG could be part of the AnalysisRequest ...
 - Split off productivity library with group_by, contains etc? Hard to tell if this is a good idea or not.
+
+## Stockfish transposition table
+Buckets of 3 (kinda funny). 
+
+The replace value of an entry is calculated as its depth minus 8 times its relative age. 
 
 ## Move Ordering
 - Move up

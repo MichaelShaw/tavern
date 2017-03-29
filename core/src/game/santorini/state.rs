@@ -66,6 +66,7 @@ impl State {
         }
     }
 
+
     pub fn player(&self) -> Player {
         self.to_move
     }
@@ -78,10 +79,11 @@ impl State {
         let height = self.buildings.get(slot);
         let build_dome = height == 3;
         if build_dome {
-            self.domes = self.domes.set(slot, 1);
-            self.collision = self.collision.set(slot, 1);
+            self.domes.set(slot, 1);
+            self.collision.set(slot, 1);
         } else {
-            self.buildings = self.buildings.set(slot, self.buildings.get(slot) + 1);
+            let new_height = self.buildings.get(slot) + 1;
+            self.buildings.set(slot, new_height);
         }
     }
 }

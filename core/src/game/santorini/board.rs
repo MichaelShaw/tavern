@@ -24,6 +24,7 @@ impl MoveSink for Vec<Move> {
     }
 }
 
+
 impl StandardBoard {
     pub fn transform<F>(&self, f: F) -> SlotTransform where F: Fn(Position) -> Position {
         let mut transform = SlotTransform { slots: [Slot(0); 25] };
@@ -46,9 +47,9 @@ impl StandardBoard {
             let from = Slot(i);
             let to = slot_transform.slots[i as usize];
 
-            new_state.buildings = new_state.buildings.set(to, state.buildings.get(from));
-            new_state.domes = new_state.domes.set(to, state.domes.get(from));
-            new_state.collision = new_state.collision.set(to, state.collision.get(from));
+            new_state.buildings.set(to, state.buildings.get(from));
+            new_state.domes.set(to, state.domes.get(from));
+            new_state.collision.set(to, state.collision.get(from));
         }
 
         for player_id in 0..2 {
@@ -107,7 +108,7 @@ impl StandardBoard {
                         adjacencies[i][j] = slot;
                         j += 1;
 
-                        packed.0 |= (1 << slot.0);
+                        packed.0 |= 1 << slot.0;
                     }
                 }
             }
@@ -297,9 +298,9 @@ impl StandardBoard {
                 let mut new_state = state.clone();
 
                 new_state.builder_locations[player_to_move.0 as usize][0] = a;
-                new_state.collision = new_state.collision.set(a, 1);
+                new_state.collision.set(a, 1);
                 new_state.builder_locations[player_to_move.0 as usize][1] = b;
-                new_state.collision = new_state.collision.set(b, 1);
+                new_state.collision.set(b, 1);
 
                 new_state.ensure_ordered(player_to_move);
 
@@ -316,8 +317,8 @@ impl StandardBoard {
                 for i in 0..BUILDERS {
                     let builder_location = new_state.builder_locations[player_to_move.0 as usize][i];    
                     if builder_location == from {
-                        new_state.collision = new_state.collision.set(from, 0);
-                        new_state.collision = new_state.collision.set(to, 1);
+                        new_state.collision.set(from, 0);
+                        new_state.collision.set(to, 1);
                         new_state.builder_locations[player_to_move.0 as usize][i] = to; // place this builder
                         break;
                     }

@@ -4,7 +4,7 @@ use colored::*;
 
 pub fn mild_a_advantage(board:&StandardBoard, to_move: Player) -> State {
     let mut state = distant_state(board);
-    state.buildings = state.buildings.set(Slot(5), 1);
+    state.buildings.set(Slot(5), 1);
     state.to_move = to_move;
     state
 }
@@ -27,8 +27,8 @@ pub fn initial(board: &StandardBoard, to_move:Player) -> State {
 pub fn a_in_1(board:&StandardBoard, to_move: Player) -> State {
     let mut state = distant_state(board);
     // staircase for player 0
-    state.buildings = state.buildings.set(Slot(1), 2);
-    state.buildings = state.buildings.set(Slot(2), 3);
+    state.buildings.set(Slot(1), 2);
+    state.buildings.set(Slot(2), 3);
     state.to_move = to_move;
     state
 }
@@ -36,9 +36,9 @@ pub fn a_in_1(board:&StandardBoard, to_move: Player) -> State {
 pub fn a_in_2(board:&StandardBoard, to_move: Player) -> State {
     let mut state = distant_state(board);
     // staircase for player 0
-    state.buildings = state.buildings.set(Slot(1), 1);
-    state.buildings = state.buildings.set(Slot(2), 2);
-    state.buildings = state.buildings.set(Slot(3), 3);
+    state.buildings.set(Slot(1), 1);
+    state.buildings.set(Slot(2), 2);
+    state.buildings.set(Slot(3), 3);
     state.to_move = to_move;
     state
 }
@@ -46,8 +46,8 @@ pub fn a_in_2(board:&StandardBoard, to_move: Player) -> State {
 pub fn b_in_1(board: &StandardBoard, to_move: Player) -> State {
     let mut state = distant_state(board);
     // staircase for player 1
-    state.buildings = state.buildings.set(Slot(23), 2);
-    state.buildings = state.buildings.set(Slot(22), 3);
+    state.buildings.set(Slot(23), 2);
+    state.buildings.set(Slot(22), 3);
 
     state.to_move = to_move;
     state
@@ -56,9 +56,9 @@ pub fn b_in_1(board: &StandardBoard, to_move: Player) -> State {
 pub fn b_in_2(board: &StandardBoard, to_move: Player) -> State {
     let mut state = distant_state(board);
     // staircase for player 1
-    state.buildings = state.buildings.set(Slot(23), 1);
-    state.buildings = state.buildings.set(Slot(22), 2);
-    state.buildings = state.buildings.set(Slot(21), 3);
+    state.buildings.set(Slot(23), 1);
+    state.buildings.set(Slot(22), 2);
+    state.buildings.set(Slot(21), 3);
     state.to_move = to_move;
     state
 }
@@ -69,9 +69,9 @@ pub fn a_blockable(board: &StandardBoard, to_move: Player) -> State {
                      Move::PlaceBuilders { a: Slot(3), b: Slot(4) }] {
         state = board.apply(mve, &state);
     }
-    state.buildings = state.buildings.set(Slot(1), 2);
-    state.buildings = state.buildings.set(Slot(2), 3);
-    state.buildings = state.buildings.set(Slot(3), 1); // we put the B player up a bit so it must move down to sacrifice
+    state.buildings.set(Slot(1), 2);
+    state.buildings.set(Slot(2), 3);
+    state.buildings.set(Slot(3), 1); // we put the B player up a bit so it must move down to sacrifice
     state.to_move = to_move;
     state
 }
@@ -82,9 +82,9 @@ pub fn b_blockable(board: &StandardBoard, to_move: Player) -> State {
                      Move::PlaceBuilders { a: Slot(3), b: Slot(4) }] {
         state = board.apply(mve, &state);
     }
-    state.buildings = state.buildings.set(Slot(1), 1);
-    state.buildings = state.buildings.set(Slot(2), 3);
-    state.buildings = state.buildings.set(Slot(3), 2); // we put the B player up a bit so it must move down to sacrifice
+    state.buildings.set(Slot(1), 1);
+    state.buildings.set(Slot(2), 3);
+    state.buildings.set(Slot(3), 2); // we put the B player up a bit so it must move down to sacrifice
     state.to_move = to_move;
     state
 }
@@ -95,9 +95,9 @@ pub fn any_in_1(board:&StandardBoard, to_move: Player) -> State {
                      Move::PlaceBuilders { a: Slot(3), b: Slot(4) }] {
         state = board.apply(mve, &state);
     }
-    state.buildings = state.buildings.set(Slot(1), 2);
-    state.buildings = state.buildings.set(Slot(2), 3);
-    state.buildings = state.buildings.set(Slot(3), 2); // we put the B player up a bit so it must move down to sacrifice
+    state.buildings.set(Slot(1), 2);
+    state.buildings.set(Slot(2), 3);
+    state.buildings.set(Slot(3), 2); // we put the B player up a bit so it must move down to sacrifice
     state.to_move = to_move;
     state
 }
@@ -108,12 +108,12 @@ pub fn any_trap_in_1(board:&StandardBoard, to_move: Player) -> State {
                      Move::PlaceBuilders { a: Slot(3), b: Slot(4) }] {
         state = board.apply(mve, &state);
     }
-    state.buildings = state.buildings.set(Slot(2), 1); // in between, so can build on top of this to block in 1
-    state.buildings = state.buildings.set(Slot(5), 2); 
-    state.buildings = state.buildings.set(Slot(6), 2); 
-    state.buildings = state.buildings.set(Slot(7), 1); // escape route
-    state.buildings = state.buildings.set(Slot(8), 2); 
-    state.buildings = state.buildings.set(Slot(9), 2); 
+    state.buildings.set(Slot(2), 1); // in between, so can build on top of this to block in 1
+    state.buildings.set(Slot(5), 2); 
+    state.buildings.set(Slot(6), 2); 
+    state.buildings.set(Slot(7), 1); // escape route
+    state.buildings.set(Slot(8), 2); 
+    state.buildings.set(Slot(9), 2); 
     state.to_move = to_move;
     state
 }
@@ -184,6 +184,7 @@ pub fn evaluate_state<E, H>(evaluator_state: &mut E::EvaluatorState, board:&Stan
     }).collect();
     (heuristic_values,info)
 }
+
 pub fn test_all_cases<E, H>() -> (u32, EvaluatorInfo) where E: Evaluator, H: Heuristic {
     println!("==== Testing {} all cases =====", E::name());
     let mut info = EvaluatorInfo::new();

@@ -23,14 +23,18 @@ impl Packed for Packed1 {
         ((self.0 >> slot.0) & ONE_MASK) as u8
     }
 
-    fn set(&self, slot : Slot, value: u8) -> Packed1 {
+    fn set(&mut self, slot : Slot, value: u8) {
         let remove_mask : u32 = (1 << slot.0) ^ ALL_MASK_32;
-        Packed1((self.0 & remove_mask) | ((value as u32) << slot.0))
+        self.0 = (self.0 & remove_mask) | ((value as u32) << slot.0)
     }
 }
 
 impl Packed1 {
-    fn count(&self) -> u32 {
+    pub fn toggle(&mut self, slot : Slot) {
+        self.0 = self.0 ^ (1 << slot.0)
+    }
+
+    pub fn count(&self) -> u32 {
         self.0.count_ones()
     }
 
@@ -137,6 +141,7 @@ impl Iterator for Packed1Iterator {
         Some(sq)
     }
 }
+
 
 #[cfg(test)]
 mod tests {

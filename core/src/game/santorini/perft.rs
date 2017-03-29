@@ -129,10 +129,10 @@ impl StandardBoard {
             }
         } else {
             for move_from in builders.iter() {
-                let current_height = state.buildings.get(move_from);
+                let current_height = state.get_building_height(move_from);
                 let moveable_adjacencies = self.packed_adjacencies[move_from.0 as usize] & available;
                 for move_to in moveable_adjacencies.iter() {
-                    if state.buildings.get(move_to) <= current_height + 1 {
+                    if state.get_building_height(move_to) <= current_height + 1 {
                         // add non collideables, then flip our original movement location
                         let buildable_adjacencies = self.packed_adjacencies[move_to.0 as usize] & available ^ Packed1(1 << move_from.0); // remove from
                         for build_at in buildable_adjacencies.iter() {
@@ -147,7 +147,7 @@ impl StandardBoard {
     pub fn new_ascension_winning_move(&self, state:&NewState, mve: Move) -> bool {
         match mve {
             Move::PlaceBuilders { .. } => false,
-            Move::Move { to, .. } => state.buildings.get(to) == 3,
+            Move::Move { to, .. } => state.get_building_height(to) == 3,
         }
     }
 
@@ -182,35 +182,51 @@ impl StandardBoard {
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub struct NewState {
     pub builders: [Packed1; 2],
-    pub buildings : Packed2, 
+    pub building_major : Packed1, 
+    pub building_minor : Packed1,
     pub domes : Packed1,
     pub to_move : Player,
 }
 
 impl NewState {
+    pub fn get_building_height(&self, slot:Slot) -> u8 {
+        self.building_major.get(slot) * 2 + self.building_minor.get(slot)
+    }
+
+    pub fn set_building_height(&mut self, slot:Slot, height: u8) {
+        self.building_major.set(slot, (height >> 1) & 1); // that is ... not at all write
+        self.building_minor.set(slot, height & 1);
+    }
+
     pub fn next_player(&self) -> Player {
         Player((self.to_move.0 + 1) % 2)
     }
 
+
     pub fn build_at(&mut self, slot:Slot) {
-        let height = self.buildings.get(slot);
+        let height = self.get_building_height(slot);
         let build_dome = height == 3;
         if build_dome {
-            self.domes = self.domes.set(slot, 1);
+            self.domes.toggle(slot);
             // self.collision = self.collision.set(slot, 1);
         } else {
-            self.buildings = self.buildings.set(slot, self.buildings.get(slot) + 1);
+            self.set_building_height(slot, height + 1);
         }
     }
 }
 
 pub const INITIAL_NEW_STATE : NewState =  NewState {
     builders: [PACKED1_EMPTY; 2],
-    buildings: PACKED2_EMPTY,
+    building_major: PACKED1_EMPTY,
+    building_minor: PACKED1_EMPTY,
     domes: PACKED1_EMPTY,
     // collision: PACKED1_EMPTY,
     to_move: Player(0),
 };
+
+use game::santorini::tests::test_cases;
+
+pub const PERFT_DEPTH : usize = 4;
 
 #[cfg(test)]
 mod tests {
@@ -239,18 +255,19 @@ mod tests {
         }
     }
 
+    
+
     #[test]
     fn test_perft() {
         let mut move_stack = MoveStack::new();
-
         let board = StandardBoard::new(ZobristHash::new_unseeded());
 
-        
+        let mut moves = 0;
 
-        let state = State::initial();
-        let depth = 5;
         let start = time::precise_time_ns();
-        let moves = board.perft(&state, depth, &mut move_stack);
+        for test_case in test_cases(&board) {
+            moves += board.perft(&test_case.state, PERFT_DEPTH, &mut move_stack);    
+        }
         let duration = time::precise_time_ns() - start;
         let as_seconds = (duration as f64) / 1_000_000_000f64;
         
@@ -260,14 +277,15 @@ mod tests {
 
     #[test]
     fn new_test_perft() {
+        let mut move_stack = MoveStack::new();
         let board = StandardBoard::new(ZobristHash::new_unseeded());
 
-        let mut move_stack = MoveStack::new();
+        let mut moves = 0;
 
-        let state = INITIAL_NEW_STATE;
-        let depth = 5;
         let start = time::precise_time_ns();
-        let moves = board.new_perft(&state, depth, &mut move_stack);
+         for test_case in test_cases(&board) {
+            moves += board.perft(&test_case.state, PERFT_DEPTH, &mut move_stack);    
+        }
         let duration = time::precise_time_ns() - start;
         let as_seconds = (duration as f64) / 1_000_000_000f64;
         
