@@ -407,7 +407,7 @@ mod tests {
         use game::santorini::tests::*;
         // use game::santorini::*;
 
-        // #[test]
+        #[test]
         fn all() {
            println!("==== PERFORMANCE TESTING =======");
            time_exploration::<MiniMax, NeighbourHeuristic>(3);

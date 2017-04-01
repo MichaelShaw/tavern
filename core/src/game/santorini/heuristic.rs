@@ -122,7 +122,7 @@ impl AdjustedNeighbourHeuristic {
 
         let mut shared_adjacencies = PACKED1_EMPTY;
 
-        println!("AH:: player {:?}", player);
+        // println!("AH:: player {:?}", player);
 
         // 1. exact heights
         for bl in builders.iter() {
@@ -131,7 +131,7 @@ impl AdjustedNeighbourHeuristic {
             // add current height o value
             let hv = STANDING_SCORE[h as usize];
 
-            println!("AH :: builder {:?} gets {} for height", bl, hv);
+            // println!("AH :: builder {:?} gets {} for height", bl, hv);
             n += hv;
 
 
@@ -155,7 +155,7 @@ impl AdjustedNeighbourHeuristic {
             let neighbour_count = (available & builder_adjacencies[h] & heights[h]).count() as HeuristicValue;
             let hv = neighbour_count * NEIGHBOUR_SCORE[h as usize];
 
-            println!("AH :: height {} with square count {} gets {}", h, neighbour_count, hv);
+            // println!("AH :: height {} with square count {} gets {}", h, neighbour_count, hv);
 
             n += hv;
         }
@@ -165,7 +165,7 @@ impl AdjustedNeighbourHeuristic {
     }
 }
 
-pub const STANDING_SCORE : [HeuristicValue; 4] = [0, 2, 8, 2];
+pub const STANDING_SCORE : [HeuristicValue; 4] = [0, 2, 8, 2]; // the 2 for height 3 is because ... height 3 is worthless outside of movement freedom
 pub const NEIGHBOUR_SCORE : [HeuristicValue; 4] = [1, 2, 4, 8];
 
 

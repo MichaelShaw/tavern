@@ -152,7 +152,7 @@ mod tests {
     
     use super::*;
 
-    // #[test]
+    #[test]
     fn test_iter() {
         let slots = vec![Slot(2), Slot(4), Slot(13), Slot(15)];
         let mut p = PACKED1_EMPTY;
