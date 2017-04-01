@@ -18,6 +18,7 @@ pub fn distant_state(board:&StandardBoard) -> State {
     state
 }
 
+#[allow(unused_variables)]
 pub fn initial(board: &StandardBoard, to_move:Player) -> State {
     let mut state = INITIAL_STATE;
     state.to_move = to_move;

@@ -7,45 +7,14 @@ Check if iterative deepending helps.
 # Santorini
 - Termination Cell + request tracking (seriously)
 - Better move ordering (domes adjacent to enemies etc.)
-- Mask based heuristic 
-- Bucketing in trasposition table (that's what Stockfish uses)
-- Split off productivity library with group_by, contains etc? Hard to tell if this is a good idea or not.
-
-## Stockfish transposition table
-Buckets of 3 (kinda funny). 
-
-The replace value of an entry is calculated as its depth minus 8 times its relative age. 
+- Split off productivity library with group_by, pairs, contains etc? Hard to tell if this is a good idea or not.
 
 ## Value sooner victories more valuable
 Perhaps we should reward faster victories than slower ones? Basically add remaining depth from to show how great it is?
 
 The problem with this is it murders the transpotition table, as various states will be evaluated differently based on how far they are away .... the effects of which I'm not confident in.
 
-## Heuristic
-- Some notion of how many moveable squares are you closer to. So if they're in file 3, and you're in file 4, they get recognition for being closer to file 1.
-- Alternate "Play it out" heuristic for when we've discovered that we can definitely lose.
-- Remove trapped checking .... NeighbourHeuristic already scores trapped positions horifically.
-
-### Other concerns
-- Aspiration windows (alpha beta) based on last iterative deepening pass?
-- Late Move Reduction
-- "Quiet" moves, quinesence search.
-
 ## AI 
-
-### Notes on our heuristic degradation
-
-It's a matter of efficiency and bang for buck .... the heuristic can basically detect trapedness already.
-
-We currently check for opponent trappedness when we evaluate the heuristic. This is currently the only method of checking that our last move secured a trapedness win.
-
-It's interesting to basically lose 1 ply of search depth over this.
-
-If we left this out, we'd still need to increase the extra ply to work out whether it's a trapping victory or not.
-
-Running one extra ply, and leaving it out .... could still be more efficient. You run N+1 ply, you miss out on the opponents N+1 trap (you would if you ran N), and you get to run the heuristic at N+1.
-
-Let's assume it's the opposite, the last move seen is them trapping you, due to complete lack of movement the heuristic score will be dreadful, basically near zero. (no adjacencies)
 
 ### Naive Move Counting
 

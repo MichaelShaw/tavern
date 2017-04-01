@@ -87,11 +87,10 @@ mod tests {
     use HashMap;
 
     #[test]
-    fn depth_check() {
+    fn heuristic_check() {
         use super::HeuristicName::*;
 
         let board = StandardBoard::new(ZobristHash::new_unseeded_secure());
-
 
         let depths : Vec<Depth> = (2..8).collect();
         let heuristics : Vec<HeuristicName> = vec![Simple, Neighbour, AdjustedNeighbour];
@@ -110,15 +109,59 @@ mod tests {
                 let ai_profiles = [a_profile, b_profile];
                 let (a_first_winner, _)= adversarial_playout(&board, ai_profiles, |_, _, _| { });
                 *won_games.entry(ai_profiles[a_first_winner.0 as usize].heuristic).or_insert(0) += 1;
+                println!(".");
 
-                let rev_ai_profiles = [a_profile, b_profile];
+                let rev_ai_profiles = [b_profile, a_profile];
                 let (b_first_winner, _)= adversarial_playout(&board, rev_ai_profiles, |_, _, _| { });
                 *won_games.entry(rev_ai_profiles[b_first_winner.0 as usize].heuristic).or_insert(0) += 1;
+                println!(".");
             }
+            println!("\n");
 
             for (heuristic, count) in won_games {
                 println!("{:?} won {} games", heuristic, count);
             }
+        }
+    }
+
+    #[test]
+    fn depth_check() {
+        let board = StandardBoard::new(ZobristHash::new_unseeded_secure());
+
+        let depths : Vec<Depth> = (2..8).collect();
+
+        let depth_pairs = pairs(&depths);
+
+        println!("how many depth pairs -> {}", depth_pairs.len());
+
+        let mut won_games : HashMap<Depth, u32> = HashMap::default();
+
+        for &(a_depth, b_depth) in &depth_pairs {
+            let a_profile = AIProfile { depth: a_depth, heuristic: HeuristicName::AdjustedNeighbour };
+            let b_profile = AIProfile { depth: b_depth, heuristic: HeuristicName::AdjustedNeighbour };
+
+            let ai_profiles = [a_profile, b_profile];
+            let (a_first_winner, _)= adversarial_playout(&board, ai_profiles, |_, _, _| { });
+            *won_games.entry(ai_profiles[a_first_winner.0 as usize].depth).or_insert(0) += 1;
+            
+            let w = ai_profiles[a_first_winner.0 as usize].depth;
+            let l = ai_profiles[((a_first_winner.0 + 1) % 2) as usize].depth;
+
+            println!("when {} started {} beat {}", a_depth, w, l);
+
+            let rev_ai_profiles = [b_profile, a_profile];
+            let (b_first_winner, _)= adversarial_playout(&board, rev_ai_profiles, |_, _, _| { });
+            *won_games.entry(rev_ai_profiles[b_first_winner.0 as usize].depth).or_insert(0) += 1;
+            
+            let w = rev_ai_profiles[b_first_winner.0 as usize].depth;
+            let l = rev_ai_profiles[((b_first_winner.0 + 1) % 2) as usize].depth;
+
+            println!("when {} started {} beat {}", b_depth, w, l);
+        }
+        println!("\n\n=== Totals ===");
+
+        for (depth, count) in won_games {
+            println!("{:?} won {} games", depth , count);
         }
     }
 }

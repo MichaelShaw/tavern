@@ -20,7 +20,9 @@ impl Evaluator for NegaMaxAlphaBeta {
     }
 
     fn new_state() -> () { () }
+    #[allow(unused_variables)]
     fn new_search(evaluator_state: &mut ()) { }
+    #[allow(unused_variables)]
     fn reset(evaluator_state: &mut ()) { }
      
     #[allow(unused_variables)]
