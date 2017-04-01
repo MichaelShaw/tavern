@@ -123,7 +123,6 @@ impl TranspositionTable {
     }
 
     pub fn reset(&mut self) {
-        println!("reset tt table!");
         self.generation = 0;
         for i in 0..self.entries.len() {
             self.entries[i] = NULL_ENTRY;
