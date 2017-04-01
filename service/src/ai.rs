@@ -54,7 +54,7 @@ impl AIService {
                 match event {
                     Analysis { state, search_method, min_depth, max_depth, time_limit } => {
                         match search_method {
-                            SearchMethod::NegaMaxAlphaBetaExp => AIService::evaluate::<NegaMaxAlphaBetaExp, NeighbourHeuristic>(&mut evaluator_state, &board, &state, min_depth, max_depth, time_limit, &ai_tx),
+                            SearchMethod::NegaMaxAlphaBetaExp => AIService::evaluate::<NegaMaxAlphaBetaExp, AdjustedNeighbourHeuristic>(&mut evaluator_state, &board, &state, min_depth, max_depth, time_limit, &ai_tx),
                         }
                     },
                     Shutdown => {
