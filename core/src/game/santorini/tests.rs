@@ -301,16 +301,17 @@ mod tests {
     fn adverserial_playout() {
         let board = StandardBoard::new(ZobristHash::new_unseeded());
         // let board = StandardBoard::new(ZobristHash::new_unseeded());
-        let depth = 6;
+        let depth = 7;
 
         let mut move_number = 0;
 
         println!("starting negamax_ab_exp adversarial playout");
 
-        let (winner, a_info, b_info) = iterative_adversarial_playout::<NegaMaxAlphaBetaExp, NeighbourHeuristic, _>(&board, depth, |state, mve, score| {
+
+        let (winner, a_info, b_info) = iterative_adversarial_playout::<NegaMaxAlphaBetaExp, AdjustedNeighbourHeuristic, _>(&board, depth, |state, mve, score| {
             move_number += 1;
 
-            let h = NeighbourHeuristic::evaluate(&board, state);
+            let h = AdjustedNeighbourHeuristic::evaluate(&board, state);
             println!("======= MOVE {} =======", move_number);
             println!("{:?} makes {:?} with expected score {}", state.next_player(), mve, score);
             println!("{}", board.print(state));
@@ -345,7 +346,7 @@ mod tests {
     }
 
     #[test]
-    fn test_adverserial_playout_old() {
+    fn andient_adversarial() {
         let board = StandardBoard::new(ZobristHash::new_unseeded());
         let depth = 4;
 

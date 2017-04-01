@@ -44,3 +44,7 @@ a info -> EvaluatorInfo { moves: 206358542 (3.34M/second) pv nodes: 423486 (0.00
 b info -> EvaluatorInfo { moves: 153223202 (3.38M/second) pv nodes: 277410 (0.00%) average branch factor: 9.8 time: 45.29s transpotition (valid 2175397 sugg 1316612 miss 164748262)}
 
 larger transposition table
+
+winner -> Player(0)
+a info -> EvaluatorInfo { moves: 88673791 (4.59M/second) pv nodes: 119232 (0.00%) average branch factor: 11.8 time: 19.33s transpotition (valid 3780126 sugg 1180109 miss 96319438)}
+b info -> EvaluatorInfo { moves: 83016679 (4.71M/second) pv nodes: 126302 (0.00%) average branch factor: 13.1 time: 17.62s transpotition (valid 2960205 sugg 1140557 miss 90073064)}
