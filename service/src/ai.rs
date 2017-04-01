@@ -22,6 +22,7 @@ pub enum SearchMethod {
 
 #[derive(Clone)]
 pub enum Request {
+    Reset,
     Analysis { state: State, search_method: SearchMethod, min_depth: Depth, max_depth: Depth, time_limit : Option<f64> },
     Shutdown,
 }
@@ -52,6 +53,9 @@ impl AIService {
 
             while let Some(event) = ai_rx.recv().ok() {
                 match event {
+                    Reset => {
+                        NegaMaxAlphaBetaExp::reset(&mut evaluator_state);
+                    },
                     Analysis { state, search_method, min_depth, max_depth, time_limit } => {
                         match search_method {
                             SearchMethod::NegaMaxAlphaBetaExp => AIService::evaluate::<NegaMaxAlphaBetaExp, AdjustedNeighbourHeuristic>(&mut evaluator_state, &board, &state, min_depth, max_depth, time_limit, &ai_tx),
@@ -150,6 +154,10 @@ impl AIService {
             time_limit: time_limit,
         };
         self.send.send(request).expect("can send analysis request to ai worker");
+    }
+
+    pub fn reset(&self) {
+        self.send.send(Request::Reset).expect("that i can send a reset");
     }
 
     pub fn shutdown(self) {

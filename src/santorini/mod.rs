@@ -132,7 +132,6 @@ impl SantoriniGame {
 
         let mut new_interaction_state : Option<StateTransition> = None;
 
-
         match self.game.interaction_state {
             InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => {
                 if let Some(ref analysis) = self.game.analysis.clone() {
@@ -282,7 +281,7 @@ impl SantoriniGame {
             cpu_players : cpu_players,
             current_move_positions : Vec::new(),
         };
-
+        self.ai_service.reset();
         if self.game.cpu_players.contains(&self.game.board_state.state.player()) {
             self.requiest_ai_analysis();
         }
