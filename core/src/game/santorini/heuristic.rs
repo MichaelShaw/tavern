@@ -13,6 +13,19 @@ pub const WORST : HeuristicValue = -std::i16::MAX; // to prevent overflow on neg
 pub const PLAYER_0_WIN : HeuristicValue = std::i16::MAX;
 pub const PLAYER_1_WIN : HeuristicValue = -std::i16::MAX; // to prevent overflow on negation
 
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+pub enum HeuristicName {
+    Simple,
+    Neighbour,
+    AdjustedNeighbour
+}
+
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+pub struct AIProfile {
+    pub depth: Depth,
+    pub heuristic : HeuristicName,
+}
+
 pub struct SimpleHeightHeuristic {}
 
 impl Heuristic for SimpleHeightHeuristic {

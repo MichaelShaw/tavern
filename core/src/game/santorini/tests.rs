@@ -308,7 +308,9 @@ mod tests {
         println!("starting negamax_ab_exp adversarial playout");
 
 
-        let (winner, a_info, b_info) = iterative_adversarial_playout::<NegaMaxAlphaBetaExp, AdjustedNeighbourHeuristic, _>(&board, depth, |state, mve, score| {
+        let ai_profile = AIProfile { depth: depth, heuristic: HeuristicName::AdjustedNeighbour };
+
+        let (winner, infos) = adversarial_playout(&board, [ai_profile; 2], |state, mve, score| {
             move_number += 1;
 
             let h = AdjustedNeighbourHeuristic::evaluate(&board, state);
@@ -320,9 +322,10 @@ mod tests {
         });
 
         println!("winner -> {:?}", winner);
-        println!("a info -> {:?}", a_info);
-        println!("b info -> {:?}", b_info);
+        println!("a info -> {:?}", infos[0]);
+        println!("b info -> {:?}", infos[1]);
     }
+
 
     #[test]
     fn test_repeat_depth() {
@@ -343,32 +346,6 @@ mod tests {
         
         println!("b info -> {:?}", b_info);
         
-    }
-
-    #[test]
-    fn andient_adversarial() {
-        let board = StandardBoard::new(ZobristHash::new_unseeded());
-        let depth = 4;
-
-        let mut move_number = 0;
-
-        println!("===== OLD starting negamax_ab ORIG adversarial playout =====");
-
-        let (winner, a_info, b_info) = iterative_adversarial_playout::<NegaMaxAlphaBeta, NeighbourHeuristic, _>(&board, depth, |state, mve, score| {
-            move_number += 1;
-
-            let h = NeighbourHeuristic::evaluate(&board, state);
-            println!("======= OLD MOVE {} =======", move_number);
-            println!("{:?} makes {:?} with expected score {}", state.next_player(), mve, score);
-            println!("{}", board.print(state));
-            println!("heuristic current state -> {}", h);
-            println!("");
-        });
-
-        println!("==== OLD =====");
-        println!("winner -> {:?}", winner);
-        println!("a info -> {:?}", a_info);
-        println!("b info -> {:?}", b_info);
     }
 
     #[test]

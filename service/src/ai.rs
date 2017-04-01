@@ -15,15 +15,12 @@ pub struct AIService {
     join_handle: JoinHandle<()>,
 }
 
-#[derive(Clone, Copy)]
-pub enum SearchMethod {
-    NegaMaxAlphaBetaExp
-}
+
 
 #[derive(Clone)]
 pub enum Request {
     Reset,
-    Analysis { state: State, search_method: SearchMethod, min_depth: Depth, max_depth: Depth, time_limit : Option<f64> },
+    Analysis { state: State, ai_profile: AIProfile, time_limit : Option<f64> },
     Shutdown,
 }
 
@@ -56,9 +53,12 @@ impl AIService {
                     Reset => {
                         NegaMaxAlphaBetaExp::reset(&mut evaluator_state);
                     },
-                    Analysis { state, search_method, min_depth, max_depth, time_limit } => {
-                        match search_method {
-                            SearchMethod::NegaMaxAlphaBetaExp => AIService::evaluate::<NegaMaxAlphaBetaExp, AdjustedNeighbourHeuristic>(&mut evaluator_state, &board, &state, min_depth, max_depth, time_limit, &ai_tx),
+                    Analysis { state, ai_profile, time_limit } => {
+                        println!("Starting analysis with ai_profile -> {:?}", ai_profile);
+                        match ai_profile.heuristic {
+                            HeuristicName::Simple => AIService::evaluate::<NegaMaxAlphaBetaExp, SimpleHeightHeuristic>(&mut evaluator_state, &board, &state, ai_profile.depth, time_limit, &ai_tx),
+                            HeuristicName::Neighbour => AIService::evaluate::<NegaMaxAlphaBetaExp, NeighbourHeuristic>(&mut evaluator_state, &board, &state, ai_profile.depth, time_limit, &ai_tx),
+                            HeuristicName::AdjustedNeighbour => AIService::evaluate::<NegaMaxAlphaBetaExp, AdjustedNeighbourHeuristic>(&mut evaluator_state, &board, &state, ai_profile.depth, time_limit, &ai_tx),
                         }
                     },
                     Shutdown => {
@@ -86,7 +86,7 @@ impl AIService {
         }
     }
 
-    pub fn evaluate<E, H>(evaluator_state: &mut E::EvaluatorState, board: &StandardBoard, state:&State, min_depth: Depth, max_depth:Depth, time_limit: Option<f64>, send: &Sender<StateAnalysis>) where E: Evaluator, H: Heuristic {
+    pub fn evaluate<E, H>(evaluator_state: &mut E::EvaluatorState, board: &StandardBoard, state:&State, max_depth:Depth, time_limit: Option<f64>, send: &Sender<StateAnalysis>) where E: Evaluator, H: Heuristic {
 
         E::new_search(evaluator_state);
 
@@ -127,8 +127,8 @@ impl AIService {
             } else {
                 let next_timing_calc = info.time * (info.average_branch_factor() as f64); 
                 println!("we're at depth {} time was {:.3} next timing calc is {:.3}", depth, info.time, next_timing_calc);
-                let terminate = depth >= min_depth && (depth >= max_depth || contains(time_limit, |&tl| next_timing_calc > tl));
-                println!("depth is {:?} min {} max {} terminate? {:?}", depth, min_depth, max_depth, terminate);
+                let terminate = depth >= 2 && (depth >= max_depth || contains(time_limit, |&tl| next_timing_calc > tl));
+                println!("depth is {:?} max {} terminate? {:?}", depth, max_depth, terminate);
                 send.send(StateAnalysis {
                     state: state.clone(),
                     depth: depth,
@@ -145,12 +145,10 @@ impl AIService {
         println!("AI :: Evaluation over");
     }
 
-    pub fn request_analysis(&self, state: State, search_method: SearchMethod, min_depth: Depth, max_depth: Depth, time_limit : Option<f64>) {
+    pub fn request_analysis(&self, state: State, ai_profile: AIProfile, time_limit : Option<f64>) {
         let request = Request::Analysis {
             state: state,
-            search_method: search_method,
-            min_depth: min_depth,
-            max_depth: max_depth,
+            ai_profile: ai_profile,
             time_limit: time_limit,
         };
         self.send.send(request).expect("can send analysis request to ai worker");

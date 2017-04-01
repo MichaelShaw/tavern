@@ -6,7 +6,7 @@ use game::*;
 // pub const HEIGHT_BUILDER_ORDER : [usize; 4] = [2,3,1,0];
 pub const HEIGHT_BUILDER_ORDER : [usize; 4] = [3,2,1,0];
 
-pub const INITIAL_STATE : State =  State {
+pub const INITIAL_STATE : State = State {
     builders: [PACKED1_EMPTY; 2],
     building_major: PACKED1_EMPTY,
     building_minor: PACKED1_EMPTY,

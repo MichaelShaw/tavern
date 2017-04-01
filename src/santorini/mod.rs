@@ -29,8 +29,6 @@ pub enum StateTransition {
     NewInteractionState(InteractionState),
 }
 
-
-
 // stuff relevant to the current game in action
 pub struct PlayerGame {
     pub interaction_state: InteractionState,
@@ -239,7 +237,11 @@ impl SantoriniGame {
     }
 
     pub fn requiest_ai_analysis(&self) {
-        self.ai_service.request_analysis(self.game.board_state.state.clone(), SearchMethod::NegaMaxAlphaBetaExp, 4, 16, Some(10.0));   
+        let ai_profile = AIProfile {
+            depth: 16,
+            heuristic: HeuristicName::AdjustedNeighbour,
+        };
+        self.ai_service.request_analysis(self.game.board_state.state.clone(), ai_profile, Some(10.0));   
     }
 
     pub fn play_move(&mut self, mve: Move) -> MatchStatus {
