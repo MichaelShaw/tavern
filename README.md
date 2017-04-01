@@ -4,9 +4,13 @@ Board game engine
 Check repeated hit rate for a given depth, how many exacts do we get.
 Check if iterative deepending helps.
 
+# Other
+- Move Jam + Howl to Nalgebra (it has modern Serde).
+
 # Santorini
 - Termination Cell + request tracking (seriously)
 - Better move ordering (domes adjacent to enemies etc.)
+- Heuristic tuning?
 - Split off productivity library with group_by, pairs, contains etc? Hard to tell if this is a good idea or not.
 
 ## Value sooner victories more valuable
