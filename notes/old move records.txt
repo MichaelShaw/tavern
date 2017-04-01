@@ -1,0 +1,57 @@
+==== OLD =====
+winnnr -> Player(0)
+a info -> EvaluatorInfo { moves: 20727513 (2.81M/second) pv nodes: 0 (0.00%) average branch factor: 26.0 time: 7.37s transpotition (valid 0 sugg 0 miss 0)}
+b info -> EvaluatorInfo { moves: 25023953 (2.91M/second) pv nodes: 0 (0.00%) average branch factor: 30.6 time: 8.61s transpotition (valid 0 sugg 0 miss 0)}
+
+
+DEPTH 5
+WITH ROOT JUDGEMENTS
+
+a info -> EvaluatorInfo { moves: 5516830 (2.71M/second) pv nodes: 13903 (0.00%) average branch factor: 13.8 time: 2.03s transpotition (valid 2570 sugg 361904 miss 5611930)}
+b info -> EvaluatorInfo { moves: 7156851 (2.73M/second) pv nodes: 17505 (0.00%) average branch factor: 15.0 time: 2.62s transpotition (valid 1590 sugg 525879 miss 7283074)}
+
+
+
+24 BIT TRANSPO
+
+DEPTH 6
+
+NO ROOT TT READ
+
+inenr -> Player(0)
+a info -> EvaluatorInfo { moves: 152007149 (2.60M/second) pv nodes: 301901 (0.00%) average branch factor: 12.7 time: 58.54s transpotition (valid 43645 sugg 16700307 miss 153801217)}
+b info -> EvaluatorInfo { moves: 121582824 (2.53M/second) pv nodes: 259017 (0.00%) average branch factor: 14.0 time: 48.08s transpotition (valid 34701 sugg 15534017 miss 121579119)}
+
+ROOT TT READ
+
+winner -> Player(0)
+a info -> EvaluatorInfo { moves: 37719064 (2.63M/second) pv nodes: 60611 (0.00%) average branch factor: 11.8 time: 14.32s transpotition (valid 12475 sugg 3900259 miss 38444008)}
+b info -> EvaluatorInfo { moves: 25425368 (2.53M/second) pv nodes: 42093 (0.00%) average branch factor: 14.0 time: 10.05s transpotition (valid 5947 sugg 3650593 miss 25642078)}
+
+
+
+FIXED DEPTH BUG, WOOPS
+
+
+with pv nodes
+
+winner -> Player(1)
+a info -> EvaluatorInfo { moves: 12904112 (2.61M/second) pv nodes: 27600 (0.00%) average branch factor: 13.3 time: 4.94s transpotition (valid 1313881 sugg 57398 miss 13690647)}
+b info -> EvaluatorInfo { moves: 7236485 (2.58M/second) pv nodes: 17898 (0.00%) average branch factor: 12.3 time: 2.81s transpotition (valid 783906 sugg 42289 miss 7720985)}
+ok
+
+
+
+winner -> Player(1)
+a info -> EvaluatorInfo { moves: 12905370 (2.52M/second) pv nodes: 27593 (0.00%) average branch factor: 13.3 time: 5.12s transpotition (valid 1313808 sugg 57426 miss 13692012)}
+b info -> EvaluatorInfo { moves: 7278775 (2.47M/second) pv nodes: 17930 (0.00%) average branch factor: 12.3 time: 2.95s transpotition (valid 786124 sugg 42307 miss 7763218)}
+ok
+
+
+FIXED DEPTH 6
+
+
+winner -> Player(0)
+a info -> EvaluatorInfo { moves: 98344277 (2.32M/second) pv nodes: 120871 (0.00%) average branch factor: 15.5 time: 42.43s transpotition (valid 1855688 sugg 321395 miss 108609154)}
+b info -> EvaluatorInfo { moves: 120532742 (2.31M/second) pv nodes: 125718 (0.00%) average branch factor: 15.3 time: 52.21s transpotition (valid 2374304 sugg 322816 miss 132065665)}
+ok

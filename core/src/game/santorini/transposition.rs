@@ -81,8 +81,9 @@ impl TranspositionTable {
         for i in 0..BUCKET_SIZE {
             let entry_location = bucket_location + i;
             let entry = &self.entries[entry_location];
-            if entry.hash.0 == 0 || entry.hash == hash {
-                return (entry_location, entry.hash == hash)
+            let same_hash = entry.hash == hash;
+            if entry.hash.0 == 0 || same_hash {
+                return (entry_location, same_hash)
             }
         }
 
@@ -92,7 +93,7 @@ impl TranspositionTable {
         let mut replace_idx : usize = bucket_location;
         for i in 0..BUCKET_SIZE {
             let entry_location = bucket_location + i;
-            if self.entries[replace_idx].value(current_generation) > self.entries[entry_location].value(current_generation) {
+            if self.entries[replace_idx].value(current_generation) > self.entries[entry_location].value(current_generation) { // if current replacement slot is newer than existing
                 replace_idx = entry_location;
             }
         }
@@ -122,7 +123,9 @@ impl TranspositionTable {
     }
 
     pub fn reset(&mut self) {
-        
+        for i in 0..self.entries.len() {
+            self.entries[i] = NULL_ENTRY;
+        }
     }
 
     pub fn new(power_of_two:usize) -> TranspositionTable {

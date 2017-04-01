@@ -183,6 +183,7 @@ pub fn focus_test_cases(board:&StandardBoard) -> Vec<TestCase> {
 pub fn evaluate_state<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, max_depth: Depth) -> (Vec<HeuristicValue>, EvaluatorInfo) where E: Evaluator, H:Heuristic {
     let mut info = EvaluatorInfo::new();
     let heuristic_values : Vec<_> = (1..(max_depth+1)).flat_map(|depth| {
+        E::new_search(evaluator_state);
         let (moves, new_info) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);
         info += new_info;
         moves.iter().map(|&(_, sc)| sc).take(1).collect::<Vec<_>>()
@@ -200,9 +201,10 @@ pub fn test_all_cases<E, H>() -> (u32, EvaluatorInfo) where E: Evaluator, H: Heu
 
     let mut evaluator_state = E::new_state();
     
-    
     for case in &cases {
         // for _ in 0..2 {
+            E::reset(&mut evaluator_state);
+
             println!("Testing {} to move {:?}", case.name, case.state.to_move);
 
             let (scores, new_info) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, case.scores.len() as Depth);
@@ -295,11 +297,11 @@ mod tests {
     // use game::santorini::*;
     use super::*;
 
-    // #[test]
-    fn test_adverserial_playout() {
+    #[test]
+    fn adverserial_playout() {
         let board = StandardBoard::new(ZobristHash::new_unseeded());
         // let board = StandardBoard::new(ZobristHash::new_unseeded());
-        let depth = 6;
+        let depth = 7;
 
         let mut move_number = 0;
 

@@ -1,0 +1,18 @@
+DEPTH 7
+
+15 bit table -> constructed state with size -> 32768 (786432 bytes)
+
+winner -> Player(1)
+a info -> EvaluatorInfo { moves: 319152703 (5.68M/second) pv nodes: 806800 (0.00%) average branch factor: 10.7 time: 56.21s transpotition (valid 3165764 sugg 109369 miss 348411250)}
+b info -> EvaluatorInfo { moves: 217065091 (5.76M/second) pv nodes: 498970 (0.00%) average branch factor: 11.6 time: 37.71s transpotition (valid 2044349 sugg 97960 miss 234862347)}
+ok
+
+
+DEPTH 7
+
+20 bit table -> constructed state with size -> 1048576 (25165824 bytes)
+
+winner -> Player(1)
+a info -> EvaluatorInfo { moves: 219714348 (3.94M/second) pv nodes: 517096 (0.00%) average branch factor: 10.0 time: 55.83s transpotition (valid 3129241 sugg 1125283 miss 239115226)}
+b info -> EvaluatorInfo { moves: 161386381 (4.05M/second) pv nodes: 325397 (0.00%) average branch factor: 10.1 time: 39.86s transpotition (valid 2191314 sugg 1054959 miss 173654597)}
+ok

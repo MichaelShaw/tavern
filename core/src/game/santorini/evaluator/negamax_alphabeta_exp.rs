@@ -30,7 +30,7 @@ impl Evaluator for NegaMaxAlphaBetaExp {
 
     fn new_state() -> EvState {
         let state = EvState {
-            transposition : TranspositionTable::new(22),
+            transposition : TranspositionTable::new(20),
             // pv_nodes : Vec::new(),
         };
         println!("constructed state with size -> {} ({} bytes)", state.transposition.entries.len(), state.transposition.size_bytes());

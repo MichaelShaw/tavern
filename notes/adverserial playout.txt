@@ -1,0 +1,46 @@
+NegaMaxAlphaBetaExp.
+
+24 bit transposition table. Only move ordering is PV.
+
+Depth 5.
+
+winner -> Player(1)
+a info -> EvaluatorInfo { moves: 6095993 (2.37M/second) pv nodes: 23267 (0.00%) average branch factor: 13.2 time: 2.58s transpotition (valid 41314 sugg 39146 miss 6491612)}
+b info -> EvaluatorInfo { moves: 5303941 (2.36M/second) pv nodes: 17373 (0.00%) average branch factor: 15.3 time: 2.25s transpotition (valid 42665 sugg 40681 miss 5633496)}
+
+Depth 6. (NO TRANSPOSITION TABLE)
+
+winner -> Player(0)
+a info -> EvaluatorInfo { moves: 620609782 (3.25M/second) pv nodes: 536 (0.00%) average branch factor: 25.8 time: 191.24s transpotition (valid 0 sugg 0 miss 0)}
+b info -> EvaluatorInfo { moves: 590061480 (3.21M/second) pv nodes: 594 (0.00%) average branch factor: 29.7 time: 183.77s transpotition (valid 0 sugg 0 miss 0)}
+ok
+
+BASELINE DEPTH 6 (TT, but no manual PV pushing)
+
+winner -> Player(0)
+a info -> EvaluatorInfo { moves: 97269902 (2.25M/second) pv nodes: 118875 (0.00%) average branch factor: 14.9 time: 43.24s transpotition (valid 1835406 sugg 319410 miss 107439086)}
+b info -> EvaluatorInfo { moves: 119980605 (2.28M/second) pv nodes: 125008 (0.00%) average branch factor: 14.7 time: 52.65s transpotition (valid 2373540 sugg 322053 miss 131508901)}
+ok
+
+WITH BASIC MOVE ORDERING, build [2,3,1,0]
+
+DEPTH 6 with ordered moves.
+a info -> EvaluatorInfo { moves: 27936437 (1.94M/second) pv nodes: 42504 (0.00%) average branch factor: 16.1 time: 14.38s transpotition (valid 880400 sugg 198808 miss 31240450)}
+b info -> EvaluatorInfo { moves: 30801266 (1.97M/second) pv nodes: 45124 (0.00%) average branch factor: 16.3 time: 15.66s transpotition (valid 741921 sugg 202395 miss 34257241)}
+
+WITH BASIC MOVE ORDERING, build [3,2,1,0] // block dome first
+
+WITH NEW TRANSPOSITION TABLE BUCKETING
+
+a info -> EvaluatorInfo { moves: 27717194 (3.27M/second) pv nodes: 42034 (0.00%) average branch factor: 16.0 time: 8.48s transpotition (valid 865155 sugg 199895 miss 31006029)}
+b info -> EvaluatorInfo { moves: 30578259 (3.39M/second) pv nodes: 44554 (0.00%) average branch factor: 16.3 time: 9.03s transpotition (valid 737404 sugg 204293 miss 33997396)}
+
+DEPTH 7
+
+heuristic current state -> -7
+
+winner -> Player(1)
+a info -> EvaluatorInfo { moves: 206358542 (3.34M/second) pv nodes: 423486 (0.00%) average branch factor: 9.9 time: 61.81s transpotition (valid 3185625 sugg 1556717 miss 224524797)}
+b info -> EvaluatorInfo { moves: 153223202 (3.38M/second) pv nodes: 277410 (0.00%) average branch factor: 9.8 time: 45.29s transpotition (valid 2175397 sugg 1316612 miss 164748262)}
+
+larger transposition table

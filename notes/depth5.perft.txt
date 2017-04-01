@@ -1,0 +1,25 @@
+BASELINE
+
+running 2 tests
+test game::santorini::perft::tests::new_test_perft ... === NEW === perft 1,833,726,805 moves (63.51M/second) in 28.87 seconds
+ok
+test game::santorini::perft::tests::test_perft ... === OLD === perft 1,833,726,805 moves (56.78M/second) in 32.30 seconds
+ok
+
+NEW WRONG (note new_test_perft has missing moves .... it's height setting logic was wrong .... needed a shift)
+
+test game::santorini::perft::tests::new_test_perft ... === NEW === perft 1838158503 moves (46.86M/second) in 39.23 seconds
+ok
+test game::santorini::perft::tests::test_perft ... === OLD === perft 1833726805 moves (57.04M/second) in 32.15 seconds
+ok
+
+POST FIX (proper height setting)
+
+running 2 tests
+test game::santorini::perft::tests::new_test_perft ... === NEW === perft 1833726805 moves (47.13M/second) in 38.91 seconds
+ok
+test game::santorini::perft::tests::test_perft ... === OLD === perft 1833726805 moves (55.16M/second) in 33.24 seconds
+ok
+
+ADVERSARIAL PLAYOUT, DEPTH 5.
+

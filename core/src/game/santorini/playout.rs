@@ -43,6 +43,12 @@ pub fn iterative_adversarial_playout<E, H, F>(board: &StandardBoard, depth: Dept
             depth = max(4, depth - 1);
         }
 
+        if state.to_move == Player(0) {
+            E::new_search(&mut a_state);
+        } else {
+            E::new_search(&mut b_state);
+        }
+
         let mut best_move : Option<(Move, HeuristicValue)> = None;
 
         // iterative deepening to allow warmup

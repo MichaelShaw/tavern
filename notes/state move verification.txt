@@ -1,0 +1,10 @@
+test game::santorini::perft::tests::new_test_perft ... === NEW === perft 93157244 moves (44.58M/second) in 2.09 seconds
+ok
+test game::santorini::perft::tests::test_perft ... === OLD === perft 93157244 moves (50.87M/second) in 1.83 seconds
+ok
+
+running 2 tests
+test game::santorini::perft::tests::new_test_perft ... === NEW === perft 93157244 moves (42.25M/second) in 2.20 seconds
+ok
+test game::santorini::perft::tests::test_perft ... === OLD === perft 93157244 moves (49.10M/second) in 1.90 seconds
+ok
