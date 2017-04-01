@@ -24,6 +24,14 @@ pub struct State {
 }
 
 impl State {
+    pub fn building_map(&self) -> [Packed1; 4] {
+        [
+            !self.building_major & !self.building_minor,
+            !self.building_major & self.building_minor,
+            self.building_major & !self.building_minor,
+            self.building_major & self.building_minor,
+        ]
+    }
     pub fn current_builders(&self) -> Packed1 {
         self.builders[self.to_move.0 as usize]
     }

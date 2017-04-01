@@ -53,21 +53,14 @@ impl Evaluator for MiniMax {
 
 impl MiniMax {
     pub fn eval<H>(board: &StandardBoard, state: &State, depth: Depth) -> (HeuristicValue, MoveCount) where H: Heuristic {
-        let mut moves = Vec::with_capacity(200);
-        board.next_moves(state, &mut moves);
+        
 
         if depth == 0 {
-            let v = if moves.is_empty() {
-                if state.to_move == Player(0) {
-                    PLAYER_1_WIN
-                } else {
-                    PLAYER_0_WIN
-                }
-            } else {
-                H::evaluate(board, state)
-            };
-            return (v, 1);
+            return (H::evaluate(board, state), 1);
         }
+
+        let mut moves = Vec::with_capacity(200);
+        board.next_moves(state, &mut moves);
 
 
         let mut total_moves = 0;

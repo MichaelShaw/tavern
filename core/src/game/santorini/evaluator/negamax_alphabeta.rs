@@ -59,17 +59,12 @@ impl Evaluator for NegaMaxAlphaBeta {
 
 impl NegaMaxAlphaBeta {
     pub fn eval<H>(board: &StandardBoard, state: &State, depth: Depth, alpha:HeuristicValue, beta:HeuristicValue, color: HeuristicValue) -> (HeuristicValue, MoveCount) where H: Heuristic {
+        if depth == 0 {
+            return (H::evaluate(board, state) * color, 1);
+        }
+
         let mut moves = Vec::with_capacity(200); // enough to prevent resizing
         board.next_moves(state, &mut moves);
-
-        if depth == 0 {
-            let v = if moves.is_empty() {
-                WORST
-            } else {
-                H::evaluate(board, state) * color
-            };
-            return (v, 1);
-        }
 
         let mut total_moves = 0;
         let mut best_observed = WORST;

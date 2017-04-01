@@ -263,7 +263,7 @@ mod tests {
 
     pub const MAH_CAP : usize = 200_000_000;
 
-    // #[test]
+    #[test]
     fn hash() {
         let new_hash = ZobristHash::new_unseeded();
         println!("constructing table");
@@ -291,7 +291,7 @@ mod tests {
         // let huge_table = 
     }
 
-    // #[test] 
+    #[test] 
     fn hasher() {
         use super::Move::*;
 

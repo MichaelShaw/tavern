@@ -199,12 +199,7 @@ impl StandardBoard {
                 }
             }
         } else {
-            let heights : [Packed1; 4] = [
-                !state.building_major & !state.building_minor,
-                !state.building_major & state.building_minor,
-                state.building_major & !state.building_minor,
-                state.building_major & state.building_minor,
-            ];
+            let heights = state.building_map();
 
             let mut available_builders = [
                 builders, // anyone can move to height 0

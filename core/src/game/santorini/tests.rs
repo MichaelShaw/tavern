@@ -301,7 +301,7 @@ mod tests {
     fn adverserial_playout() {
         let board = StandardBoard::new(ZobristHash::new_unseeded());
         // let board = StandardBoard::new(ZobristHash::new_unseeded());
-        let depth = 7;
+        let depth = 6;
 
         let mut move_number = 0;
 
@@ -323,7 +323,7 @@ mod tests {
         println!("b info -> {:?}", b_info);
     }
 
-    // #[test]
+    #[test]
     fn test_repeat_depth() {
         let board = StandardBoard::new(ZobristHash::new_unseeded_secure());
         let mut state = INITIAL_STATE;
@@ -344,7 +344,7 @@ mod tests {
         
     }
 
-    // #[test]
+    #[test]
     fn test_adverserial_playout_old() {
         let board = StandardBoard::new(ZobristHash::new_unseeded());
         let depth = 4;
@@ -370,7 +370,7 @@ mod tests {
         println!("b info -> {:?}", b_info);
     }
 
-    // #[test]
+    #[test]
     fn minimax_vs_negamax() {
         let board = StandardBoard::new(ZobristHash::new_unseeded());
         let depth = 4;
@@ -378,12 +378,12 @@ mod tests {
         // evaluate_cross_state(&board, &b_blockable(&board, Player(0)), depth);
     }
 
-    // #[test]
+    #[test]
     fn minimax_alphabeta() {
         assert!(time_test_cases::<MiniMaxAlphaBeta, SimpleHeightHeuristic>());
     }
 
-    // #[test]
+    #[test]
     fn negamax_alphabeta() {
         assert!(time_test_cases::<NegaMaxAlphaBeta, SimpleHeightHeuristic>());
     }   
@@ -393,12 +393,12 @@ mod tests {
         assert!(time_test_cases::<NegaMaxAlphaBetaExp, SimpleHeightHeuristic>());
     }
 
-    // #[test]
+    #[test]
     fn minimax() {
         assert!(time_test_cases::<MiniMax, SimpleHeightHeuristic>());
     }
 
-    // #[test]
+    #[test]
     fn negamax() {
         assert!(time_test_cases::<NegaMax, SimpleHeightHeuristic>());
     } 
