@@ -44,3 +44,21 @@ pub fn group_by<T, K, F>(items: Vec<T>, f: F) -> HashMap<K, Vec<T>> where F : Fn
 pub fn contains<T, F>(opt: Option<T>, f: F) -> bool where F: Fn(&T) -> bool {
 	opt.iter().any(f)
 }
+
+#[macro_export]
+macro_rules! hashset {
+    ($($val: expr ),*) => {{
+         let mut set = HashSet::default();
+         $( set.insert( $val); )*
+         set
+    }}
+}
+
+#[macro_export]
+macro_rules! hashmap {
+    ($( $key: expr => $val: expr ),*) => {{
+         let mut map = HashMap::default();
+         $( map.insert($key, $val); )*
+         map
+    }}
+}

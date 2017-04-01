@@ -13,7 +13,7 @@ pub const WORST : HeuristicValue = -std::i16::MAX; // to prevent overflow on neg
 pub const PLAYER_0_WIN : HeuristicValue = std::i16::MAX;
 pub const PLAYER_1_WIN : HeuristicValue = -std::i16::MAX; // to prevent overflow on negation
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
 pub enum HeuristicName {
     Simple,
     Neighbour,

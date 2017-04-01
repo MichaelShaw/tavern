@@ -63,7 +63,18 @@ fn sample_principal_variant(depth:Depth) {
     let mut new_state_b = board.apply(Move::PlaceBuilders { a: Slot(23), b: Slot(24) }, &new_state);
     new_state_b.set_building_height(Slot(5), 1);
 
+
     principal_variant::<MiniMax, SimpleHeightHeuristic>(&mut (), &board, &new_state_b, depth);
+}
+
+pub fn pairs<T>(items: &Vec<T>) -> Vec<(T, T)> where T : Copy {
+    let mut pairs = Vec::new();
+    for a in 0..items.len() {
+        for b in (a+1)..items.len() {
+            pairs.push((items[a], items[b]));
+        }
+    }
+    pairs
 }
 
 
@@ -73,17 +84,41 @@ mod tests {
 
     use super::*;
 
+    use HashMap;
+
     #[test]
     fn depth_check() {
         use super::HeuristicName::*;
 
-        let depths : Vec<Depth> = (2..7).collect();
+        let board = StandardBoard::new(ZobristHash::new_unseeded_secure());
+
+
+        let depths : Vec<Depth> = (2..8).collect();
         let heuristics : Vec<HeuristicName> = vec![Simple, Neighbour, AdjustedNeighbour];
+
+        let heuristic_pairs = pairs(&heuristics);
+
         for d in depths {
+            println!("\n\n==== DEPTH {} ====", d);
 
+            let mut won_games : HashMap<HeuristicName, u32> = HashMap::default();
 
+            for &(a_heuristic, b_heuristic) in &heuristic_pairs {
+                let a_profile = AIProfile { depth: d, heuristic: a_heuristic };
+                let b_profile = AIProfile { depth: d, heuristic: b_heuristic };
+
+                let ai_profiles = [a_profile, b_profile];
+                let (a_first_winner, _)= adversarial_playout(&board, ai_profiles, |_, _, _| { });
+                *won_games.entry(ai_profiles[a_first_winner.0 as usize].heuristic).or_insert(0) += 1;
+
+                let rev_ai_profiles = [a_profile, b_profile];
+                let (b_first_winner, _)= adversarial_playout(&board, rev_ai_profiles, |_, _, _| { });
+                *won_games.entry(rev_ai_profiles[b_first_winner.0 as usize].heuristic).or_insert(0) += 1;
+            }
+
+            for (heuristic, count) in won_games {
+                println!("{:?} won {} games", heuristic, count);
+            }
         }
-
-
     }
 }

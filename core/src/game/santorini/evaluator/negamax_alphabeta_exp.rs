@@ -33,7 +33,7 @@ impl Evaluator for NegaMaxAlphaBetaExp {
             transposition : TranspositionTable::new(22),
             // pv_nodes : Vec::new(),
         };
-        println!("constructed state with size -> {} ({} bytes)", state.transposition.entries.len(), state.transposition.size_bytes());
+        // println!("constructed state with size -> {} ({} bytes)", state.transposition.entries.len(), state.transposition.size_bytes());
         state
     }
 
