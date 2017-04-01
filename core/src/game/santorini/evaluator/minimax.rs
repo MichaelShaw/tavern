@@ -12,12 +12,12 @@ impl Evaluator for MiniMax {
         "MiniMax".into()
     }
 
-    fn new_state() -> () {
-        ()
-    }
+    fn new_state() -> () { () }
+    fn new_search(evaluator_state: &mut ()) { }
+    fn reset(evaluator_state: &mut ()) { }
 
     #[allow(unused_variables)]
-    fn evaluate_moves_impl<H>(evaluator_state: &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
+    fn evaluate_moves_impl<H>(evaluator_state: &mut (), board: &StandardBoard, state: &State, depth: Depth) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
         let mut moves = Vec::with_capacity(200);
         board.next_moves(state, &mut moves);
 
@@ -52,7 +52,7 @@ impl Evaluator for MiniMax {
 }
 
 impl MiniMax {
-    pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8) -> (HeuristicValue, MoveCount) where H: Heuristic {
+    pub fn eval<H>(board: &StandardBoard, state: &State, depth: Depth) -> (HeuristicValue, MoveCount) where H: Heuristic {
         let mut moves = Vec::with_capacity(200);
         board.next_moves(state, &mut moves);
 

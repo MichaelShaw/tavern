@@ -9,23 +9,32 @@ pub enum EntryType {
     Upper,
 }
 
-#[derive(Eq, PartialEq, Clone, Debug)]
+#[derive(Eq, Copy, PartialEq, Clone, Debug)]
 pub struct TranspositionEntry {
     // pub state: State,
-    pub hash: StateHash,
-    pub value: HeuristicValue,
-    pub entry_type: EntryType,
-    pub depth: u8,
-    pub best_move: Option<Move>,
-    // best move
+    pub hash: StateHash, // 8 bytes
+    pub value: HeuristicValue, // 2 bytes
+    pub entry_type: EntryType, // 1 byte
+    pub depth: i8, // 1 byte
+    pub generation: Generation, // 1 byte
+    pub best_move: Option<Move>, // 5 bytes
+    
+    // move in theory could be reduced to 2 bytes + flag -> 3 bytes  + optionality == 3-4 ish bytes ...
+}
+
+impl TranspositionEntry {
+    pub fn value(&self, current_generation: Generation) -> i8 { // i feel this numerical type isn't correct
+        self.depth - (current_generation - self.generation) as i8 * 2
+    }
 }
 
 pub const NULL_ENTRY : TranspositionEntry = TranspositionEntry {
     // state: INITIAL_STATE,
     hash: StateHash(0),
     value: 0,
-    entry_type: EntryType::Exact,
+    entry_type: EntryType::Lower,
     depth: 0, 
+    generation: 0,
     best_move: None,
 };
 
@@ -33,9 +42,12 @@ pub const NULL_ENTRY : TranspositionEntry = TranspositionEntry {
 #[derive(Eq, Copy, PartialEq, Clone, Debug)]
 pub struct StateHash(pub u64);
 
+pub const BUCKET_SIZE : usize = 4; // 24 x 4 = 96 bytes .... that's 3 cache lines ... my cache alignment sucks, i need to get to 16 bytes per entry
 pub const STATE_HASH_ZERO : StateHash = StateHash(0);
 
 use std::ops::BitXor;
+
+pub type Generation = u8;
 
 impl BitXor for StateHash {
     type Output = StateHash;
@@ -47,47 +59,85 @@ impl BitXor for StateHash {
 
 #[derive(Clone)]
 pub struct TranspositionTable {
-    pub mask: u64,
+    pub generation : Generation,
+    pub bucket_mask: u64,
     pub entries : Vec<TranspositionEntry>,
 }
 
 impl TranspositionTable {
-    pub fn location_for(&self, hash:StateHash) -> usize {
-        (hash.0 & self.mask) as usize
+    #[inline]
+    pub fn bucket_location_for(&self, hash:StateHash) -> usize {
+        ((hash.0 & self.bucket_mask) as usize) * BUCKET_SIZE
     }
 
-    pub fn get(&self, hash:StateHash) -> Option<&TranspositionEntry> {
-        let loc = self.location_for(hash);
-        let entry = &self.entries[loc];
-        if entry.hash == hash {
-            Some(entry)
-        } else {
-            None    
+    pub fn increment_generation(&mut self) {
+        self.generation = self.generation.wrapping_add(1)
+    }
+
+    pub fn probe(&self, hash:StateHash) -> (usize, bool) { // entry_location, found/match
+        let bucket_location = self.bucket_location_for(hash);
+        
+        // look for null or same position
+        for i in 0..BUCKET_SIZE {
+            let entry_location = bucket_location + i;
+            let entry = &self.entries[entry_location];
+            if entry.hash.0 == 0 || entry.hash == hash {
+                return (entry_location, entry.hash == hash)
+            }
+        }
+
+        // ok nothing the same, let's replace the least valuable entry
+        let current_generation = self.generation;
+
+        let mut replace_idx : usize = bucket_location;
+        for i in 0..BUCKET_SIZE {
+            let entry_location = bucket_location + i;
+            if self.entries[replace_idx].value(current_generation) > self.entries[entry_location].value(current_generation) {
+                replace_idx = entry_location;
+            }
+        }
+
+        return (replace_idx, false)
+    }
+
+    pub fn store(&mut self, idx: usize, hash:StateHash, value:HeuristicValue, depth: i8, entry_type: EntryType, best_move: Option<Move>) {
+        let entry = &mut self.entries[idx];
+
+        if entry.hash != hash || depth > (entry.depth - 4) || entry_type == EntryType::Exact {
+            entry.hash = hash;
+            entry.value = value;
+            entry.entry_type = entry_type;
+            entry.depth = depth;
+            entry.generation = self.generation;
+            entry.best_move = best_move;
         }
     }
 
-    pub fn put(&mut self, entry: TranspositionEntry) {
-        let loc = self.location_for(entry.hash);
-        self.entries[loc] = entry;
+    pub fn size_bytes(&self) -> usize {
+        TranspositionTable::approx_size_bytes(self.entries.capacity())
     }
 
-    pub fn approx_size_bytes(&self) -> usize {
-        mem::size_of::<TranspositionEntry>() * self.entries.capacity()
+    pub fn approx_size_bytes(entry_count: usize) -> usize {
+        mem::size_of::<TranspositionEntry>() * entry_count
     }
 
-    pub fn new(power_of_two:usize) -> TranspositionTable{
+    pub fn reset(&mut self) {
+        
+    }
+
+    pub fn new(power_of_two:usize) -> TranspositionTable {
         let size = 1 << power_of_two;
-        let mut mask : usize = 1;
-        for _ in 0..(power_of_two-1) {
-            mask = mask | (mask << 1);
+        let mut bucket_mask : usize = 1;
+        for _ in 0..(power_of_two-1-2) { // -1 is normal, the -2 is for buckets
+            bucket_mask = bucket_mask | (bucket_mask << 1);
         }
 
         let mut entries = Vec::with_capacity(size);
         entries.resize(size, NULL_ENTRY);
 
-
         TranspositionTable {
-            mask: mask as u64,
+            generation: 0,
+            bucket_mask: bucket_mask as u64,
             entries: entries,
         }
     }
@@ -157,7 +207,25 @@ mod tests {
     use std::mem;
     use super::*;
 
-    // #[test]
+    #[test]
+    fn table() {
+        let mut table = TranspositionTable::new(5); // 8 boxes in theory
+        println!("ok we have a table, entry count -> {:?}, mask -> {:b}", table.entries.len(), table.bucket_mask);
+
+        
+
+
+        for i in 1..40 {
+            let hash = StateHash(i);
+            let (idx, found) = table.probe(hash);
+            println!("state {:?} -> idx {:?} found {:?}", i, idx, found);
+
+            table.store(idx, hash, 12, 4, EntryType::Exact, None);
+        }
+
+    }
+
+    #[test]
     fn my_zobist() {
         use super::Move::*;
 
@@ -175,15 +243,17 @@ mod tests {
         println!("a {:?} b {:?}", a_hash, b_hash);
     }
 
-    // #[test]
+    #[test]
     fn sizes() {
         println!("State size -> {}", mem::size_of::<State>());
         println!("Move size -> {}", mem::size_of::<Move>());
+        println!("Option<Move> size -> {}", mem::size_of::<Option<Move>>());
         println!("EntryType size -> {}", mem::size_of::<EntryType>());
         println!("TranspositionEntry size -> {}", mem::size_of::<TranspositionEntry>());
 
         // println!("talble entry count -> {}", TABLE_ENTRY_COUNT);
         println!("size of table -> {}", mem::size_of::<TranspositionTable>());
+
 
         println!("size of unit -> {}", mem::size_of::<()>())
     }
@@ -195,9 +265,9 @@ mod tests {
         let new_hash = ZobristHash::new_unseeded();
         println!("constructing table");
         let table = TranspositionTable::new(26);
-        println!("mask -> {:#b}", table.mask);
+        println!("mask -> {:#b}", table.bucket_mask);
         println!("capacity -> {}", table.entries.capacity());
-        println!("approx size -> {}", table.approx_size_bytes());
+        println!("approx size -> {}", table.size_bytes());
         // println!("new hash -> {:?}", new_hash);
 
         use time;

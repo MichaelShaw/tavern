@@ -20,12 +20,12 @@ impl Evaluator for NegaMax {
         "NegaMax".into()
     }
 
-    fn new_state() -> () {
-        ()
-    }
+    fn new_state() -> () { () }
+    fn new_search(evaluator_state: &mut ()) { }
+    fn reset(evaluator_state: &mut ()) { }
 
     #[allow(unused_variables)]
-    fn evaluate_moves_impl<H>(evaluator_state: &mut (), board: &StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
+    fn evaluate_moves_impl<H>(evaluator_state: &mut (), board: &StandardBoard, state: &State, depth: Depth) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
         let color = color(state.to_move);
         let mut moves = Vec::with_capacity(200);
 
@@ -53,7 +53,7 @@ impl Evaluator for NegaMax {
 }
 
 impl NegaMax {
-    pub fn eval<H>(board: &StandardBoard, state: &State, depth: u8, color: HeuristicValue) -> (HeuristicValue, MoveCount) where H: Heuristic {
+    pub fn eval<H>(board: &StandardBoard, state: &State, depth: Depth, color: HeuristicValue) -> (HeuristicValue, MoveCount) where H: Heuristic {
         let mut moves = Vec::with_capacity(200); // enough to prevent resizing
         board.next_moves(state, &mut moves);
 

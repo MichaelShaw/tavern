@@ -180,7 +180,7 @@ pub fn focus_test_cases(board:&StandardBoard) -> Vec<TestCase> {
     ]
 }
 
-pub fn evaluate_state<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, max_depth: u8) -> (Vec<HeuristicValue>, EvaluatorInfo) where E: Evaluator, H:Heuristic {
+pub fn evaluate_state<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, max_depth: Depth) -> (Vec<HeuristicValue>, EvaluatorInfo) where E: Evaluator, H:Heuristic {
     let mut info = EvaluatorInfo::new();
     let heuristic_values : Vec<_> = (1..(max_depth+1)).flat_map(|depth| {
         let (moves, new_info) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);
@@ -205,7 +205,7 @@ pub fn test_all_cases<E, H>() -> (u32, EvaluatorInfo) where E: Evaluator, H: Heu
         // for _ in 0..2 {
             println!("Testing {} to move {:?}", case.name, case.state.to_move);
 
-            let (scores, new_info) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, case.scores.len() as u8);
+            let (scores, new_info) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, case.scores.len() as Depth);
             info += new_info.clone();
 
             if scores != case.scores {
@@ -240,7 +240,7 @@ pub fn time_test_cases<E, H>() -> bool where E: Evaluator, H: Heuristic {
     v == 0
 }
 
-pub fn time_exploration<E, H>(depth:u8) -> EvaluatorInfo where E: Evaluator, H: Heuristic  {
+pub fn time_exploration<E, H>(depth:Depth) -> EvaluatorInfo where E: Evaluator, H: Heuristic  {
     let mut info = EvaluatorInfo::new();
     let board = StandardBoard::new(ZobristHash::new_unseeded());
     let cases = test_cases(&board);
@@ -257,7 +257,7 @@ pub fn time_exploration<E, H>(depth:u8) -> EvaluatorInfo where E: Evaluator, H: 
 }
 
 
-fn evaluate_cross_state(board: &StandardBoard, state:&State, depth: u8) {
+fn evaluate_cross_state(board: &StandardBoard, state:&State, depth: Depth) {
     println!("test case state");
     println!("{}", board.print(&state));
 

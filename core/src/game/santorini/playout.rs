@@ -24,7 +24,7 @@ use game::santorini::*;
 // }
 
 
-pub fn iterative_adversarial_playout<E, H, F>(board: &StandardBoard, depth: u8, mut on_move: F) -> (Player, EvaluatorInfo, EvaluatorInfo)  where E : Evaluator, H : Heuristic, F: FnMut(&State, &Move, HeuristicValue) -> () {
+pub fn iterative_adversarial_playout<E, H, F>(board: &StandardBoard, depth: Depth, mut on_move: F) -> (Player, EvaluatorInfo, EvaluatorInfo)  where E : Evaluator, H : Heuristic, F: FnMut(&State, &Move, HeuristicValue) -> () {
     let mut state = INITIAL_STATE;
 
     let mut winner : Option<Player> = None;
@@ -187,7 +187,7 @@ pub fn iterative_adversarial_playout<E, H, F>(board: &StandardBoard, depth: u8, 
 //     (winner_message, a_info, b_info)
 // }
 
-fn sample_principal_variant(depth:u8) {
+fn sample_principal_variant(depth:Depth) {
     let board = StandardBoard::new(ZobristHash::new_unseeded());
     let init = INITIAL_STATE;
     let new_state = board.apply(Move::PlaceBuilders { a: Slot(0), b: Slot(1) }, &init);

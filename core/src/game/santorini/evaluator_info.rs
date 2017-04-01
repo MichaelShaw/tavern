@@ -30,7 +30,7 @@ impl EvaluatorInfo {
         average(&self.branch_factors)
     }
 
-    pub fn from_moves_depth(move_count: MoveCount, depth: u8) -> EvaluatorInfo {
+    pub fn from_moves_depth(move_count: MoveCount, depth: Depth) -> EvaluatorInfo {
         EvaluatorInfo {
             move_count : move_count,
             pv_count: 0,
@@ -95,7 +95,7 @@ impl AddAssign for EvaluatorInfo {
     }
 }
 
-pub fn branch_factor(move_count: MoveCount, depth: u8) -> f64 {
+pub fn branch_factor(move_count: MoveCount, depth: Depth) -> f64 {
     (move_count as f64).powf(1.0 / (depth as f64))
 }
 

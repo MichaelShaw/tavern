@@ -49,6 +49,8 @@ pub type HeuristicValue = i16;
 
 pub type BranchFactor = f64;
 
+pub type Depth = i8;
+
 pub trait Heuristic {
     fn name() -> String;
     fn evaluate(board: &StandardBoard, state: &State) -> HeuristicValue;
@@ -58,19 +60,21 @@ pub trait Evaluator {
     type EvaluatorState;
     fn name() -> String;
     fn new_state() -> Self::EvaluatorState;
+    fn new_search(evaluator_state: &mut Self::EvaluatorState);
+    fn reset(evaluator_state: &mut Self::EvaluatorState);
 
-    fn evaluate_moves<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
+    fn evaluate_moves<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: Depth) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
         let start_time = time::precise_time_ns();
         let (best_move, mut info) = Self::evaluate_moves_impl::<H>(evaluator_state, board, state, depth);
         let duration_seconds = (time::precise_time_ns() - start_time) as f64 / 1_000_000_000f64;
         info.time += duration_seconds;
         (best_move, info)
     }
-    fn evaluate_moves_impl<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic;
+    fn evaluate_moves_impl<H>(evaluator_state: &mut Self::EvaluatorState, board:&StandardBoard, state: &State, depth: Depth) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic;
 }
 
 // the manual/crap way
-pub fn principal_variant<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, depth:u8) where E: Evaluator, H: Heuristic {
+pub fn principal_variant<E, H>(evaluator_state: &mut E::EvaluatorState, board:&StandardBoard, state:&State, depth:Depth) where E: Evaluator, H: Heuristic {
     println!("about to playout {}", board.print(state));
     let mut current_state = state.clone();
     for d in (1..(depth+1)).rev() {

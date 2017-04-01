@@ -22,14 +22,14 @@ pub enum SearchMethod {
 
 #[derive(Clone)]
 pub enum Request {
-    Analysis { state: State, search_method: SearchMethod, min_depth: u8, max_depth: u8, time_limit : Option<f64> },
+    Analysis { state: State, search_method: SearchMethod, min_depth: Depth, max_depth: Depth, time_limit : Option<f64> },
     Shutdown,
 }
 
 #[derive(Debug, Clone)]
 pub struct StateAnalysis {
     pub state: State,
-    pub depth: u8,
+    pub depth: Depth,
     pub best_move: Option<(Move, HeuristicValue)>,
     pub terminal: bool, 
     pub rollback : bool, // rollback means we discovered we will lose guaranteed ... so we resort to the prior depth to discovering that ... so we still make a reasonable move
@@ -38,6 +38,7 @@ pub struct StateAnalysis {
 impl AIService {
     pub fn new() -> AIService {
         use self::Request::*;
+
 
         let (main_tx, ai_rx) = channel::<Request>();
         let (ai_tx, main_rx) = channel::<StateAnalysis>();
@@ -81,7 +82,10 @@ impl AIService {
         }
     }
 
-    pub fn evaluate<E, H>(evaluator_state: &mut E::EvaluatorState, board: &StandardBoard, state:&State, min_depth: u8, max_depth:u8, time_limit: Option<f64>, send: &Sender<StateAnalysis>) where E: Evaluator, H: Heuristic {
+    pub fn evaluate<E, H>(evaluator_state: &mut E::EvaluatorState, board: &StandardBoard, state:&State, min_depth: Depth, max_depth:Depth, time_limit: Option<f64>, send: &Sender<StateAnalysis>) where E: Evaluator, H: Heuristic {
+
+        E::new_search(evaluator_state);
+
         let score = H::evaluate(board, state);
         println!("AI :: Asked for analysis, current score {:?} with {:?} to move", score, state.to_move);
         
@@ -137,7 +141,7 @@ impl AIService {
         println!("AI :: Evaluation over");
     }
 
-    pub fn request_analysis(&self, state: State, search_method: SearchMethod, min_depth: u8, max_depth: u8, time_limit : Option<f64>) {
+    pub fn request_analysis(&self, state: State, search_method: SearchMethod, min_depth: Depth, max_depth: Depth, time_limit : Option<f64>) {
         let request = Request::Analysis {
             state: state,
             search_method: search_method,

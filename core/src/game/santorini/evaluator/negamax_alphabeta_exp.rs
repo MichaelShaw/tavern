@@ -30,16 +30,23 @@ impl Evaluator for NegaMaxAlphaBetaExp {
 
     fn new_state() -> EvState {
         let state = EvState {
-            transposition : TranspositionTable::new(24),
+            transposition : TranspositionTable::new(22),
             // pv_nodes : Vec::new(),
         };
-        println!("constructed state with size -> {} ({} bytes)", state.transposition.entries.len(), state.transposition.approx_size_bytes());
+        println!("constructed state with size -> {} ({} bytes)", state.transposition.entries.len(), state.transposition.size_bytes());
         state
     }
-     
 
+    fn reset(evaluator_state: &mut EvState) {
+        evaluator_state.transposition.reset();
+    }
+
+    fn new_search(evaluator_state: &mut EvState) {
+        evaluator_state.transposition.increment_generation();
+    }
+     
     #[allow(unused_variables)]
-    fn evaluate_moves_impl<H>(evaluator_state: &mut EvState, board: &StandardBoard, state: &State, depth: u8) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
+    fn evaluate_moves_impl<H>(evaluator_state: &mut EvState, board: &StandardBoard, state: &State, depth: Depth) -> (Option<(Move, HeuristicValue)>, EvaluatorInfo) where H: Heuristic {
         let color = color(state.to_move);
 
         let mut unsorted_moves : Vec<(Move, HeuristicValue)> = Vec::with_capacity(200);
@@ -54,60 +61,47 @@ impl Evaluator for NegaMaxAlphaBetaExp {
 
         let mut info = EvaluatorInfo::new();
 
-
         let hash = board.hash(state);
 
         // println!("== starting depth {:?}", depth);
 
         // TT TABLE READ
         let mut tt_best_move : Option<Move> = None;
-        {
-            if let Some(entry) = evaluator_state.transposition.get(hash)  {
-                // let ok = &entry.state == state;
-                // if !ok {
-                //     println!("FUCK WE GOT A STATE MISMATCH!!!!");
 
+        let (tt_idx, found) = evaluator_state.transposition.probe(hash);
 
-                //     println!("CURRENT {:?} state -> {}", hash, board.print(state));
-                //     println!("cur hash -> {:?}", board.hash(&state));
-                //     println!("ENTRY {:?} state -> {}", entry.hash, board.print(&entry.state));
-                //     println!("entry hash -> {:?}", board.hash(&entry.state));
-
-
-                //     panic!("FUCK THIS SHIT IM OUTTY");
-                // }
-                // println!("WE ROOT DID WE GET HIT -> {:?} desired depth {:?}", entry, depth);
-                if entry.depth >= depth {
-                    info.tt_valid += 1;
-                    match entry.entry_type {
-                        EntryType::Exact => {
-                            // println!("valid exact!");
-                            if let Some(mv) = entry.best_move {
-                                // println!("it has a best move ... returning");
-                                return (Some((mv, entry.value)), info)  // unsure about this negation   
-                            } 
-                            // return (Some((entry.best_move.unwrap(), entry.value)), info)
-                            // return (entry.value, 0)
-                        },
-                        EntryType::Lower => {
-                            alpha = max(alpha, entry.value);
-                        },
-                        EntryType::Upper => {
-                            beta = min(beta, entry.value)
-                        },
-                    }
-                    if alpha >= beta {
+        if found {
+            let entry = &evaluator_state.transposition.entries[tt_idx];
+            if entry.depth >= depth {
+                info.tt_valid += 1;
+                match entry.entry_type {
+                    EntryType::Exact => {
+                        // println!("valid exact!");
                         if let Some(mv) = entry.best_move {
-                            return (Some((mv, entry.value)), info)  // unsure about this negation
+                            // println!("it has a best move ... returning");
+                            return (Some((mv, entry.value)), info)  // unsure about this negation   
                         } 
-                    }
-                } else {
-                    info.tt_suggest += 1;
+                        // return (Some((entry.best_move.unwrap(), entry.value)), info)
+                        // return (entry.value, 0)
+                    },
+                    EntryType::Lower => {
+                        alpha = max(alpha, entry.value);
+                    },
+                    EntryType::Upper => {
+                        beta = min(beta, entry.value)
+                    },
                 }
-                tt_best_move = entry.best_move;
+                if alpha >= beta {
+                    if let Some(mv) = entry.best_move {
+                        return (Some((mv, entry.value)), info)  // unsure about this negation
+                    } 
+                }
             } else {
-                info.tt_miss += 1;
+                info.tt_suggest += 1;
             }
+            tt_best_move = entry.best_move;
+        } else {
+            info.tt_miss += 1;
         }
 
         if let Some(mve) = tt_best_move {
@@ -176,14 +170,7 @@ impl Evaluator for NegaMaxAlphaBetaExp {
 
         info.pv_count += 1;
 
-        let entry = TranspositionEntry {
-            hash: hash,
-            value: best_observed,
-            entry_type: EntryType::Exact,
-            depth: depth,
-            best_move: best_move,
-        };
-        evaluator_state.transposition.put(entry);
+        evaluator_state.transposition.store(tt_idx, hash, best_observed, depth, EntryType::Exact, best_move);
   
         unsorted_moves.sort_by_key(|&(_, hv)| hv * -color);
 
@@ -194,57 +181,38 @@ impl Evaluator for NegaMaxAlphaBetaExp {
 }
 
 impl NegaMaxAlphaBetaExp {
-    pub fn eval<H>(board: &StandardBoard, state: &State, hash: StateHash, depth: u8, alpha:HeuristicValue, beta:HeuristicValue, color: HeuristicValue, move_stack: &mut MoveStack, info: &mut EvaluatorInfo, ev_state : &mut EvState) -> (HeuristicValue, MoveCount) where H: Heuristic {
+    pub fn eval<H>(board: &StandardBoard, state: &State, hash: StateHash, depth: Depth, alpha:HeuristicValue, beta:HeuristicValue, color: HeuristicValue, move_stack: &mut MoveStack, info: &mut EvaluatorInfo, ev_state : &mut EvState) -> (HeuristicValue, MoveCount) where H: Heuristic {
         let mut new_alpha = alpha;
         let mut new_beta = beta;
 
 
         let mut tt_best_move : Option<Move> = None;
-
-        {
-            if let Some(entry) = ev_state.transposition.get(hash)  {
-                // let ok = &entry.state == state;
-                // if !ok {
-                //     println!("FUCK WE GOT A STATE MISMATCH!!!!");
-
-
-                //     println!("CURRENT {:?} state -> {}", hash, board.print(state));
-                //     println!("cur hash -> {:?}", board.hash(&state));
-                //     println!("ENTRY {:?} state -> {}", entry.hash, board.print(&entry.state));
-                //     println!("entry hash -> {:?}", board.hash(&entry.state));
-
-
-                //     panic!("FUCK THIS SHIT IM OUTTY");
-                // }
-
-
-                if entry.depth >= depth {
-                    info.tt_valid += 1;
-                    match entry.entry_type {
-                        EntryType::Exact => {
-                            return (entry.value, 0);
-                        },
-                        EntryType::Lower => {
-                            new_alpha = max(new_alpha, entry.value);
-                        },
-                        EntryType::Upper => {
-                            new_beta = min(new_beta, entry.value);
-                        },
-                    }
-                    if new_alpha >= new_beta {
-                        return (entry.value, 0)
-                    }
-
-                } else {
-                    info.tt_suggest += 1;
+        let (tt_idx, found) = ev_state.transposition.probe(hash);
+        if found {
+            let entry = &ev_state.transposition.entries[tt_idx];
+            if entry.depth >= depth {
+                info.tt_valid += 1;
+                match entry.entry_type {
+                    EntryType::Exact => {
+                        return (entry.value, 0);
+                    },
+                    EntryType::Lower => {
+                        new_alpha = max(new_alpha, entry.value);
+                    },
+                    EntryType::Upper => {
+                        new_beta = min(new_beta, entry.value);
+                    },
                 }
-                tt_best_move = entry.best_move;
+                if new_alpha >= new_beta {
+                    return (entry.value, 0)
+                }
             } else {
-                info.tt_miss += 1;
+                info.tt_suggest += 1;
             }
+            tt_best_move = entry.best_move;
+        } else {
+            info.tt_miss += 1;
         }
-
-        
 
         if depth == 0 {
             // let v = if stack_begin == stack_end {
@@ -314,18 +282,20 @@ impl NegaMaxAlphaBetaExp {
             EntryType::Exact
         };
 
-        let entry = TranspositionEntry {
-            // state: state.clone(),
-            hash: hash,
-            value: best_observed,
-            entry_type: score_type,
-            depth: depth,
-            best_move: best_move,
-        };
+        ev_state.transposition.store(tt_idx, hash, best_observed, depth, score_type, best_move);
+
+        // let entry = TranspositionEntry {
+        //     // state: state.clone(),
+        //     hash: hash,
+        //     value: best_observed,
+        //     entry_type: score_type,
+        //     depth: depth,
+        //     best_move: best_move,
+        // };
         // if score_type == EntryType::Exact {
         //     ev_state.pv_nodes.push(entry.clone());
         // }
-        ev_state.transposition.put(entry);
+        // ev_state.transposition.put(entry);
 
         move_stack.next = stack_begin;
         (best_observed, total_moves)
