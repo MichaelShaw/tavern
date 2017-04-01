@@ -161,8 +161,12 @@ pub fn test_cases(board:&StandardBoard) -> Vec<TestCase> {
         case("any_in_1", any_in_1(board, Player(0)), vec![PLAYER_0_WIN] ),
         case("any_in_1", any_in_1(board, Player(1)), vec![PLAYER_1_WIN] ),
 
-        case("any_trap_in_1", any_trap_in_1(board, Player(0)), vec![PLAYER_0_WIN] ),
-        case("any_trap_in_1", any_trap_in_1(board, Player(1)), vec![PLAYER_1_WIN] ),
+        // I've removed perfect trap detection ... it's too expensive
+        // case("any_trap_in_1", any_trap_in_1(board, Player(0)), vec![PLAYER_0_WIN] ),
+        // case("any_trap_in_1", any_trap_in_1(board, Player(1)), vec![PLAYER_1_WIN] ),
+
+        case("any_trap_in_1", any_trap_in_1(board, Player(0)), vec![1] ),
+        case("any_trap_in_1", any_trap_in_1(board, Player(1)), vec![-1] ),
     ]
 }
 
@@ -191,14 +195,14 @@ pub fn test_all_cases<E, H>() -> (u32, EvaluatorInfo) where E: Evaluator, H: Heu
     let mut info = EvaluatorInfo::new();
     let board = StandardBoard::new(ZobristHash::new_unseeded());
     let mut error_cases = 0;
-    // let cases = test_cases(&board);
-    let cases = focus_test_cases(&board);
+    let cases = test_cases(&board);
+    // let cases = focus_test_cases(&board);
 
     let mut evaluator_state = E::new_state();
     
     
     for case in &cases {
-        for _ in 0..2 {
+        // for _ in 0..2 {
             println!("Testing {} to move {:?}", case.name, case.state.to_move);
 
             let (scores, new_info) = evaluate_state::<E, H>(&mut evaluator_state, &board, &case.state, case.scores.len() as u8);
@@ -211,7 +215,7 @@ pub fn test_all_cases<E, H>() -> (u32, EvaluatorInfo) where E: Evaluator, H: Heu
             } else {
                 println!("{}", format!("ok -> {:?} -> {:?}", scores, new_info).green());
             }
-        }
+        // }
     }
 
     if error_cases > 0 {

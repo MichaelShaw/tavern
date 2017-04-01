@@ -74,7 +74,6 @@ impl NeighbourHeuristic {
                     }
                     let target_height = state.get_building_height(move_to);
 
-
                     if collision.get(move_to) == 0 && target_height <= current_height + 1 {
                         n += (target_height + 1) as HeuristicValue;
                     }

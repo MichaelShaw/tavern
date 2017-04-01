@@ -244,20 +244,22 @@ impl NegaMaxAlphaBetaExp {
             }
         }
 
+        
+
+        if depth == 0 {
+            // let v = if stack_begin == stack_end {
+            //    WORST
+            // } else {
+            //    H::evaluate(board, state) * color
+            // };
+            let v = H::evaluate(board, state) * color;
+            // move_stack.next = stack_begin;
+            return (v, 1);
+        }
+
         let stack_begin = move_stack.next;
         board.next_moves(state, move_stack);
         let stack_end = move_stack.next;
-
-        if depth == 0 {
-            let v = if stack_begin == stack_end {
-               WORST
-            } else {
-               H::evaluate(board, state) * color
-            };
-            // let v = H::evaluate(board, state) * color;
-            move_stack.next = stack_begin;
-            return (v, 1);
-        }
        
         let mut total_moves = 0;
         let mut best_observed = WORST;
