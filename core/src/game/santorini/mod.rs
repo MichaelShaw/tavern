@@ -38,7 +38,8 @@ pub use self::evaluator_info::*;
 use time;
 use std::cmp::max;
 
-use HashSet;
+use aphid::HashSet;
+
 use super::util::*;
 use pad::Alignment;
 pub use rand::Rng;

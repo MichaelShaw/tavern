@@ -10,6 +10,7 @@ pad = "0.1.4"
 quickersort = "2.2.0"
 fnv = "1.0"
 colored = "1.4"
+aphid = { path = "../aphid" }
 
 [profile.dev]
 opt-level = 3

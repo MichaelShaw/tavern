@@ -9,6 +9,7 @@ rand = "*"
 time = "*"
 pad = "0.1.4"
 quickersort = "2.2.0"
+aphid = { path = "./aphid" }
 tavern_core = { path = "./core" }
 tavern_service = { path = "./service" }
 jam = { path = "./jam" }

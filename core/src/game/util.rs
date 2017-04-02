@@ -1,7 +1,7 @@
 use std::fmt;
 use std;
 
-use HashSet;
+use aphid::HashSet;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Player(pub i8);

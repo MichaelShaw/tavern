@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Michael Shaw <michaeljshaw@gmail.com>"]
 
 [dependencies]
-tavern_core = { path = "../core" }
 time = "*"
 rand = "*"
+tavern_core = { path = "../core" }
+aphid = { path = "../aphid" }

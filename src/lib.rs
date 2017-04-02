@@ -8,6 +8,7 @@ extern crate time;
 extern crate cgmath;
 extern crate rand;
 
+extern crate aphid;
 extern crate tavern_core;
 extern crate tavern_service;
 

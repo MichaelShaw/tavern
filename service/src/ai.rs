@@ -1,13 +1,14 @@
 
 use tavern_core::game::santorini::*;
 use tavern_core::game::util::*;
-use tavern_core::*;
 
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Sender, Receiver};
 
 use std::thread;
 use std::thread::JoinHandle;
+
+use aphid::contains;
 
 pub struct AIService {
     send: Sender<Request>,

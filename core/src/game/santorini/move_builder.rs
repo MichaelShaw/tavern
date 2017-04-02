@@ -1,7 +1,9 @@
 use super::*;
 use game::*;
 
-use HashSet;
+use aphid::HashSet;
+
+
 
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
