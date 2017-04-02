@@ -5,10 +5,13 @@ use tavern_core::game::santorini::*;
 use tavern_service::ai::*;
 
 use cgmath::InnerSpace;
+use jam::Vec2;
 
+use jam::BitmapFont;
 use jam::{Vec3, Vec3f, HashSet, InputState, Color, clamp};
 use jam::color::*;
 use jam::color;
+use jam::Dimensions;
 use jam::render::*;
 
 use std::path::PathBuf;
@@ -360,6 +363,58 @@ impl SantoriniGame {
         if self.game.cpu_players.contains(&self.game.board_state.state.player()) {
             self.requiest_ai_analysis();
         }
+    }
+
+    pub fn render_ui(&self, ui: &mut GeometryTesselator, font: &BitmapFont, font_layer: u32, dimensions: Dimensions) {
+        let scale = 1.0 / dimensions.scale as f64;
+        let scaled_font_size = (font.description.pixel_size as f64) * scale;
+
+        ui.color = color::BLACK.float_raw();
+
+        let (p_x, p_y) = dimensions.points();
+
+        let progress_text = format!("Depth {}\nWins {}/{}", self.progress.level, self.progress.wins, wins_to_pass_for_level(self.progress.level));
+
+        let at = Vec2::new(20.0,  p_y - scaled_font_size - 20.0);
+
+        text::render_text(
+            &progress_text, 
+            font, 
+            font_layer,
+            at,
+            -1.0, // i assume this is because our coordinate system is hosed ... 
+            scale,
+            ui, 
+            Some(300.0)
+        );
+
+        let status : &str = match self.game.interaction_state {
+            InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => "Waiting on AI Opponent ...",
+            InteractionState::AwaitingInput { player_type: PlayerType::Human, .. } => "Your move.",
+            InteractionState::WaitingVictory { player, .. } => {
+                if self.game.cpu_players.contains(&player) {
+                    "Defeat"
+                } else {
+                    "Victory!"
+                }
+            },
+            InteractionState::AnimatingMove { .. } => "Moving ...",
+        };
+
+        let status_size = text::measure(status, font, scale, None);
+
+        let status_at = Vec2::new(p_x / 2.0 - status_size.x / 2.0, 20.0);
+
+        text::render_text(
+            &status, 
+            font, 
+            font_layer,
+            status_at,
+            -1.0, // i assume this is because our coordinate system is hosed ... 
+            scale,
+            ui, 
+            None
+        );
     }
 
     pub fn render(&self, opaque: &mut GeometryTesselator, trans: &mut GeometryTesselator, units_per_point: f64) {

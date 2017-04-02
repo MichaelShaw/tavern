@@ -4,6 +4,8 @@ service/target/
 core/target/
 dist
 
+tavern.profile.txt
+
 /target/
 
 # Remove Cargo.lock from gitignore if creating an executable, leave it for libraries

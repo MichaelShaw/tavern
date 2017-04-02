@@ -170,6 +170,10 @@ impl App {
         GeometryTesselator::new(tesselator_scale)
     }
 
+    fn ui_tesselator(&self) -> GeometryTesselator {
+        GeometryTesselator::new(Vec3::new(1.0, 1.0, 1.0))
+    }
+
     fn run(&mut self) {
         let start_time = time::precise_time_ns();
         let mut last_time = start_time;
@@ -183,11 +187,12 @@ impl App {
 
             self.update(&input_state, dimensions, since_start, delta_time);  
 
-            let render_passes = self.render();
+            let render_passes = self.render(dimensions);
 
-            // rgb(132, 193, 255)
-            // 
-            self.renderer.render(render_passes, rgb(116, 181, 231)).unwrap();
+            match self.renderer.render(render_passes, rgb(116, 181, 231)) {
+                Ok(_) => (),
+                Err(e) => println!("uhhh, render didnt work -> {:?}", e),
+            }
 
             last_time = time;
             if input_state.close {
@@ -218,19 +223,31 @@ impl App {
         self.sound_worker.send(Render { master_gain: 1.0, sounds:sound_events, persistent_sounds: HashMap::default(), listener: Listener::default() }).unwrap();
     }
 
-    fn render(&mut self) -> Vec<Pass<String>> {
+    fn render(&mut self, dimensions:Dimensions) -> Vec<Pass<String>> {
+        use jam::font::FontDescription;
+
+        let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: (32f64 * self.camera.viewport.scale) as u32 };
+        match self.renderer.load_font(&font_description) {
+            Ok(_) => (),
+            Err(e) => println!("Error loading font -> {:?}", e),
+        }
+
         let mut opaque_commands : Vec<Command<String>> = Vec::new();
         let mut translucent_commands : Vec<Command<String>> = Vec::new();
         let mut ui_commands : Vec<Command<String>> = Vec::new();
 
         let mut opaque = self.tesselator();
         let mut trans = self.tesselator();
+        let mut ui = self.ui_tesselator();
 
         let upp = self.units_per_point();
 
         match &mut self.state {
             &mut Game::Santorini(ref mut game) => {
                 game.render(&mut opaque, &mut trans, upp);
+                if let Some((font, layer)) = self.renderer.get_font(&font_description) {
+                    game.render_ui(&mut ui, font, layer, dimensions);
+                }
             },
         }
 
@@ -248,6 +265,15 @@ impl App {
             vertices: trans.tesselator.vertices, 
             uniforms: Uniforms {
                 transform : down_size_m4(self.camera.view_projection().into()),
+                color: color::WHITE,
+            }
+        });
+
+        ui_commands.push(DrawNew {
+            key: None, 
+            vertices: ui.tesselator.vertices, 
+            uniforms: Uniforms {
+                transform : down_size_m4(self.camera.ui_projection().into()),
                 color: color::WHITE,
             }
         });
