@@ -11,8 +11,12 @@ use jam::color::*;
 use jam::color;
 use jam::render::*;
 
+use std::path::PathBuf;
+
 use howl::SoundEvent;
 use cgmath::{Zero, Vector3};
+
+use aphid;
 
 use rand;
 use rand::{Rng, XorShiftRng, SeedableRng};
@@ -25,7 +29,8 @@ pub fn unseeded_rng() -> XorShiftRng {
 }
 
 pub enum StateTransition {
-    Reset,
+    PlayerWin,
+    PlayerLoss,
     NewInteractionState(InteractionState),
 }
 
@@ -66,12 +71,64 @@ impl InteractionState {
     }
 }
 
+#[derive(Eq, Debug, Copy, Clone, PartialEq, Deserialize, Serialize)]
+pub struct Progress {
+    pub level: usize,
+    pub wins: usize,
+}
+
+pub fn wins_to_pass_for_level(level: usize) -> usize {
+    match level {
+        0...3 => 1,
+        4...6 => 2,
+        _ => 4,
+    }
+}
+
+impl Progress {
+    pub fn cpu_players(&self) -> HashSet<Player> {
+        if self.wins % 2 == 0 {
+            hashset![Player(1)]
+        } else {
+            hashset![Player(0)]
+        }
+    }
+
+    pub fn ai_profile(&self) -> (AIProfile, Option<f64>) {
+        (AIProfile {
+            depth: self.level as Depth,
+            heuristic: HeuristicName::AdjustedNeighbour,
+        }, Some(15.0))
+    }
+
+    pub fn win(&mut self) {
+        self.wins += 1;
+        if self.wins == wins_to_pass_for_level(self.level) {
+            self.level += 1;
+            self.wins = 0;
+        }
+    }
+
+    pub fn loss(&mut self) {
+        if self.wins == 0 && self.level > 2 { // can't go lower than depth 2
+            self.level -= 1;
+            self.wins = wins_to_pass_for_level(self.level) - 1;
+        } else {
+            self.wins -= 1;
+        }
+    }
+}
+
+pub const DEFAULT_PROGRESS : Progress = Progress { level: 2, wins: 0 };
+
 pub struct SantoriniGame {
     pub game : PlayerGame, // should the core game have AI state?
     pub mouse_over_slot : Option<Slot>,
     pub atlas: SantoriniAtlas,
     pub rand: XorShiftRng,
     pub ai_service : AIService,
+    pub progress: Progress,
+    pub profile_path: PathBuf,
 }
 
 const BOARD_OFFSET : Vec3 = Vector3 { x: 1.0, y: 0.0, z: 1.0 };
@@ -83,11 +140,12 @@ const VICTORY_WAIT : f64 = 5.0;
 const ANIMATION_WAIT : f64 = 1.0;
 
 impl SantoriniGame {
-    pub fn new() -> SantoriniGame {
-        let mut rng = unseeded_rng();
+    pub fn new(profile_path: PathBuf) -> SantoriniGame {
+        let progress : Progress = aphid::deserialize_from_json_file(&profile_path).ok().unwrap_or(DEFAULT_PROGRESS);
 
-        let cpu_players = hashset![Player(rng.gen_range(0, 2))]; 
-        // let cpu_players = hashset![Player(0)]; 
+        println!("starting with progress -> {:?}", progress);
+
+        let cpu_players = progress.cpu_players();
         
         let board_state = BoardState::new(StandardBoard::new(ZobristHash::new_unseeded()), INITIAL_STATE);
         let tentative = board_state.tentative(&Vec::new(), None);
@@ -107,8 +165,10 @@ impl SantoriniGame {
             game: player_game,
             mouse_over_slot: None,
             atlas: SantoriniAtlas::build(),
-            rand: rng,
+            rand: unseeded_rng(),
             ai_service: ai_service,
+            progress:progress,
+            profile_path: profile_path,
         };
 
         match &game.game.interaction_state {
@@ -188,11 +248,15 @@ impl SantoriniGame {
                     self.play_move(* mve);
                 }
             },
-            InteractionState::WaitingVictory { ref mut elapsed, .. } => {
+            InteractionState::WaitingVictory { ref player, ref mut elapsed } => {
                 *elapsed += delta_time;
                 if *elapsed >= VICTORY_WAIT {
                     println!("we've waited long enough, reset");
-                    new_interaction_state = Some(StateTransition::Reset);
+                    if self.game.cpu_players.contains(player) {
+                        new_interaction_state = Some(StateTransition::PlayerLoss);
+                    } else {
+                        new_interaction_state = Some(StateTransition::PlayerWin);
+                    }
                 }
             },
             InteractionState::AnimatingMove { ref mut elapsed, winner, .. } => {
@@ -211,9 +275,8 @@ impl SantoriniGame {
             Some(StateTransition::NewInteractionState(is)) => {
                 self.game.interaction_state = is
             },
-            Some(StateTransition::Reset) => {
-                self.reset()
-            },
+            Some(StateTransition::PlayerLoss) => self.complete_game(false),
+            Some(StateTransition::PlayerWin) => self.complete_game(true),
             None => (),
         }
 
@@ -237,15 +300,11 @@ impl SantoriniGame {
     }
 
     pub fn requiest_ai_analysis(&self) {
-        let ai_profile = AIProfile {
-            depth: 16,
-            heuristic: HeuristicName::AdjustedNeighbour,
-        };
-        self.ai_service.request_analysis(self.game.board_state.state.clone(), ai_profile, Some(10.0));   
+        let (ai_profile, time_limit) = self.progress.ai_profile();
+        self.ai_service.request_analysis(self.game.board_state.state.clone(), ai_profile, time_limit);   
     }
 
     pub fn play_move(&mut self, mve: Move) -> MatchStatus {
-        println!("PLAY MOVE");
         let prior_state = self.game.board_state.state.clone();
 
         let match_status = self.game.board_state.make_move(mve);
@@ -271,8 +330,22 @@ impl SantoriniGame {
         match_status
     }
 
-    pub fn reset(&mut self) {
-        let cpu_players = hashset![Player(self.rand.gen_range(0, 2))]; ;
+    pub fn complete_game(&mut self, player_win: bool) { // RESET AINT GOOD ENOUGH ANYMORE
+        println!("pre progress {:?}", self.progress);
+        if player_win {
+            println!("register win");
+            self.progress.win();
+        } else {
+            println!("register loss");
+            self.progress.loss();
+        }
+        println!("post progress {:?}", self.progress);
+        let res = aphid::serialize_to_json_file(&self.progress, &self.profile_path);
+        println!("serialization result -> {:?}", res);
+
+
+        let cpu_players = self.progress.cpu_players();
+
         let board_state = BoardState::new(StandardBoard::new(ZobristHash::new_unseeded()), INITIAL_STATE);
         let tentative = board_state.tentative(&Vec::new(), None);
         self.game = PlayerGame {

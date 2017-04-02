@@ -37,17 +37,6 @@ pub struct TavernPaths {
     pub profile : PathBuf,
 }
 
-#[derive(Eq, Debug, Clone, PartialEq)]
-pub struct DifficultyLevel {
-    pub wins_to_pass: u8,
-    pub depth: i8,
-}
-
-#[derive(Eq, Debug, Clone, PartialEq, Serialize)]
-pub struct Progress {
-    pub level: usize,
-    pub wins: usize,
-}
 
 #[derive(Debug)]
 pub enum TavernError {
@@ -68,8 +57,6 @@ impl From<io::Error> for TavernError {
 }
 
 pub type TavernResult<T> = Result<T, TavernError>;
-
-pub const DEFAULT_PROGRESS : Progress = Progress { level: 0, wins: 0 };
 
 pub fn get_paths() -> TavernResult<TavernPaths> {
     if cfg!(all(target_os = "macos")) { // -- mac release
@@ -115,8 +102,6 @@ pub fn run_app() -> TavernResult<()> {
 
     println!("paths -> {:?}", paths);
 
-    // let progress :  = deserialize_from_json_file();
-
     let sound_path = format!("{}/sound", paths.resources);
     let vertex_shader_path = format!("{}/shader/fat.vert", paths.resources);
     let fragment_shader_path = format!("{}/shader/fat.frag", paths.resources);
@@ -148,7 +133,7 @@ pub fn run_app() -> TavernResult<()> {
         points_per_unit: 16.0,
         n: 0, // frame counter
         renderer: renderer,
-        state: Game::Santorini(santorini::SantoriniGame::new()),
+        state: Game::Santorini(santorini::SantoriniGame::new(paths.profile)),
         sound_worker: sound_worker, 
     };
 

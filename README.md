@@ -5,9 +5,10 @@ Check repeated hit rate for a given depth, how many exacts do we get.
 Check if iterative deepending helps.
 
 # Other
-- Move Jam + Howl to NAlgebra (it has modern Serde).
+- Move Jam + Howl to use Aphid (for HashMap etc.).
 
 # Santorini
+- Implement dynamic difficulty mode
 - Print who wins when it happens ... play sound effect?
 - Termination Cell + request tracking (seriously)
 - Better move ordering (domes adjacent to enemies etc.)
