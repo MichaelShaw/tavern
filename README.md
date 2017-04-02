@@ -8,8 +8,7 @@ Check if iterative deepending helps.
 - Move Jam + Howl to use Aphid (for HashMap etc.).
 
 # Santorini
-- Implement dynamic difficulty mode
-- Print who wins when it happens ... play sound effect?
+- Play sound effect when you win?
 - Termination Cell + request tracking (seriously)
 - Better move ordering (domes adjacent to enemies etc.)
 - Heuristic tuning?
