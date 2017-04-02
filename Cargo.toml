@@ -13,6 +13,9 @@ tavern_core = { path = "./core" }
 tavern_service = { path = "./service" }
 jam = { path = "./jam" }
 howl = { path = "./howl" }
+serde = "0.9"
+serde_json = "0.9"
+serde_derive = "0.9"
 
 [profile.dev]
 opt-level = 3
