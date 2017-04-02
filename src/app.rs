@@ -23,16 +23,38 @@ use howl::engine::SoundEngineUpdate::*;
 use santorini;
 
 use std::env;
-// use std::fs::File;
-// use std::io::prelude::*;
 
-// use std::thread;
-// use std;
+use std::path::PathBuf;
 
-pub fn run_app() {
-    let (resources_path, openal_path) : (String, String) = if cfg!(all(target_os = "macos")) { // -- mac release
+use std::io;
+
+#[derive(Eq, Debug, Clone, PartialEq)]
+pub struct TavernPaths {
+    pub resources: String,
+    pub openal : String,
+    pub profile : PathBuf,
+}
+
+#[derive(Eq, Debug, Clone, PartialEq)]
+pub struct DifficultyLevel {
+    pub wins_to_pass: u8,
+    pub depth: i8,
+}
+
+#[derive(Eq, Debug, Clone, PartialEq)]
+pub struct Progress {
+    pub level: usize,
+    pub wins: usize,
+}
+
+pub fn get_paths() -> io::Result<TavernPaths> {
+    if cfg!(all(target_os = "macos")) { // -- mac release
         if cfg!(debug_assertions) { //
-            ("./resources".into(), "./native/openal.dylib".into())
+            Ok((TavernPaths {
+                resources: "./resources".into(),
+                openal: "./native/openal.dylib".into(),
+                profile: PathBuf::from("./tavern.profile.txt"), // ~/Library/Application Support/tavern
+            }))
         } else {
             // mac in a .app
             let mut resources_path = env::current_exe().unwrap();
@@ -47,27 +69,37 @@ pub fn run_app() {
             alpth.push("openal.dylib");
 
             let al_path = alpth.to_str().unwrap().into();
-            // let directories = format!("resources -> {:?} openal -> {:?}", r_path, al_path);
-            // f.write_all(directories.as_bytes()).unwrap();
-
-            (r_path, al_path)
+            
+            Ok((TavernPaths {
+                resources: r_path,
+                openal: al_path,
+                profile: PathBuf::from("./tavern.profile.txt"), // ~/Library/Application Support/tavern
+            }))
         }
     } else  {
-        ("./resources".into(), "./native/OpenAL64.dll".into())
-    };
-
-    let directories = format!("resources -> {:?} openal -> {:?}", resources_path, openal_path);
-    println!("{}", directories);
-
-
-    let sound_path = format!("{}/sound", resources_path);
-    let vertex_shader_path = format!("{}/shader/fat.vert", resources_path);
-    let fragment_shader_path = format!("{}/shader/fat.frag", resources_path);
-    let texture_path = format!("{}/textures", resources_path);
-    let fonts_path = format!("{}/fonts", resources_path);
+        Ok((TavernPaths {
+            resources: "./resources".into(),
+            openal: "./native/OpenAL64.dll".into(),
+            profile: PathBuf::from("./tavern.profile.txt"), // current directory
+        }))
+    }
+}
 
 
-    let sound_worker = SoundWorker::create(openal_path, sound_path, "ogg".into(), 1_000_000, 5.0);
+pub fn run_app() -> io::Result<()> {
+    let paths = try!(get_paths());
+
+    println!("paths -> {:?}", paths);
+
+
+    let sound_path = format!("{}/sound", paths.resources);
+    let vertex_shader_path = format!("{}/shader/fat.vert", paths.resources);
+    let fragment_shader_path = format!("{}/shader/fat.frag", paths.resources);
+    let texture_path = format!("{}/textures", paths.resources);
+    let fonts_path = format!("{}/fonts", paths.resources);
+
+
+    let sound_worker = SoundWorker::create(paths.openal, sound_path, "ogg".into(), 1_000_000, 5.0);
     sound_worker.send(Preload(vec![("place_tile".into(), 1.0), ("select".into(), 1.0)])).unwrap();
 
     let shader_pair = ShaderPair::for_paths(&vertex_shader_path, &fragment_shader_path);
@@ -98,6 +130,8 @@ pub fn run_app() {
     app.run();
 
     app.sound_worker.shutdown_and_wait();
+
+    Ok(())
 }
 
 struct App {

@@ -7,5 +7,8 @@ extern crate time;
 extern crate tavern;
 
 fn main() {
-    tavern::app::run_app();
+    match tavern::app::run_app() {
+    	Ok(()) => (),
+    	Err(e) => println!("Error launching -> {:?}", e),
+    }
 }
