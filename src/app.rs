@@ -23,6 +23,7 @@ use howl::engine::SoundEngineUpdate::*;
 use santorini;
 
 use std::env;
+use std::fs;
 
 use std::path::PathBuf;
 
@@ -42,6 +43,7 @@ pub struct TavernPaths {
 pub enum TavernError {
     Aphid(aphid::AphidError),
     IO(io::Error),
+    NoHomeDir,
 }
 
 impl From<aphid::AphidError> for TavernError {
@@ -80,11 +82,22 @@ pub fn get_paths() -> TavernResult<TavernPaths> {
             alpth.push("openal.dylib");
 
             let al_path = alpth.to_str().unwrap().into();
+
+            // SAVE PROFILE IN APP SUPPORT
+            let mut home_dir = try!(env::home_dir().ok_or(TavernError::NoHomeDir));
+            home_dir.push("Library");
+            home_dir.push("Application Support");
+            home_dir.push("Tavern");
+
+            if !home_dir.exists() {
+                fs::create_dir(&home_dir)?;
+            } 
+            home_dir.push("tavern.profile.txt");
             
             Ok((TavernPaths {
                 resources: r_path,
                 openal: al_path,
-                profile: PathBuf::from("./tavern.profile.txt"), // ~/Library/Application Support/tavern
+                profile: home_dir, 
             }))
         }
     } else  {
