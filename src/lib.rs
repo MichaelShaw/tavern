@@ -12,5 +12,8 @@ extern crate aphid;
 extern crate tavern_core;
 extern crate tavern_service;
 
+#[macro_use]
+extern crate serde_derive;
+
 pub mod app;
 pub mod santorini;

@@ -28,6 +28,8 @@ use std::path::PathBuf;
 
 use std::io;
 
+use aphid;
+
 #[derive(Eq, Debug, Clone, PartialEq)]
 pub struct TavernPaths {
     pub resources: String,
@@ -41,13 +43,35 @@ pub struct DifficultyLevel {
     pub depth: i8,
 }
 
-#[derive(Eq, Debug, Clone, PartialEq)]
+#[derive(Eq, Debug, Clone, PartialEq, Serialize)]
 pub struct Progress {
     pub level: usize,
     pub wins: usize,
 }
 
-pub fn get_paths() -> io::Result<TavernPaths> {
+#[derive(Debug)]
+pub enum TavernError {
+    Aphid(aphid::AphidError),
+    IO(io::Error),
+}
+
+impl From<aphid::AphidError> for TavernError {
+    fn from(err: aphid::AphidError) -> Self {
+        TavernError::Aphid(err)
+    }
+}
+
+impl From<io::Error> for TavernError {
+    fn from(err: io::Error) -> Self {
+        TavernError::IO(err)
+    }
+}
+
+pub type TavernResult<T> = Result<T, TavernError>;
+
+pub const DEFAULT_PROGRESS : Progress = Progress { level: 0, wins: 0 };
+
+pub fn get_paths() -> TavernResult<TavernPaths> {
     if cfg!(all(target_os = "macos")) { // -- mac release
         if cfg!(debug_assertions) { //
             Ok((TavernPaths {
@@ -86,11 +110,12 @@ pub fn get_paths() -> io::Result<TavernPaths> {
 }
 
 
-pub fn run_app() -> io::Result<()> {
+pub fn run_app() -> TavernResult<()> {
     let paths = try!(get_paths());
 
     println!("paths -> {:?}", paths);
 
+    // let progress :  = deserialize_from_json_file();
 
     let sound_path = format!("{}/sound", paths.resources);
     let vertex_shader_path = format!("{}/shader/fat.vert", paths.resources);
