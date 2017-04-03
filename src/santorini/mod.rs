@@ -113,9 +113,11 @@ impl Progress {
     }
 
     pub fn loss(&mut self) {
-        if self.wins == 0 && self.level > 2 { // can't go lower than depth 2
-            self.level -= 1;
-            self.wins = wins_to_pass_for_level(self.level) - 1;
+        if self.wins == 0 { // can't go lower than depth 2
+            if self.level > 2 {
+                self.level -= 1;
+                self.wins = wins_to_pass_for_level(self.level) - 1;
+            } 
         } else {
             self.wins -= 1;
         }
