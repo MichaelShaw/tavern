@@ -6,5 +6,11 @@ authors = ["Michael Shaw <michaeljshaw@gmail.com>"]
 [dependencies]
 time = "*"
 rand = "*"
+
+serde = "1.0"
+serde_derive = "1.0"
+
+aphid = { git = "https://github.com/michaelshaw/aphid" }
+psyk = { git = "https://github.com/michaelshaw/psyk" }
+
 tavern_core = { path = "../core" }
-aphid = { path = "../aphid" }

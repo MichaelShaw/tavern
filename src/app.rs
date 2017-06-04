@@ -16,7 +16,10 @@ use time;
 
 use cgmath::{Rad, Zero};
 
-use howl::{Listener, SoundEvent, Vec3f, HashMap};
+use aphid;
+use aphid::{HashMap, HashSet};
+
+use howl::{Listener, SoundEvent, Vec3f};
 use howl::worker::SoundWorker;
 use howl::engine::SoundEngineUpdate::*;
 
@@ -28,8 +31,6 @@ use std::fs;
 use std::path::PathBuf;
 
 use std::io;
-
-use aphid;
 
 #[derive(Eq, Debug, Clone, PartialEq)]
 pub struct TavernPaths {

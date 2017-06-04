@@ -8,4 +8,5 @@ extern crate time;
 extern crate rand;
 
 pub mod ai;
-pub mod play;
+pub mod server;
+pub mod game;

@@ -10,10 +10,8 @@ pad = "0.1.4"
 quickersort = "2.2.0"
 fnv = "1.0"
 colored = "1.4"
-aphid = { path = "../aphid" }
 
-[profile.dev]
-opt-level = 3
+serde = "1.0"
+serde_derive = "1.0"
 
-[profile.test]
-opt-level = 3
+aphid = { git = "https://github.com/michaelshaw/aphid" }

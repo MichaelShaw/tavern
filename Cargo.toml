@@ -9,14 +9,19 @@ rand = "*"
 time = "*"
 pad = "0.1.4"
 quickersort = "2.2.0"
-aphid = { path = "./aphid" }
+
+serde = "*"
+serde_derive = "*"
+serde_json = "*"
+
+aphid = { git = "https://github.com/michaelshaw/aphid" }
+jam = { git = "https://github.com/michaelshaw/jam" }
+howl = { git = "https://github.com/michaelshaw/howl" }
+
 tavern_core = { path = "./core" }
 tavern_service = { path = "./service" }
-jam = { path = "./jam" }
-howl = { path = "./howl" }
-serde = "0.9"
-serde_json = "0.9"
-serde_derive = "0.9"
+
+[workspace]
 
 [profile.dev]
 opt-level = 3

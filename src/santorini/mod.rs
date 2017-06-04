@@ -7,8 +7,10 @@ use tavern_service::ai::*;
 use cgmath::InnerSpace;
 use jam::Vec2;
 
+use aphid::HashSet;
+
 use jam::BitmapFont;
-use jam::{Vec3, Vec3f, HashSet, InputState, Color, clamp};
+use jam::{Vec3, Vec3f, InputState, Color, clamp};
 use jam::color::*;
 use jam::color;
 use jam::Dimensions;
@@ -144,9 +146,12 @@ const PLAYER_COLORS : [Color; 2] = [RED, YELLOW];
 const VICTORY_WAIT : f64 = 5.0;
 const ANIMATION_WAIT : f64 = 1.0;
 
+
+
+
 impl SantoriniGame {
     pub fn new(profile_path: PathBuf) -> SantoriniGame {
-        let progress : Progress = aphid::deserialize_from_json_file(&profile_path).ok().unwrap_or(DEFAULT_PROGRESS);
+        let progress : Progress = aphid::deserialize_from_json_file::<_,_,aphid::codec::JsonCodec>(&profile_path).ok().unwrap_or(DEFAULT_PROGRESS);
 
         println!("starting with progress -> {:?}", progress);
 
@@ -345,7 +350,7 @@ impl SantoriniGame {
             self.progress.loss();
         }
         println!("post progress {:?}", self.progress);
-        let res = aphid::serialize_to_json_file(&self.progress, &self.profile_path);
+        let res = aphid::serialize_to_json_file::<_,_,aphid::codec::JsonCodec>(&self.progress, &self.profile_path);
         println!("serialization result -> {:?}", res);
 
 
