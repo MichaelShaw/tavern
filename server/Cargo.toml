@@ -1,0 +1,7 @@
+[package]
+name = "tavern_server"
+version = "0.1.0"
+authors = ["Michael Shaw <michaeljshaw@gmail.com>"]
+
+[dependencies]
+tavern_service = { path = "../service" }

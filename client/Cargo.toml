@@ -1,0 +1,22 @@
+[package]
+name = "tavern_client"
+version = "0.1.0"
+authors = ["Michael Shaw <michaeljshaw@gmail.com>"]
+
+[dependencies]
+cgmath = "*"
+rand = "*"
+time = "*"
+pad = "0.1.4"
+quickersort = "2.2.0"
+
+serde = "*"
+serde_derive = "*"
+serde_json = "*"
+
+aphid = { git = "https://github.com/michaelshaw/aphid" }
+jam = { git = "https://github.com/michaelshaw/jam" }
+howl = { git = "https://github.com/michaelshaw/howl" }
+
+tavern_core = { path = "../core" }
+tavern_service = { path = "../service" }

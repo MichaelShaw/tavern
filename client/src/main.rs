@@ -4,10 +4,10 @@ extern crate jam;
 extern crate rand;
 extern crate tavern_core;
 extern crate time;
-extern crate tavern;
+extern crate tavern_client;
 
 fn main() {
-    match tavern::app::run_app() {
+    match tavern_client::app::run_app() {
     	Ok(()) => (),
     	Err(e) => println!("Error launching -> {:?}", e),
     }

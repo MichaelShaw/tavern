@@ -1,4 +1,4 @@
-#![crate_name="tavern"]
+#![crate_name="tavern_client"]
 #![allow(dead_code)]
 
 extern crate jam;
