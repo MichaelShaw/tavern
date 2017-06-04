@@ -1,9 +1,0 @@
-[submodule "howl"]
-	path = howl
-	url = https://github.com/MichaelShaw/howl.git
-[submodule "jam"]
-	path = jam
-	url = https://github.com/MichaelShaw/jam.git
-[submodule "aphid"]
-	path = aphid
-	url = https://github.com/MichaelShaw/aphid.git
