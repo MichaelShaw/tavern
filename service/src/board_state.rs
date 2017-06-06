@@ -1,9 +1,7 @@
 
 
 use tavern_core::game::santorini::{Move, State, StandardBoard};
-use tavern_core::{Player, Slot, Packed1};
-
-use aphid::HashSet;
+use tavern_core::{Player};
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

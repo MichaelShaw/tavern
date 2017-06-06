@@ -16,3 +16,4 @@ pub mod server;
 pub mod game;
 pub mod board_state;
 pub mod tentative;
+pub mod event;

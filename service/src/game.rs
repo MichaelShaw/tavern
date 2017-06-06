@@ -1,5 +1,5 @@
 
-use tavern_core::{Player};
+use tavern_core::{Player, Slot};
 use tavern_core::game::santorini::{Move, State};
 use aphid::{HashSet, Seconds};
 
@@ -14,11 +14,15 @@ pub struct Game {
     pub cpu_players : HashSet<Player>,
 }
 
-
 pub struct UIState {
     pub interaction_state: InteractionState, // animation/interactivity really
-	pub tentative: TentativeState, // predicted moves
+    pub legal_moves : Vec<Move>, // produced after each move
+    pub current_slots : Vec<Slot>, // this is our clicked slots
+    pub tentative_slot : Option<Slot>, // mouse over slot
+    pub tentative: TentativeState, // predicted moves
 }
+
+// after each move, clear out legal_moves/current_slots/tentative_slot ..... and tentative gets produced every frame ....
 
 // is interaction state a .... local thing .... or a server thing ...
 #[derive(Debug, Clone, PartialEq)]

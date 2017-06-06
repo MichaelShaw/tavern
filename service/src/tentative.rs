@@ -5,54 +5,42 @@ use aphid::HashSet;
 
 
 pub struct TentativeState {
-    pub proposed_state: State, 
-    
     pub matching_slots : HashSet<Slot>, // matching positions for highlights
     pub move_count : usize,
-
-    pub current_slots : Vec<Slot>, // this is our clicked slots
-    pub tentative_slot : Option<Slot>,
-
-    pub legal_moves : Vec<Move>, // next valid moves
+    pub proposed_state: State, 
 }
 
 fn produce_tentative(state:&State, legal_moves: &Vec<Move>, current_slots: &Vec<Slot>, tentative_slot: Option<Slot>) -> TentativeState {
     let legal_moves_as_slots : Vec<_> = legal_moves.iter().map(|m| m.to_slots()).filter(|sl| {
-            sl.starts_with(&current_slots)
-        }).collect();
+        sl.starts_with(&current_slots)
+    }).collect();
 
-        let mut with_tentative : Vec<_> = current_slots.clone();
-        let mut tentative_move_count = 0;
+    let mut with_tentative : Vec<_> = current_slots.clone();
+    let mut tentative_move_count = 0;
 
-        if let Some(slot) = tentative_slot {
-            with_tentative.push(slot);
-            tentative_move_count = legal_moves_as_slots.iter().filter(|slots| slots.starts_with(&with_tentative)).count();
-            if tentative_move_count == 0 {
-                with_tentative.pop();
-            }
+    if let Some(slot) = tentative_slot {
+        with_tentative.push(slot);
+        tentative_move_count = legal_moves_as_slots.iter().filter(|slots| slots.starts_with(&with_tentative)).count();
+        if tentative_move_count == 0 {
+            with_tentative.pop();
         }
-        let new_state = modify_state(state, &with_tentative);
+    }
+    let new_state = modify_state(state, &with_tentative);
 
-        let mut matching_slots : HashSet<Slot> = HashSet::default();
-        
-        for slots in &legal_moves_as_slots {
-            let next_slot_idx = current_slots.len() as usize;
-            if next_slot_idx < slots.len() {
-                matching_slots.insert(slots[next_slot_idx]);
-            }
+    let mut matching_slots : HashSet<Slot> = HashSet::default();
+    
+    for slots in &legal_moves_as_slots {
+        let next_slot_idx = current_slots.len() as usize;
+        if next_slot_idx < slots.len() {
+            matching_slots.insert(slots[next_slot_idx]);
         }
+    }
 
-        TentativeState {
-            proposed_state: new_state,
-
-            matching_slots: matching_slots,
-            move_count: tentative_move_count,
-
-            current_slots: current_slots.clone(),
-            tentative_slot: tentative_slot.clone(),
-
-            legal_moves: legal_moves.clone(),
-        }
+    TentativeState {
+        proposed_state: new_state,
+        matching_slots: matching_slots,
+        move_count: tentative_move_count,
+    }
 }
 
 
