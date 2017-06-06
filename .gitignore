@@ -2,7 +2,9 @@
 # will have compiled files and executables
 service/target/
 core/target/
-dist
+client/target/
+server/target/
+client/dist
 
 tavern.profile.txt
 

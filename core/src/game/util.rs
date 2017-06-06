@@ -3,10 +3,10 @@ use std;
 
 use aphid::HashSet;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct Player(pub i8);
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct Slot(pub i8);
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -121,41 +121,41 @@ pub const ROTATE_180 : Transform = Transform { m00: -1, m01: 0, m10: 0, m11: -1}
 pub const ROTATE_270 : Transform = Transform { m00: 0, m01: -1, m10: 1, m11: 0};
 
 
-pub const PACKED2_EMPTY : Packed2 = Packed2(0);
+// pub const PACKED2_EMPTY : Packed2 = Packed2(0);
 
 pub const TWO_MASK : u64 = 3;
 pub const ALL_MASK_64 : u64 = 0xffffffffffffffff;
 
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
-pub struct Packed2(pub u64);
+// #[derive(Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+// pub struct Packed2(pub u64);
 
-impl Packed for Packed2 {
-    fn empty() -> Packed2 {
-        Packed2(0)
-    }
+// impl Packed for Packed2 {
+//     fn empty() -> Packed2 {
+//         Packed2(0)
+//     }
  
-    fn get(&self, slot: Slot) -> u8 {
-        ((self.0 >> (slot.0 * 2)) & TWO_MASK) as u8
-    }
+//     fn get(&self, slot: Slot) -> u8 {
+//         ((self.0 >> (slot.0 * 2)) & TWO_MASK) as u8
+//     }
 
-    fn set(&mut self, slot:Slot, value: u8) {
-        let remove_mask : u64 = (3 << (slot.0 * 2)) ^ ALL_MASK_64;
-        self.0 = (self.0 & remove_mask) | ((value as u64) << (slot.0*2)) 
-    }
-}
+//     fn set(&mut self, slot:Slot, value: u8) {
+//         let remove_mask : u64 = (3 << (slot.0 * 2)) ^ ALL_MASK_64;
+//         self.0 = (self.0 & remove_mask) | ((value as u64) << (slot.0*2)) 
+//     }
+// }
 
-impl fmt::Debug for Packed2 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str("Packed2(\n").unwrap();
-        for y in 0..5 {
-            f.write_str("  ").unwrap();
-            for x in 0..5 {
-                let on = self.get(Slot(y * 5 + x ));
-                write!(f, "{}", on).unwrap();
-            }
-            f.write_str("\n").unwrap();
-        }
-        f.write_str(")\n")
-    }
-}
+// impl fmt::Debug for Packed2 {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         f.write_str("Packed2(\n").unwrap();
+//         for y in 0..5 {
+//             f.write_str("  ").unwrap();
+//             for x in 0..5 {
+//                 let on = self.get(Slot(y * 5 + x ));
+//                 write!(f, "{}", on).unwrap();
+//             }
+//             f.write_str("\n").unwrap();
+//         }
+//         f.write_str(")\n")
+//     }
+// }

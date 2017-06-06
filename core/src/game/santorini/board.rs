@@ -183,7 +183,7 @@ impl StandardBoard {
                             new_builders[player_to_move.0 as usize] = both_placed;
 
                             for slot_transform in &self.transforms {
-                                let transformed_builders = StandardBoard::transform_packed2(slot_transform, new_builders);
+                                let transformed_builders = StandardBoard::transform_packed2(slot_transform, new_builders); // this is the only usage of Packed2
                                 if seen.contains(&transformed_builders) {
                                     dupe = true;
                                     break;

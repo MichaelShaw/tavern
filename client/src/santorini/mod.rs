@@ -49,19 +49,6 @@ pub struct PlayerGame {
     pub current_move_positions : Vec<Slot>,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum PlayerType {
-    AI,
-    Human,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum InteractionState {
-    AnimatingMove { prior_state: State, mve:Move, player_type: PlayerType, elapsed : Seconds, winner: Option<Player> }, // player_type is for who's move we're animating ...
-    AwaitingInput { player: Player, player_type: PlayerType },
-    WaitingVictory { player: Player, elapsed : Seconds },
-}
-
 fn player_type_for(state:&State, cpu_players: &HashSet<Player>) -> PlayerType {
     if cpu_players.contains(&state.to_move) {
         PlayerType::AI
@@ -130,7 +117,6 @@ pub const DEFAULT_PROGRESS : Progress = Progress { level: 2, wins: 0 };
 
 pub struct SantoriniGame {
     pub game : PlayerGame, // should the core game have AI state?
-    pub mouse_over_slot : Option<Slot>,
     pub atlas: SantoriniAtlas,
     pub rand: XorShiftRng,
     pub ai_service : AIService,
@@ -145,9 +131,6 @@ const PLAYER_COLORS : [Color; 2] = [RED, YELLOW];
 
 const VICTORY_WAIT : f64 = 5.0;
 const ANIMATION_WAIT : f64 = 1.0;
-
-
-
 
 impl SantoriniGame {
     pub fn new(profile_path: PathBuf) -> SantoriniGame {

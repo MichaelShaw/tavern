@@ -16,8 +16,6 @@ pub struct AIService {
     join_handle: JoinHandle<()>,
 }
 
-
-
 #[derive(Clone)]
 pub enum Request {
     Reset,

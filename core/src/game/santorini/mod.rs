@@ -1,7 +1,7 @@
 // use std::fmt;
 
 // extern crate pad;
-pub mod move_builder;
+// pub mod move_builder;
 pub mod perft;
 pub mod evaluator {
     pub mod minimax;
@@ -20,7 +20,7 @@ pub mod playout;
 
 pub mod tests;
 
-pub use self::move_builder::*;
+// pub use self::move_builder::*;
 pub use self::heuristic::*;
 pub use self::evaluator::negamax::*;
 pub use self::evaluator::negamax_alphabeta::*;
@@ -144,7 +144,7 @@ pub fn reflect_diag_b(pos: Position) -> Position {
 }
 
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Move {
     PlaceBuilders { a: Slot, b: Slot },
     Move { from: Slot, to:Slot, build: Slot },

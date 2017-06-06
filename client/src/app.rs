@@ -165,12 +165,8 @@ struct App {
     points_per_unit : f64,
     n : u64,
     renderer:Renderer<String>,
-    state: Game,
+    state: Option<santorini::SantoriniGame>,
     sound_worker: SoundWorker,
-}
-
-pub enum Game {
-    Santorini(santorini::SantoriniGame)
 }
 
 impl App {

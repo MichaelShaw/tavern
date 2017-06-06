@@ -5,7 +5,9 @@ use std::fmt;
 
 use std::ops::{BitOr, BitOrAssign, BitAnd, BitAndAssign, BitXor, BitXorAssign, Not};
   
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Packed1(pub u32);
 
 pub const PACKED1_EMPTY : Packed1 = Packed1(0);

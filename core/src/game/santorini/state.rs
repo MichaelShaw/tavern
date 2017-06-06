@@ -14,7 +14,7 @@ pub const INITIAL_STATE : State = State {
     to_move: Player(0),
 };
 
-#[derive(Debug, Clone, PartialEq, Hash, Eq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq, Serialize, Deserialize)]
 pub struct State {
     pub builders: [Packed1; 2],
     pub building_major : Packed1, 
