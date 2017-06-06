@@ -8,6 +8,8 @@ use board_state::BoardState;
 
 use tentative::TentativeState;
 
+use ai::StateAnalysis;
+
 pub struct Game {
 	pub board_state: BoardState, // essential state
     pub ui_state : UIState, // transient, tied to this current game
@@ -20,6 +22,8 @@ pub struct UIState {
     pub current_slots : Vec<Slot>, // this is our clicked slots
     pub tentative_slot : Option<Slot>, // mouse over slot
     pub tentative: TentativeState, // predicted moves
+
+    pub state_analysis : Option<StateAnalysis>, // temporary until we get the listen server working
 }
 
 // after each move, clear out legal_moves/current_slots/tentative_slot ..... and tentative gets produced every frame ....
