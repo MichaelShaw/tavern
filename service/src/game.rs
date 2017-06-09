@@ -213,7 +213,7 @@ impl UIState {
 
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InteractionState {
     AnimatingMove { prior_state: State, mve:Move, player: PlayerActual, elapsed : Milliseconds, winner: Option<PlayerActual> }, // player_type is for who's move we're animating ...
     AwaitingInput { player: PlayerActual },

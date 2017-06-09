@@ -23,7 +23,7 @@ pub enum Request {
     Shutdown,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct StateAnalysis {
     pub state: State,
     pub depth: Depth,

@@ -17,7 +17,7 @@ use time;
 use cgmath::{Rad, Zero};
 
 use aphid;
-use aphid::{HashMap, HashSet};
+use aphid::{HashMap, HashSet, Seconds};
 
 use howl::{Listener, SoundEvent, Vec3f};
 use howl::worker::SoundWorker;
