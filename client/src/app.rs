@@ -147,8 +147,8 @@ pub fn run_app() -> TavernResult<()> {
         points_per_unit: 16.0,
         n: 0, // frame counter
         renderer: renderer,
-        state: Game::Santorini(santorini::SantoriniGame::new(paths.profile)),
         sound_worker: sound_worker, 
+        client: santorini::SantoriniClient::new(paths.profile),
     };
 
     app.run();
@@ -165,8 +165,8 @@ struct App {
     points_per_unit : f64,
     n : u64,
     renderer:Renderer<String>,
-    state: Option<santorini::SantoriniGame>,
     sound_worker: SoundWorker,
+    client: santorini::SantoriniClient,
 }
 
 impl App {
@@ -219,12 +219,8 @@ impl App {
         let (mx, my) = input_state.mouse.at;
 
         let ground_intersection = self.camera.world_line_segment_for_mouse_position(mx, my).and_then(|ls| ls.intersects(ground_plane));
-        match &mut self.state {
-            &mut Game::Santorini(ref mut game) => {
-                game.update(ground_intersection, &input_state, &mut sound_events, delta_time);
-            },
-        }
-
+        self.client.update(ground_intersection, &input_state, &mut sound_events, delta_time);
+        
         self.camera.at = Vec3::new(3.5, 0.0, 3.5);
         self.camera.points_per_unit = self.points_per_unit * self.zoom;
         self.camera.viewport = dimensions;
@@ -252,14 +248,11 @@ impl App {
 
         let upp = self.units_per_point();
 
-        match &mut self.state {
-            &mut Game::Santorini(ref mut game) => {
-                game.render(&mut opaque, &mut trans, upp);
-                if let Some((font, layer)) = self.renderer.get_font(&font_description) {
-                    game.render_ui(&mut ui, font, layer, dimensions);
-                }
-            },
+        self.client.render(&mut opaque, &mut trans, upp);
+        if let Some((font, layer)) = self.renderer.get_font(&font_description) {
+            self.client.render_ui(&mut ui, font, layer, dimensions);
         }
+       
 
         opaque_commands.push(DrawNew {
             key: None, 

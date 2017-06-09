@@ -7,8 +7,6 @@ use tavern_service::ai::*;
 use cgmath::InnerSpace;
 use jam::Vec2;
 
-use aphid::HashSet;
-
 use jam::BitmapFont;
 use jam::{Vec3, Vec3f, InputState, Color, clamp};
 use jam::color::*;
@@ -22,10 +20,29 @@ use howl::SoundEvent;
 use cgmath::{Zero, Vector3};
 
 use aphid;
+use aphid::{Seconds, HashSet, Milliseconds};
 
 use rand;
 use rand::{Rng, XorShiftRng, SeedableRng};
 
+use tavern_service::game::*;
+use tavern_service::tentative::*;
+use tavern_service::board_state::*;
+
+pub struct SantoriniClient {
+    pub profile : PlayerProfile,
+    pub profile_path: PathBuf,
+
+    pub game : ClientGame, // should the core game have AI state?
+    pub board : StandardBoard,
+
+    pub rand: XorShiftRng, // unsure why we need this .... for new games I guess ..... for now
+    pub ai_service : AIService,
+
+    pub atlas: SantoriniAtlas,    
+}
+
+ // should we move this to aphid
 pub fn unseeded_rng() -> XorShiftRng {
     let mut threaded_rng = rand::thread_rng();
     let random_seed = [threaded_rng.next_u32(), threaded_rng.next_u32(), threaded_rng.next_u32(), threaded_rng.next_u32()];
@@ -39,157 +56,89 @@ pub enum StateTransition {
     NewInteractionState(InteractionState),
 }
 
-// stuff relevant to the current game in action
-pub struct PlayerGame {
-    pub interaction_state: InteractionState,
-    pub board_state: BoardState,
-    pub tentative: TentativeState,
-    pub analysis: Option<StateAnalysis>,
-    pub cpu_players : HashSet<Player>,
-    pub current_move_positions : Vec<Slot>,
-}
 
-fn player_type_for(state:&State, cpu_players: &HashSet<Player>) -> PlayerType {
-    if cpu_players.contains(&state.to_move) {
-        PlayerType::AI
-    }  else {
-        PlayerType::Human
-    }
-}
 
-impl InteractionState {
-    pub fn awaiting_input(state:&State, cpu_players: &HashSet<Player>) -> InteractionState {
-        InteractionState::AwaitingInput { player: state.to_move, player_type: player_type_for(state, cpu_players) }
-    }
-}
-
-#[derive(Eq, Debug, Copy, Clone, PartialEq, Deserialize, Serialize)]
-pub struct Progress {
-    pub level: usize,
-    pub wins: usize,
-}
-
-pub fn wins_to_pass_for_level(level: usize) -> usize {
-    match level {
-        0...3 => 1,
-        4...6 => 2,
-        _ => 4,
-    }
-}
-
-impl Progress {
-    pub fn cpu_players(&self) -> HashSet<Player> {
-        if self.wins % 2 == 0 {
-            hashset![Player(1)]
-        } else {
-            hashset![Player(0)]
-        }
-    }
-
-    pub fn ai_profile(&self) -> (AIProfile, Option<f64>) {
-        (AIProfile {
-            depth: self.level as Depth,
-            heuristic: HeuristicName::AdjustedNeighbour,
-        }, Some(15.0))
-    }
-
-    pub fn win(&mut self) {
-        self.wins += 1;
-        if self.wins == wins_to_pass_for_level(self.level) {
-            self.level += 1;
-            self.wins = 0;
-        }
-    }
-
-    pub fn loss(&mut self) {
-        if self.wins == 0 { // can't go lower than depth 2
-            if self.level > 2 {
-                self.level -= 1;
-                self.wins = wins_to_pass_for_level(self.level) - 1;
-            } 
-        } else {
-            self.wins -= 1;
-        }
-    }
-}
 
 pub const DEFAULT_PROGRESS : Progress = Progress { level: 2, wins: 0 };
 
-pub struct SantoriniGame {
-    pub game : PlayerGame, // should the core game have AI state?
-    pub atlas: SantoriniAtlas,
-    pub rand: XorShiftRng,
-    pub ai_service : AIService,
-    pub progress: Progress,
-    pub profile_path: PathBuf,
-}
 
 const BOARD_OFFSET : Vec3 = Vector3 { x: 1.0, y: 0.0, z: 1.0 };
 const BUILDING_PIXEL_OFFSETS : [u32; 4] = [0, 5, 10, 12];
 
 const PLAYER_COLORS : [Color; 2] = [RED, YELLOW];
 
-const VICTORY_WAIT : f64 = 5.0;
-const ANIMATION_WAIT : f64 = 1.0;
+const VICTORY_WAIT : Milliseconds = 5_000;
+const ANIMATION_WAIT : Milliseconds = 1_000;
 
-impl SantoriniGame {
-    pub fn new(profile_path: PathBuf) -> SantoriniGame {
-        let progress : Progress = aphid::deserialize_from_json_file::<_,_,aphid::codec::JsonCodec>(&profile_path).ok().unwrap_or(DEFAULT_PROGRESS);
+fn game_for(standard_board: &StandardBoard, players:Players) -> ClientGame {
+    let board_with_moves = BoardWithMoves::for_board(BoardState::new(INITIAL_STATE), &standard_board);
+    let interaction_state = InteractionState::awaiting_input(board_with_moves.state(), &players);
+    ClientGame {
+        board: board_with_moves, // board
+        tentative : None, 
+        players : players, 
+        interactivity: interaction_state, // interactivity
+        analysis : None, 
+    }
+}
 
-        println!("starting with progress -> {:?}", progress);
+impl SantoriniClient {
+    pub fn new_profile<R : Rng>(rng: R) -> PlayerProfile {
+        PlayerProfile {
+            player: HumanPlayer { id: 12, name: "Steve".into() },
+            progress: DEFAULT_PROGRESS,
+        }
+    }
 
-        let cpu_players = progress.cpu_players();
+    pub fn new(profile_path: PathBuf) -> SantoriniClient {
+        let standard_board = StandardBoard::new(ZobristHash::new_unseeded());
+        let rng = unseeded_rng();
+
+        let profile : PlayerProfile = aphid::deserialize_from_json_file::<_,_,aphid::codec::JsonCodec>(&profile_path).ok().unwrap_or(SantoriniClient::new_profile(rng));
+        println!("starting with profile -> {:?}", profile);
+
+        let game_players = profile.progress.players(&profile.player);
+
+        let game = game_for(&standard_board, game_players);
         
-        let board_state = BoardState::new(StandardBoard::new(ZobristHash::new_unseeded()), INITIAL_STATE);
-        let tentative = board_state.tentative(&Vec::new(), None);
-
-        let player_game = PlayerGame {
-            interaction_state: InteractionState::awaiting_input(&board_state.state, &cpu_players),
-            board_state:board_state,
-            tentative : tentative,
-            analysis: None,
-            cpu_players : cpu_players,
-            current_move_positions : Vec::new(),
-        };
-
         let ai_service = AIService::new();
         
-        let game = SantoriniGame {
-            game: player_game,
-            mouse_over_slot: None,
-            atlas: SantoriniAtlas::build(),
-            rand: unseeded_rng(),
-            ai_service: ai_service,
-            progress:progress,
+        let client = SantoriniClient {
+            profile : profile,
             profile_path: profile_path,
+
+            game : game, // should the core game have AI state?
+            board : standard_board,
+
+            rand: rng, // unsure why we need this .... for new games I guess ..... for now
+            ai_service : ai_service,
+
+            atlas: SantoriniAtlas::build(), 
         };
 
-        match &game.game.interaction_state {
-            &InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => {
-                game.requiest_ai_analysis();
-            }
-            _ => (),
+        if client.game.waiting_on_ai() {
+            client.requiest_ai_analysis();
         }
 
-        game
+        client
     }
 
     pub fn update(&mut self, intersection: Option<Vec3>, input_state: &InputState, sound_event_sink: &mut Vec<SoundEvent>, delta_time: Seconds) {
-        if let Some(intersects_at) = intersection {
-            self.mouse_over_slot = Position::from(intersects_at.x - 1.0, intersects_at.z - 1.0).and_then(|p| self.game.board_state.board.slot_for(p));  
-        } else {
-            self.mouse_over_slot = None;
+        if let Some(ui_state) = self.game.players.mut_human_ui_state(&self.profile.player) {
+            ui_state.tentative_slot = intersection.and_then(|intersects_at| {
+                Position::from(intersects_at.x - 1.0, intersects_at.z - 1.0).and_then(|p| self.board.slot_for(p))
+            });
         }
 
         let mut new_interaction_state : Option<StateTransition> = None;
 
-        match self.game.interaction_state {
-            InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => {
+        match self.game.interactivity {
+            InteractionState::AwaitingInput { player: PlayerActual::AI(_) }  => {
                 if let Some(ref analysis) = self.game.analysis.clone() {
                     if analysis.terminal {
                         println!("move analysis -> {:?}", analysis.best_move);
                         if let Some((mve, h)) = analysis.best_move {
-                            if self.game.board_state.next_moves.iter().any(|&m| m == mve) {
+                            if self.game.board.legal_moves().iter().any(|&m| m == mve) {
                                 println!("playin move with heuristic {:?} -> {:?}", h, mve);
                                 self.play_move(mve);
                             }
@@ -197,89 +146,104 @@ impl SantoriniGame {
                     }
                 }
             },
-            InteractionState::AwaitingInput { player_type: PlayerType::Human, .. } => {
-                let tentative = self.game.board_state.tentative(&self.game.current_move_positions, self.mouse_over_slot);
-                if let Some(sl) = self.mouse_over_slot {
-                    if input_state.mouse.left_released() {
-                        println!("pushing slot {:?}", sl);
-                        if tentative.move_count > 0 {
-                            self.game.current_move_positions.push(sl);
-                            sound_event_sink.push(SoundEvent {
-                                name: "place_tile".into(),
-                                position: Vec3f::zero(),
-                                gain: 1.0,
-                                pitch: 1.0,
-                                attenuation:1.0,
-                                loop_sound: false,
-                            });
-                            println!("move is A-OK! matching moves -> {:?}", tentative.move_count);
-                        } else {
-                            println!("tentative move isnt valid");
+            InteractionState::AwaitingInput { player: PlayerActual::Human(human_player), .. } if &human_player == &self.profile.player => {
+                // if we have ui state
+                if let Some(ui) = self.game.players.mut_ui_state(&PlayerActual::Human(self.profile.player.clone())) {
+                    let tentative = TentativeState::from(&self.game.board, ui);
+
+                    if let Some(sl) = ui.tentative_slot {
+                        if input_state.mouse.left_released() { // if user clicked on tentative slot
+                            println!("pushing slot {:?}", sl);
+                            if tentative.move_count > 0 {
+                                ui.current_slots.push(sl);
+                                sound_event_sink.push(SoundEvent {
+                                    name: "place_tile".into(),
+                                    position: Vec3f::zero(),
+                                    gain: 1.0,
+                                    pitch: 1.0,
+                                    attenuation:1.0,
+                                    loop_sound: false,
+                                });
+                                println!("move is A-OK! matching moves -> {:?}", tentative.move_count);
+                            } else {
+                                println!("tentative move isnt valid");
+                            }
                         }
                     }
-                }
 
-                // right click pops move builder
-                if input_state.mouse.right_released() && !self.game.current_move_positions.is_empty() {
-                    self.game.current_move_positions.pop();
-                    sound_event_sink.push(SoundEvent {
-                        name: "select".into(),
-                        position: Vec3f::zero(),
-                        gain: 1.0,
-                        pitch: 1.0,
-                        attenuation:1.0,
-                        loop_sound: false,
-                    });
-                }
+                    // right click pops move builder
+                    if input_state.mouse.right_released() && !ui.current_slots.is_empty() {
+                        ui.current_slots.pop();
+                        sound_event_sink.push(SoundEvent {
+                            name: "select".into(),
+                            position: Vec3f::zero(),
+                            gain: 1.0,
+                            pitch: 1.0,
+                            attenuation:1.0,
+                            loop_sound: false,
+                        });
+                    }
 
-                 // if we have a completd move, apply it to the board!
-                let completed_moves : Vec<_> = self.game.board_state.next_moves.iter().filter(|m| {
-                    &m.to_slots() == &self.game.current_move_positions
-                }).cloned().collect();
 
-                if let Some(mve) = completed_moves.first() {
-                    self.play_move(* mve);
+                     // if we have a completd move, apply it to the board!
+                    let completed_moves : Vec<_> = self.game.board.legal_moves().iter().filter(|m| {
+                        &m.to_slots() == &ui.current_slots
+                    }).cloned().collect();
+
+                    if let Some(mve) = completed_moves.first() {
+                        self.play_move(* mve);
+                    }
+                } else {
+                    println!("FOR SOME REASON WE HAVE NO UI STATE :-/ should be impossible");
                 }
             },
             InteractionState::WaitingVictory { ref player, ref mut elapsed } => {
-                *elapsed += delta_time;
+                *elapsed += (delta_time * 1000.0) as Milliseconds;
                 if *elapsed >= VICTORY_WAIT {
                     println!("we've waited long enough, reset");
-                    if self.game.cpu_players.contains(player) {
-                        new_interaction_state = Some(StateTransition::PlayerLoss);
-                    } else {
+                    
+                    if player.is_human(&self.profile.player) {
                         new_interaction_state = Some(StateTransition::PlayerWin);
+                    } else {
+                        new_interaction_state = Some(StateTransition::PlayerLoss);
                     }
                 }
             },
             InteractionState::AnimatingMove { ref mut elapsed, winner, .. } => {
-                *elapsed = *elapsed + delta_time;
+                *elapsed = *elapsed + (delta_time * 1000.0) as Milliseconds;
                 if *elapsed >= ANIMATION_WAIT {
                     let is = if let Some(player) = winner {
-                        InteractionState::WaitingVictory { player: player, elapsed: 0.0 }
+                        InteractionState::WaitingVictory { player: player, elapsed: 0 }
                     } else {
-                        InteractionState::awaiting_input(&self.game.board_state.state, &self.game.cpu_players)
+                        InteractionState::awaiting_input(&self.game.board.state(), &self.game.players)
                     };
                     new_interaction_state = Some(StateTransition::NewInteractionState(is));
                 }
             },
         };
+
         match new_interaction_state {
             Some(StateTransition::NewInteractionState(is)) => {
-                self.game.interaction_state = is
+                self.game.interactivity = is
             },
             Some(StateTransition::PlayerLoss) => self.complete_game(false),
             Some(StateTransition::PlayerWin) => self.complete_game(true),
             None => (),
         }
 
-        self.game.tentative = self.game.board_state.tentative(&self.game.current_move_positions, self.mouse_over_slot);
+        self.game.tentative = if let Some(ui) = self.game.players.human_ui_state(&self.profile.player) {
+            Some(TentativeState::from(&self.game.board, ui))
+        } else {
+            None
+        };
+
+        // self.game.tentative = self.game.board_state.tentative(&self.game.current_move_positions, self.mouse_over_slot);
 
 
         'ai_loop: loop {
             match self.ai_service.receive.try_recv() {
                 Ok(analysis) => {
-                    if analysis.state == self.game.board_state.state {
+                    if &analysis.state == self.game.board.state() {
                         self.game.analysis = Some(analysis);
                     } else {
                         println!("wrong state :-/")
@@ -293,64 +257,72 @@ impl SantoriniGame {
     }
 
     pub fn requiest_ai_analysis(&self) {
-        let (ai_profile, time_limit) = self.progress.ai_profile();
-        self.ai_service.request_analysis(self.game.board_state.state.clone(), ai_profile, time_limit);   
+        if let Some(ai_profile) = self.game.players.first_ai() {
+            self.ai_service.request_analysis(self.game.board.state().clone(), ai_profile);       
+        }
     }
 
     pub fn play_move(&mut self, mve: Move) -> MatchStatus {
-        let prior_state = self.game.board_state.state.clone();
+        let prior_state = self.game.board.state().clone();
 
-        let match_status = self.game.board_state.make_move(mve);
-        let winning_player : Option<Player> = match match_status {
-            MatchStatus::Won(player) => Some(player),
+        // work out the player to move
+
+        let player_moving = self.game.players.for_player(self.game.board.state().to_move).clone();
+
+        self.game.board.make_move(&self.board, mve);
+
+        let match_status =  self.game.board.match_status(&self.board);
+        
+        let winning_player : Option<PlayerActual> = match match_status {
+            MatchStatus::Won(player) => Some(self.game.players.0[player.0 as usize].0),
             MatchStatus::ToMove(_) => None,
         };
 
-        self.game.interaction_state = InteractionState::AnimatingMove { 
+
+        self.game.interactivity = InteractionState::AnimatingMove { 
             prior_state: prior_state.clone(), 
-            mve:mve, 
-            player_type: player_type_for(&prior_state, &self.game.cpu_players), 
-            elapsed : 0.0, 
+            mve: mve, 
+            player: player_moving, 
+            elapsed : 0, 
             winner: winning_player
         };
 
-        // println!("played move new interaction state -> {:?}", self.game.interaction_state);
-        self.game.current_move_positions.clear();
-        self.game.analysis = None;
-        if self.game.cpu_players.contains(&self.game.board_state.state.player()) {
-            self.requiest_ai_analysis();
+        if let Some(ui) = self.game.players.mut_human_ui_state(&self.profile.player) {
+            ui.clear();
         }
+        self.game.tentative = None;
+        self.game.analysis = None;
+
+        if self.game.waiting_on_ai() {
+            self.requiest_ai_analysis()
+        }
+        
         match_status
     }
 
     pub fn complete_game(&mut self, player_win: bool) { // RESET AINT GOOD ENOUGH ANYMORE
-        println!("pre progress {:?}", self.progress);
+        println!("pre progress {:?}", self.profile.progress);
         if player_win {
             println!("register win");
-            self.progress.win();
+            self.profile.progress.win();
         } else {
             println!("register loss");
-            self.progress.loss();
+            self.profile.progress.loss();
         }
-        println!("post progress {:?}", self.progress);
-        let res = aphid::serialize_to_json_file::<_,_,aphid::codec::JsonCodec>(&self.progress, &self.profile_path);
+        println!("post progress {:?}", self.profile.progress);
+        let res = aphid::serialize_to_json_file::<_,_,aphid::codec::JsonCodec>(&self.profile, &self.profile_path);
         println!("serialization result -> {:?}", res);
 
 
-        let cpu_players = self.progress.cpu_players();
 
-        let board_state = BoardState::new(StandardBoard::new(ZobristHash::new_unseeded()), INITIAL_STATE);
-        let tentative = board_state.tentative(&Vec::new(), None);
-        self.game = PlayerGame {
-            interaction_state: InteractionState::awaiting_input(&board_state.state, &cpu_players),
-            board_state: board_state,
-            tentative : tentative,
-            analysis: None,
-            cpu_players : cpu_players,
-            current_move_positions : Vec::new(),
-        };
+        // NEW GAME :D
+
+        let game_players = self.profile.progress.players(&self.profile.player);
+
+        self.game = game_for(&self.board, game_players);
         self.ai_service.reset();
-        if self.game.cpu_players.contains(&self.game.board_state.state.player()) {
+
+        if self.game.waiting_on_ai() {
             self.requiest_ai_analysis();
         }
     }
@@ -363,7 +335,7 @@ impl SantoriniGame {
 
         let (p_x, p_y) = dimensions.points();
 
-        let progress_text = format!("Depth {}\nWins {}/{}", self.progress.level, self.progress.wins, wins_to_pass_for_level(self.progress.level));
+        let progress_text = format!("Depth {}\nWins {}/{}", self.profile.progress.level, self.profile.progress.wins, wins_to_pass_for_level(self.profile.progress.level));
 
         let at = Vec2::new(20.0,  p_y - scaled_font_size - 20.0);
 
@@ -378,14 +350,13 @@ impl SantoriniGame {
             Some(300.0)
         );
 
-        let status : &str = match self.game.interaction_state {
-            InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => "Waiting on AI Opponent ...",
-            InteractionState::AwaitingInput { player_type: PlayerType::Human, .. } => "Your move.",
+        let status : &str = match self.game.interactivity {
+            InteractionState::AwaitingInput { player: PlayerActual::AI(_), .. } => "Waiting on AI Opponent ...",
+            InteractionState::AwaitingInput { player: PlayerActual::Human(_), .. } => "Your move.",
             InteractionState::WaitingVictory { player, .. } => {
-                if self.game.cpu_players.contains(&player) {
-                    "Defeat"
-                } else {
-                    "Victory!"
+                match player {
+                    PlayerActual::Human(_) => "Victory!",
+                    PlayerActual::AI(_) =>  "Defeat!",
                 }
             },
             InteractionState::AnimatingMove { .. } => "Moving ...",
@@ -410,17 +381,17 @@ impl SantoriniGame {
     pub fn render(&self, opaque: &mut GeometryTesselator, trans: &mut GeometryTesselator, units_per_point: f64) {
     	opaque.draw_floor_tile(&self.atlas.background, 0, 0.0, 0.0, 0.0, 0.0, false);
 
-        let next_player_color = PLAYER_COLORS[self.game.board_state.state.player().0 as usize];
+        let next_player_color = PLAYER_COLORS[self.game.board.state().player().0 as usize];
 
-        match &self.game.interaction_state {
-            &InteractionState::AnimatingMove { player_type: PlayerType::Human, .. } => {
-                 self.draw_opaques(&self.game.board_state.state, opaque, units_per_point)
+        match &self.game.interactivity {
+            &InteractionState::AnimatingMove { player: PlayerActual::Human(_), .. } => {
+                 self.draw_opaques(&self.game.board.state(), opaque, units_per_point)
             }
-            &InteractionState::AnimatingMove { ref prior_state, mve, player_type:PlayerType::AI, elapsed, .. } => {
+            &InteractionState::AnimatingMove { ref prior_state, mve, player:PlayerActual::AI(_), elapsed, .. } => {
                 let subtracted_state = subtract(prior_state, mve);
                 self.draw_opaques(&subtracted_state, opaque, units_per_point);
 
-                let progress = clamp(elapsed / ANIMATION_WAIT, 0.0, 1.0);
+                let progress = clamp((elapsed as f64) / (ANIMATION_WAIT as f64), 0.0, 1.0);
                 match mve {
                     Move::PlaceBuilders { a, b } => {
                         for slot in vec![a, b] {
@@ -456,31 +427,37 @@ impl SantoriniGame {
                     },
                 }
             },
-            &InteractionState::AwaitingInput { player_type: PlayerType::AI, .. } => {
-                self.draw_opaques(&self.game.board_state.state, opaque, units_per_point);
+            &InteractionState::AwaitingInput { player: PlayerActual::AI(_), .. } => {
+                self.draw_opaques(&self.game.board.state(), opaque, units_per_point);
             },
-            &InteractionState::AwaitingInput { player_type: PlayerType::Human, ..  } => {
-                self.draw_opaques(&self.game.tentative.proposed_state, opaque, units_per_point);
-                for slot in &self.game.tentative.matching_slots {
-                    let pos = StandardBoard::position(*slot);
-                    let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
-                    trans.color = next_player_color.float_raw();
-                    trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.1, false);
+            &InteractionState::AwaitingInput { player: PlayerActual::Human(_), ..  } => {
+                if let Some(tentative) = self.game.tentative {
+                    self.draw_opaques(&tentative.proposed_state, opaque, units_per_point);    
+
+                     for slot in &tentative.matching_slots {
+                        let pos = StandardBoard::position(*slot);
+                        let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
+                        trans.color = next_player_color.float_raw();
+                        trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.1, false);
+                    }
                 }
             },
             &InteractionState::WaitingVictory { .. } => {
-                self.draw_opaques(&self.game.board_state.state, opaque, units_per_point);
+                self.draw_opaques(&self.game.board.state(), opaque, units_per_point);
             },
         }
         
         trans.color = WHITE.float_raw();
 
          // DRAW MOUSE OVER
-        if let Some(slot) = self.mouse_over_slot {
-            let position = StandardBoard::position(slot);
-            let v = Vec3::new(position.x as f64, 0.0, position.y as f64) + BOARD_OFFSET;
-            trans.color = color::WHITE.float_raw();
-            trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.12, false);
+
+        if let Some(ui) = self.game.players.human_ui_state(&self.profile.player) {
+            if let Some(slot) = ui.tentative_slot {
+                let position = StandardBoard::position(slot);
+                let v = Vec3::new(position.x as f64, 0.0, position.y as f64) + BOARD_OFFSET;
+                trans.color = color::WHITE.float_raw();
+                trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.12, false);
+            }
         }
     }
 

@@ -5,6 +5,8 @@ use game::packed::*;
 use std;
 use std::cmp::{min};
 
+use aphid::Milliseconds;
+
 pub const VICTORY : HeuristicValue = 32_000;
 
 pub const BEST : HeuristicValue = std::i16::MAX;
@@ -13,17 +15,18 @@ pub const WORST : HeuristicValue = -std::i16::MAX; // to prevent overflow on neg
 pub const PLAYER_0_WIN : HeuristicValue = std::i16::MAX;
 pub const PLAYER_1_WIN : HeuristicValue = -std::i16::MAX; // to prevent overflow on negation
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash, Serialize, Deserialize)]
 pub enum HeuristicName {
     Simple,
     Neighbour,
     AdjustedNeighbour
 }
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct AIProfile {
     pub depth: Depth,
     pub heuristic : HeuristicName,
+    pub time_limit : Option<Milliseconds>,
 }
 
 pub struct SimpleHeightHeuristic {}

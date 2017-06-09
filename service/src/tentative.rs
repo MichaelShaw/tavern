@@ -1,5 +1,7 @@
-use tavern_core::game::santorini::{Move, State};
+use tavern_core::game::santorini::{State};
 use tavern_core::{Slot, Packed1};
+
+use game::{BoardWithMoves, UIState};
 
 use aphid::HashSet;
 
@@ -10,39 +12,41 @@ pub struct TentativeState {
     pub proposed_state: State, 
 }
 
-fn produce_tentative(state:&State, legal_moves: &Vec<Move>, current_slots: &Vec<Slot>, tentative_slot: Option<Slot>) -> TentativeState {
-    let legal_moves_as_slots : Vec<_> = legal_moves.iter().map(|m| m.to_slots()).filter(|sl| {
-        sl.starts_with(&current_slots)
-    }).collect();
+impl TentativeState {
+    pub fn from(board_with_moves: &BoardWithMoves, ui: &UIState) -> TentativeState {
+        let legal_moves_as_slots : Vec<_> = board_with_moves.legal_moves().iter().map(|m| m.to_slots()).filter(|sl| {
+            sl.starts_with(&ui.current_slots)
+        }).collect();
 
-    let mut with_tentative : Vec<_> = current_slots.clone();
-    let mut tentative_move_count = 0;
+        let mut with_tentative : Vec<_> = ui.current_slots.clone();
+        let mut tentative_move_count = 0;
 
-    if let Some(slot) = tentative_slot {
-        with_tentative.push(slot);
-        tentative_move_count = legal_moves_as_slots.iter().filter(|slots| slots.starts_with(&with_tentative)).count();
-        if tentative_move_count == 0 {
-            with_tentative.pop();
+        if let Some(slot) = ui.tentative_slot {
+            with_tentative.push(slot);
+            tentative_move_count = legal_moves_as_slots.iter().filter(|slots| slots.starts_with(&with_tentative)).count();
+            if tentative_move_count == 0 {
+                with_tentative.pop();
+            }
         }
-    }
-    let new_state = modify_state(state, &with_tentative);
 
-    let mut matching_slots : HashSet<Slot> = HashSet::default();
-    
-    for slots in &legal_moves_as_slots {
-        let next_slot_idx = current_slots.len() as usize;
-        if next_slot_idx < slots.len() {
-            matching_slots.insert(slots[next_slot_idx]);
+        let new_state = modify_state(board_with_moves.state(), &with_tentative);
+
+        let mut matching_slots : HashSet<Slot> = HashSet::default();
+        
+        for slots in &legal_moves_as_slots {
+            let next_slot_idx = ui.current_slots.len() as usize;
+            if next_slot_idx < slots.len() {
+                matching_slots.insert(slots[next_slot_idx]);
+            }
         }
-    }
 
-    TentativeState {
-        proposed_state: new_state,
-        matching_slots: matching_slots,
-        move_count: tentative_move_count,
+        TentativeState {
+            proposed_state: new_state,
+            matching_slots: matching_slots,
+            move_count: tentative_move_count,
+        }
     }
 }
-
 
 // applies predicted slot moves to some state to produce a new state (used in tentative production)
 fn modify_state(base_state:&State, slots:&Vec<Slot>) -> State {
