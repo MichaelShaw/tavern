@@ -20,3 +20,11 @@ howl = { git = "https://github.com/michaelshaw/howl" }
 
 tavern_core = { path = "../core" }
 tavern_service = { path = "../service" }
+
+[profile.dev]
+opt-level = 3
+debug = true
+
+[profile.release]
+lto = true
+panic = 'abort'

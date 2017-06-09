@@ -15,7 +15,6 @@ pub enum ClientLocalEvent {
 	PushCurrentSlot(Slot),
 	PopCurrentSlot,
 	PlayMove(Move, Option<HeuristicValue>),
-	// theeese areeeen't the best defined :-/
     PlayerWin,
     PlayerLoss,
     NewInteractionState(InteractionState),
