@@ -8,7 +8,7 @@ rm -rf ./target/release/tavern.app
 echo "Building"
 cargo build --release
 echo "Stripping"
-strip target/release/tavern
+strip target/release/tavern_client
 echo "Creating base Bundle"
 cargo bundle --release -d resources
 echo "Copying fonts"
