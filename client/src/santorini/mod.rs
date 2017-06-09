@@ -40,7 +40,9 @@ pub struct SantoriniClient {
     pub rand: XorShiftRng, // unsure why we need this .... for new games I guess ..... for now
     pub ai_service : AIService,
 
-    pub atlas: SantoriniAtlas,    
+    pub atlas: SantoriniAtlas,  
+
+    pub sound_events: Vec<SoundEvent>,  
 }
 
  // should we move this to aphid
@@ -115,10 +117,12 @@ impl SantoriniClient {
             ai_service : ai_service,
 
             atlas: SantoriniAtlas::build(), 
+
+            sound_events: Vec::new(),
         };
 
         if client.game.waiting_on_ai() {
-            client.requiest_ai_analysis();
+            client.request_ai_analysis();
         }
 
         client
@@ -140,27 +144,22 @@ impl SantoriniClient {
             println!("processing -> {:?}", ev);
             match ev {
                 UpdateTentativeSlot(slot) => {
-                    let update = if let Some(ui_state) = self.game.players.mut_human_ui_state(&self.profile.player) {
+                    if let Some(ui_state) = self.game.players.mut_human_ui_state(&self.profile.player) {
                         ui_state.tentative_slot = slot;
-                        true
-                    } else {
-                        false
-                    };
-                    if update {
-                        self.recalculate_tentative();
                     }
                 },
                 PushCurrentSlot(slot) => {
                     if let Some(ui) = self.game.players.mut_human_ui_state(&self.profile.player) {
                         ui.current_slots.push(slot);
-                        // sound_event_sink.push(SoundEvent {
-                        //     name: "place_tile".into(),
-                        //     position: Vec3f::zero(),
-                        //     gain: 1.0,
-                        //     pitch: 1.0,
-                        //     attenuation:1.0,
-                        //     loop_sound: false,
-                        // });
+
+                        self.sound_events.push(SoundEvent {
+                            name: "place_tile".into(),
+                            position: Vec3f::zero(),
+                            gain: 1.0,
+                            pitch: 1.0,
+                            attenuation:1.0,
+                            loop_sound: false,
+                        });
 
                         // if we have a completd move, apply it to the board!
                         let completed_moves : Vec<_> = self.game.board.legal_moves().iter().filter(|m| {
@@ -168,30 +167,29 @@ impl SantoriniClient {
                         }).cloned().collect();
 
                         if let Some(mve) = completed_moves.first() {
-                            events.push(PlayMove(*mve));
-                        }
+                            events.push(PlayMove(*mve, None));
+                        } 
                     }
                 },
                 PopCurrentSlot => {
                     let update = if let Some(ui) = self.game.players.mut_human_ui_state(&self.profile.player) {
                         ui.current_slots.pop();
-                        // sound_event_sink.push(SoundEvent {
-                        //     name: "select".into(),
-                        //     position: Vec3f::zero(),
-                        //     gain: 1.0,
-                        //     pitch: 1.0,
-                        //     attenuation:1.0,
-                        //     loop_sound: false,
-                        // });
                         true
                     } else {
                         false
                     };
                     if update {
-                        self.recalculate_tentative();
+                        self.sound_events.push(SoundEvent {
+                             name: "select".into(),
+                             position: Vec3f::zero(),
+                             gain: 1.0,
+                             pitch: 1.0,
+                             attenuation:1.0,
+                             loop_sound: false,
+                        });
                     }
                 },
-                PlayMove(mve) => {
+                PlayMove(mve, h) => {
                     self.play_move(mve);
                 },
                 NewInteractionState(is) => self.game.interactivity = is,
@@ -206,6 +204,8 @@ impl SantoriniClient {
                 },
             }
         }
+
+        self.recalculate_tentative();
     }
 
     pub fn recalculate_tentative(&mut self) {
@@ -258,11 +258,9 @@ impl SantoriniClient {
             InteractionState::AwaitingInput { player: PlayerActual::AI(_) }  => {
                 if let Some(ref analysis) = self.game.analysis {
                     if analysis.terminal {
-                        println!("move analysis -> {:?}", analysis.best_move);
                         if let Some((mve, h)) = analysis.best_move {
                             if self.game.board.legal_moves().iter().any(|&m| m == mve) {
-                                println!("playin move with heuristic {:?} -> {:?}", h, mve);
-                                events.push(PlayMove(mve));
+                                events.push(PlayMove(mve, Some(h)));
                             }
                         }
                     }
@@ -275,12 +273,8 @@ impl SantoriniClient {
                     
                     if input_state.mouse.left_released() { // if user clicked on tentative slot
                         if let Some(sl) = ui.tentative_slot {
-                            println!("pushing slot {:?}", sl);
                             if tentative.move_count > 0 {
                                 events.push(PushCurrentSlot(sl));
-                                println!("move is A-OK! matching moves -> {:?}", tentative.move_count);
-                            } else {
-                                println!("tentative move isnt valid");
                             }
                         }
                     } else if input_state.mouse.right_released() && !ui.current_slots.is_empty() {
@@ -300,9 +294,8 @@ impl SantoriniClient {
     pub fn update(&mut self, intersection: Option<Vec3>, input_state: &InputState, sound_event_sink: &mut Vec<SoundEvent>, delta_time: Seconds) {
         use self::ClientLocalEvent::*;
 
-
         let mut evs = Vec::new();
-        
+
         let mouse_over_slot : Option<Slot> = intersection.and_then(|intersects_at| {
             Position::from(intersects_at.x - 1.0, intersects_at.z - 1.0).and_then(|p| self.board.slot_for(p) )
         });
@@ -314,8 +307,6 @@ impl SantoriniClient {
         }
 
         self.process_multiple(evs);
-
-        
 
         let time_pass_events = self.time_passes_for_interaction_state((delta_time * 1000.0) as Milliseconds);
         self.process_multiple(time_pass_events);
@@ -333,9 +324,11 @@ impl SantoriniClient {
                 }
             }
         }
+
+        sound_event_sink.append(&mut self.sound_events);
     }
 
-    pub fn requiest_ai_analysis(&self) {
+    pub fn request_ai_analysis(&self) {
         if let Some(ai_profile) = self.game.players.first_ai() {
             self.ai_service.request_analysis(self.game.board.state().clone(), ai_profile);       
         }
@@ -348,7 +341,7 @@ impl SantoriniClient {
 
         self.game.board.make_move(&self.board, mve);
 
-        let match_status =  self.game.board.match_status(&self.board);
+        let match_status = self.game.board.match_status(&self.board);
         
         let winning_player : Option<PlayerActual> = match match_status {
             MatchStatus::Won(ref player) => Some(self.game.players.0[player.0 as usize].0.clone()),
@@ -366,32 +359,26 @@ impl SantoriniClient {
         if let Some(ui) = self.game.players.mut_human_ui_state(&self.profile.player) {
             ui.clear();
         }
+
         self.game.tentative = None;
         self.game.analysis = None;
 
         if self.game.waiting_on_ai() {
-            self.requiest_ai_analysis()
+            self.request_ai_analysis()
         }
         
         match_status
     }
 
     pub fn complete_game(&mut self, player_win: bool) { // RESET AINT GOOD ENOUGH ANYMORE
-        println!("pre progress {:?}", self.profile.progress);
         if player_win {
-            println!("register win");
             self.profile.progress.win();
         } else {
-            println!("register loss");
             self.profile.progress.loss();
         }
-        println!("post progress {:?}", self.profile.progress);
+        
         let res = aphid::serialize_to_json_file::<_,_,aphid::codec::JsonCodec>(&self.profile, &self.profile_path);
         println!("serialization result -> {:?}", res);
-
-
-
-        // NEW GAME :D
 
         let game_players = self.profile.progress.players(&self.profile.player);
 
@@ -399,7 +386,7 @@ impl SantoriniClient {
         self.ai_service.reset();
 
         if self.game.waiting_on_ai() {
-            self.requiest_ai_analysis();
+            self.request_ai_analysis();
         }
     }
 
@@ -509,19 +496,24 @@ impl SantoriniClient {
             &InteractionState::AwaitingInput { player: PlayerActual::Human(_), ..  } => {
                 if let Some(ref tentative) = self.game.tentative {
                     self.draw_opaques(&tentative.proposed_state, opaque, units_per_point);    
-
-                     for slot in &tentative.matching_slots {
+                    for slot in &tentative.matching_slots {
                         let pos = StandardBoard::position(*slot);
                         let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
                         trans.color = next_player_color.float_raw();
                         trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.1, false);
                     }
+                } else {
+                    self.draw_opaques(&self.game.board.state(), opaque, units_per_point);    
                 }
             },
             &InteractionState::WaitingVictory { .. } => {
                 self.draw_opaques(&self.game.board.state(), opaque, units_per_point);
             },
         }
+
+        
+
+        // map(|t| t.proposed_state.clone() )
         
         trans.color = WHITE.float_raw();
 
