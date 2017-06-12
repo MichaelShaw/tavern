@@ -3,11 +3,9 @@
 use tavern_core::Slot;
 use tavern_core::game::santorini::*;
 
-use game::InteractionState;
-use ai::StateAnalysis;
-// this is your starting state
+use game::{InteractionState};
 
-// someone made a move
+use ai::StateAnalysis;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ClientLocalEvent {
@@ -20,3 +18,75 @@ pub enum ClientLocalEvent {
     NewInteractionState(InteractionState),
     NewAnalysis(StateAnalysis),
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GameId(u64);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Version(u64);
+
+pub mod to_server {
+    use super::{GameId, Version};
+    use game::*;
+    use tavern_core::game::santorini::*;
+
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub struct Event {
+        pub player: PlayerActual,
+        pub payload: Payload,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum Payload {
+        Hello(Version), // unsure if this will actually work ...
+        ListGames,
+        NewGame,
+        JoinGame(GameId),
+        AbandonGame(GameId),
+        GameEvent {
+            game_id: GameId,
+            payload: GameEventPayload,
+        },
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum GameEventPayload {
+        UpdateUI(UIState),
+        PlayMove(Move),
+    }
+}
+
+pub mod to_client {
+    use super::GameId;
+    use tavern_core::game::santorini::*;
+    use game::*;
+    use board_state::BoardState;
+
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum Event {
+        GameListing,
+        GameCreated {
+            game_id: GameId,
+            board: BoardState,
+            players: Players,
+        },
+        GameEvent {
+            game_id: GameId,
+            payload: GameEventPayload,
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum GameEventPayload {
+        PlayMove { // basically an ack of an attempted move
+            mve: Move,
+            player: PlayerActual,
+            winner: Option<PlayerActual>,
+        },
+        UpdatePlayers(Players), // ui state, or disconnect etc.
+    }
+}
+
+
+
+

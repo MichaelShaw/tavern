@@ -102,6 +102,7 @@ impl Players {
     }
 }
 
+// we can derive status from if there's enough players
 pub struct ServerGame {
     pub board: BoardWithMoves, // essential
     pub players : Players, // based on slots in board state
@@ -240,7 +241,6 @@ pub struct Progress {
     pub level: usize,
     pub wins: usize,
 }
-
 
 impl Progress {
     pub fn players(&self, client_player: &HumanPlayer) -> Players {
