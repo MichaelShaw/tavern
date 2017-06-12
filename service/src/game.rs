@@ -34,6 +34,7 @@ impl PlayerActual {
 #[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
 pub enum PlayerState {
     Disconnected,
+    Abandoned,
     Connected(UIState),
 }
 
@@ -72,7 +73,7 @@ impl Players {
         if let Some(idx) = self.index_of_human(player) {
             match self.0[idx].1 {
                 PlayerState::Connected(ref mut ui) => Some(ui),
-                PlayerState::Disconnected => None,
+                PlayerState::Disconnected | PlayerState::Abandoned => None,
             }
         } else {
             None
@@ -83,7 +84,7 @@ impl Players {
         if let Some(idx) = self.index_of_human(player) {
             match self.0[idx].1 {
                 PlayerState::Connected(ref ui) => Some(ui),
-                PlayerState::Disconnected => None,
+                PlayerState::Disconnected | PlayerState::Abandoned => None,
             }
         } else {
             None
@@ -94,7 +95,7 @@ impl Players {
         if let Some(idx) = self.index_of(player) {
             match self.0[idx].1 {
                 PlayerState::Connected(ref mut ui) => Some(ui),
-                PlayerState::Disconnected => None,
+                PlayerState::Disconnected | PlayerState::Abandoned => None,
             }
         } else {
             None

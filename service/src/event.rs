@@ -29,6 +29,7 @@ pub mod to_server {
     use super::{GameId, Version};
     use game::*;
     use tavern_core::game::santorini::*;
+    use board_state::BoardState;
 
     #[derive(Debug, Clone, PartialEq, Eq)]
     pub struct Event {
@@ -64,16 +65,19 @@ pub mod to_client {
 
     #[derive(Debug, Clone, PartialEq, Eq)]
     pub enum Event {
-        GameListing,
-        GameCreated {
-            game_id: GameId,
-            board: BoardState,
-            players: Players,
-        },
+        GameListing(Vec<GameDetails>),
+        GameCreated(GameDetails),
         GameEvent {
             game_id: GameId,
             payload: GameEventPayload,
         }
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub struct GameDetails {
+        game_id: GameId,
+        board: BoardState,
+        players: Players,
     }
 
     #[derive(Debug, Clone, PartialEq, Eq)]
