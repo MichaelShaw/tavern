@@ -1,34 +1,40 @@
 
-use tavern_core::{Slot, Player, Position, Packed};
-use tavern_core::game::santorini::*;
 
-use tavern_service::ai::*;
-
-use cgmath::InnerSpace;
-use jam::Vec2;
-
-use jam::BitmapFont;
-use jam::{Vec3, Vec3f, InputState, Color, clamp};
-use jam::color::*;
-use jam::color;
-use jam::Dimensions;
-use jam::render::*;
 
 use std::path::PathBuf;
 
-use howl::SoundEvent;
+use rand;
+use rand::{Rng, XorShiftRng, SeedableRng};
+
+use cgmath::InnerSpace;
 use cgmath::{Zero, Vector3};
 
 use aphid;
 use aphid::{Seconds, HashSet, Milliseconds};
 
-use rand;
-use rand::{Rng, XorShiftRng, SeedableRng};
+use jam::BitmapFont;
+use jam::{Vec2,Vec3, Vec3f, InputState, Color, clamp};
+use jam::color::*;
+use jam::color;
+use jam::Dimensions;
+use jam::render::*;
 
+use howl::SoundEvent;
+
+use psyk::game::{Player, Human};
+
+use tavern_core;
+use tavern_core::{Slot, Position, Packed};
+use tavern_core::game::santorini::*;
+
+use tavern_service::ai::*;
 use tavern_service::game::*;
 use tavern_service::tentative::*;
 use tavern_service::board_state::*;
 use tavern_service::event::*;
+
+
+type PlayerSlot = tavern_core::Player;
 
 pub struct SantoriniClient {
     pub profile : PlayerProfile,
@@ -88,7 +94,7 @@ fn game_for(standard_board: &StandardBoard, players:Players) -> ClientGame {
 impl SantoriniClient {
     pub fn new_profile<R : Rng>(rng: &mut R) -> PlayerProfile {
         PlayerProfile {
-            player: HumanPlayer { id: 12, name: "Steve".into() },
+            player: Human { id: 12, name: "Steve".into() },
             progress: DEFAULT_PROGRESS,
         }
     }
@@ -255,7 +261,7 @@ impl SantoriniClient {
         let mut events : Vec<ClientLocalEvent> = Vec::new();
 
         match self.game.interactivity {
-            InteractionState::AwaitingInput { player: PlayerActual::AI(_) }  => {
+            InteractionState::AwaitingInput { player: Player::AI }  => {
                 if let Some(ref analysis) = self.game.analysis {
                     if analysis.terminal {
                         if let Some((mve, h)) = analysis.best_move {
@@ -266,7 +272,7 @@ impl SantoriniClient {
                     }
                 }
             },
-            InteractionState::AwaitingInput { player: PlayerActual::Human(_) } => { // if &human_player == &self.profile.player
+            InteractionState::AwaitingInput { player: Player::Human(_) } => { // if &human_player == &self.profile.player
                 // if we have ui state
                 if let Some(ui) = self.game.players.human_ui_state(&self.profile.player) {
                     let tentative = TentativeState::from(&self.game.board, ui);
@@ -343,7 +349,7 @@ impl SantoriniClient {
 
         let match_status = self.game.board.match_status(&self.board);
         
-        let winning_player : Option<PlayerActual> = match match_status {
+        let winning_player : Option<Player> = match match_status {
             MatchStatus::Won(ref player) => Some(self.game.players.0[player.0 as usize].0.clone()),
             MatchStatus::ToMove(_) => None,
         };
@@ -414,12 +420,12 @@ impl SantoriniClient {
         );
 
         let status : &str = match self.game.interactivity {
-            InteractionState::AwaitingInput { player: PlayerActual::AI(_), .. } => "Waiting on AI Opponent ...",
-            InteractionState::AwaitingInput { player: PlayerActual::Human(_), .. } => "Your move.",
+            InteractionState::AwaitingInput { player: Player::AI, .. } => "Waiting on AI Opponent ...",
+            InteractionState::AwaitingInput { player: Player::Human(_), .. } => "Your move.",
             InteractionState::WaitingVictory { ref player, .. } => {
                 match player {
-                    &PlayerActual::Human(_) => "Victory!",
-                    &PlayerActual::AI(_) =>  "Defeat!",
+                    &Player::Human(_) => "Victory!",
+                    &Player::AI =>  "Defeat!",
                 }
             },
             InteractionState::AnimatingMove { .. } => "Moving ...",
@@ -447,10 +453,10 @@ impl SantoriniClient {
         let next_player_color = PLAYER_COLORS[self.game.board.state().player().0 as usize];
 
         match &self.game.interactivity {
-            &InteractionState::AnimatingMove { player: PlayerActual::Human(_), .. } => {
+            &InteractionState::AnimatingMove { player: Player::Human(_), .. } => {
                  self.draw_opaques(&self.game.board.state(), opaque, units_per_point)
             }
-            &InteractionState::AnimatingMove { ref prior_state, mve, player:PlayerActual::AI(_), elapsed, .. } => {
+            &InteractionState::AnimatingMove { ref prior_state, mve, player:Player::AI, elapsed, .. } => {
                 let subtracted_state = subtract(prior_state, mve);
                 self.draw_opaques(&subtracted_state, opaque, units_per_point);
 
@@ -490,10 +496,10 @@ impl SantoriniClient {
                     },
                 }
             },
-            &InteractionState::AwaitingInput { player: PlayerActual::AI(_), .. } => {
+            &InteractionState::AwaitingInput { player: Player::AI, .. } => {
                 self.draw_opaques(&self.game.board.state(), opaque, units_per_point);
             },
-            &InteractionState::AwaitingInput { player: PlayerActual::Human(_), ..  } => {
+            &InteractionState::AwaitingInput { player: Player::Human(_), ..  } => {
                 if let Some(ref tentative) = self.game.tentative {
                     self.draw_opaques(&tentative.proposed_state, opaque, units_per_point);    
                     for slot in &tentative.matching_slots {

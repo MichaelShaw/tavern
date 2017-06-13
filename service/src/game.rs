@@ -1,5 +1,5 @@
 
-use tavern_core::{Slot, Player};
+use tavern_core::{Slot};
 use tavern_core::game::santorini::{Move, State, StandardBoard, AIProfile, Depth, HeuristicName};
 use aphid::{Milliseconds};
 
@@ -10,26 +10,12 @@ use tentative::TentativeState;
 
 use ai::StateAnalysis;
 
-#[derive(Eq, PartialEq, Clone, Debug, Hash, Serialize, Deserialize)]
-pub struct HumanPlayer {
-    pub id: u64,
-    pub name : String,
-}
+use psyk::game::{Player, Human};
 
-#[derive(Eq, PartialEq, Clone, Debug, Hash, Serialize, Deserialize)]
-pub enum PlayerActual {
-    Human(HumanPlayer),
-    AI(AIProfile),
-}
+use tavern_core;
 
-impl PlayerActual {
-    pub fn is_human(&self, human:&HumanPlayer) -> bool {
-        match self {
-            &PlayerActual::Human(ref player) => player == human,
-            &PlayerActual::AI { .. } => false, 
-        }
-    }
-}
+pub type PlayerSlot = tavern_core::Player;
+
 
 #[derive(Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
 pub enum PlayerState {
@@ -39,37 +25,46 @@ pub enum PlayerState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Players(pub Vec<(PlayerActual, PlayerState)>);
+pub struct Players(pub Vec<(Player, PlayerState)>);
 
 impl Players {
-    pub fn for_player<'a>(&'a self, player:Player) -> &'a PlayerActual {
+    pub fn for_player<'a>(&'a self, player:PlayerSlot) -> &'a Player {
         &self.0[player.0 as usize].0
     }
 
-    pub fn index_of(&self, player:&PlayerActual) -> Option<usize> {
+    pub fn index_of(&self, player:&Player) -> Option<usize> {
         self.0.iter().position(|&(ref pl, _)| { pl == player })
     }
 
     pub fn first_ai(&self) -> Option<AIProfile> {
         for &(ref player, _) in &self.0 {
             match player {
-                &PlayerActual::Human(_) => (),
-                &PlayerActual::AI(ai_profile) => return Some(ai_profile),
+                &Player::Human(_) => (),
+                &Player::AI => {
+                    return Some( 
+                        AIProfile {
+                            depth: 2 as Depth,
+                            heuristic: HeuristicName::AdjustedNeighbour,
+                            time_limit: Some(15_000),
+                        }
+                    );
+                    
+                }
             }
         }
         None
     }
 
-    pub fn index_of_human(&self, player:&HumanPlayer) -> Option<usize> {
+    pub fn index_of_human(&self, player:&Human) -> Option<usize> {
         self.0.iter().position(|&(ref pl, _)| {
             match pl {
-                &PlayerActual::Human(ref play) => play == player,
-                &PlayerActual::AI { .. } => false,
+                &Player::Human(ref play) => play == player,
+                &Player::AI { .. } => false,
             }
         })
     }
 
-    pub fn mut_human_ui_state<'a>(&'a mut self, player:&HumanPlayer) -> Option<&'a mut UIState> {
+    pub fn mut_human_ui_state<'a>(&'a mut self, player:&Human) -> Option<&'a mut UIState> {
         if let Some(idx) = self.index_of_human(player) {
             match self.0[idx].1 {
                 PlayerState::Connected(ref mut ui) => Some(ui),
@@ -80,7 +75,7 @@ impl Players {
         }
     }
 
-    pub fn human_ui_state<'a>(&'a self, player:&HumanPlayer) -> Option<&'a UIState> {
+    pub fn human_ui_state<'a>(&'a self, player:&Human) -> Option<&'a UIState> {
         if let Some(idx) = self.index_of_human(player) {
             match self.0[idx].1 {
                 PlayerState::Connected(ref ui) => Some(ui),
@@ -91,7 +86,7 @@ impl Players {
         }
     }
 
-    pub fn mut_ui_state<'a>(&'a mut self, player:&PlayerActual) -> Option<&'a mut UIState> {
+    pub fn mut_ui_state<'a>(&'a mut self, player:&Player) -> Option<&'a mut UIState> {
         if let Some(idx) = self.index_of(player) {
             match self.0[idx].1 {
                 PlayerState::Connected(ref mut ui) => Some(ui),
@@ -103,11 +98,7 @@ impl Players {
     }
 }
 
-// we can derive status from if there's enough players
-pub struct ServerGame {
-    pub board: BoardWithMoves, // essential
-    pub players : Players, // based on slots in board state
-}
+
 
 pub struct ClientGame {
     pub board: BoardWithMoves, // essential
@@ -126,22 +117,23 @@ pub struct ClientGame {
 impl ClientGame {
     pub fn waiting_on_ai(&self) -> bool {
         match self.players.for_player(self.board.state().to_move) {
-            &PlayerActual::AI(_) => true,
-            &PlayerActual::Human(_) => false,
+            &Player::AI => true,
+            &Player::Human(_) => false,
         }
     }
 }
 
 
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MatchStatus {
-    ToMove(Player),
-    Won(Player),
+    ToMove(PlayerSlot),
+    Won(PlayerSlot),
 }
 
 // what gets sent over the wire
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct BoardWithMoves {
     state: BoardState,
     legal_moves : Vec<Move>, // derived
@@ -213,13 +205,11 @@ impl UIState {
 }
 
 
-
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InteractionState {
-    AnimatingMove { prior_state: State, mve:Move, player: PlayerActual, elapsed : Milliseconds, winner: Option<PlayerActual> }, // player_type is for who's move we're animating ...
-    AwaitingInput { player: PlayerActual },
-    WaitingVictory { player: PlayerActual, elapsed : Milliseconds },
+    AnimatingMove { prior_state: State, mve:Move, player: Player, elapsed : Milliseconds, winner: Option<Player> }, // player_type is for who's move we're animating ...
+    AwaitingInput { player: Player },
+    WaitingVictory { player: Player, elapsed : Milliseconds },
 }
 
 impl InteractionState {
@@ -233,7 +223,7 @@ impl InteractionState {
 
 #[derive(Eq, Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct PlayerProfile {
-    pub player: HumanPlayer,
+    pub player: Human,
     pub progress: Progress
 }
 
@@ -244,16 +234,18 @@ pub struct Progress {
 }
 
 impl Progress {
-    pub fn players(&self, client_player: &HumanPlayer) -> Players {
-        let human_player = PlayerActual::Human(client_player.clone());
+    pub fn players(&self, client_player: &Human) -> Players {
+        let human_player = Player::Human(client_player.clone());
 
-        let cpu_opponent = PlayerActual::AI( 
+        let cpu_opponent = Player::AI;
+
+        /*( 
             AIProfile {
                 depth: self.level as Depth,
                 heuristic: HeuristicName::AdjustedNeighbour,
                 time_limit: Some(15_000),
             }
-        );
+        );*/
 
         let mut players = vec![ 
             (human_player, PlayerState::Connected(UIState::empty())),

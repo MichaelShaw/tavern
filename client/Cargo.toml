@@ -17,6 +17,7 @@ serde_json = "1.0"
 aphid = { git = "https://github.com/michaelshaw/aphid" }
 jam = { git = "https://github.com/michaelshaw/jam" }
 howl = { git = "https://github.com/michaelshaw/howl" }
+psyk = { git = "https://github.com/michaelshaw/psyk" }
 
 tavern_core = { path = "../core" }
 tavern_service = { path = "../service" }
