@@ -25,5 +25,5 @@ pub mod event;
 use psyk::event::{to_server, to_client};
 use event::{GameEvent, GameDetails};
 
-pub type ToServerEvent = to_server::Event<GameEvent>;
+pub type ToServerEvent = to_server::Event<GameEvent, ()>;
 pub type ToClientEvent = to_client::Event<GameEvent, GameDetails>;

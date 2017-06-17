@@ -141,7 +141,7 @@ fn handle_server_event(server: &mut Server, event: &ToServerEvent) -> Vec<EventF
     match event.payload {
         Auth => (),
         ListGames => (),
-        NewGame => (), 
+        NewGame(description) => (), 
         JoinGame(game_id) => (), // state transition
         AbandonGame(game_id) => (), // state transition
         GameEvent(game_id, ref game_event) => (),
