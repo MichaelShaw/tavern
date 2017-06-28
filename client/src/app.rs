@@ -5,7 +5,7 @@ use jam::render::glium::renderer::Renderer;
 
 use jam::*;
 use jam::render::*;
-use jam::render::Command::*;
+
 
 
 use std::f64::consts::PI;
@@ -164,7 +164,7 @@ struct App {
     zoom : f64,
     points_per_unit : f64,
     n : u64,
-    renderer:Renderer<String>,
+    renderer:Renderer,
     sound_worker: SoundWorker,
     client: santorini::SantoriniClient,
 }
@@ -197,12 +197,9 @@ impl App {
 
             self.update(&input_state, dimensions, since_start, delta_time);  
 
-            let render_passes = self.render(dimensions);
+            let ok = self.render(dimensions);
 
-            match self.renderer.render(render_passes, rgb(116, 181, 231)) {
-                Ok(_) => (),
-                Err(e) => println!("uhhh, render didnt work -> {:?}", e),
-            }
+            
 
             last_time = time;
             if input_state.close {
@@ -225,11 +222,12 @@ impl App {
         self.camera.points_per_unit = self.points_per_unit * self.zoom;
         self.camera.viewport = dimensions;
 
+
         // "song".into() => song()
         self.sound_worker.send(Render { master_gain: 1.0, sounds:sound_events, persistent_sounds: HashMap::default(), listener: Listener::default() }).unwrap();
     }
 
-    fn render(&mut self, dimensions:Dimensions) -> Vec<Pass<String>> {
+    fn render(&mut self, dimensions:Dimensions) -> JamResult<()> {
         use jam::font::FontDescription;
 
         let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: (32f64 * self.camera.viewport.scale) as u32 };
@@ -237,10 +235,6 @@ impl App {
             Ok(_) => (),
             Err(e) => println!("Error loading font -> {:?}", e),
         }
-
-        let mut opaque_commands : Vec<Command<String>> = Vec::new();
-        let mut translucent_commands : Vec<Command<String>> = Vec::new();
-        let mut ui_commands : Vec<Command<String>> = Vec::new();
 
         let mut opaque = self.tesselator();
         let mut trans = self.tesselator();
@@ -252,48 +246,29 @@ impl App {
         if let Some((font, layer)) = self.renderer.get_font(&font_description) {
             self.client.render_ui(&mut ui, font, layer, dimensions);
         }
+
+        let mut frame = self.renderer.render(rgb(116, 181, 231))?;
+
+        frame.draw_vertices(&opaque.tesselator.vertices, Uniforms {
+            transform : down_size_m4(self.camera.view_projection().into()),
+            color: color::WHITE,
+        }, Blend::None);
+
+        frame.draw_vertices(&trans.tesselator.vertices, Uniforms {
+            transform : down_size_m4(self.camera.view_projection().into()),
+            color: color::WHITE,
+        }, Blend::Alpha);
+
+        frame.clear_depth();
+
+        frame.draw_vertices(&trans.tesselator.vertices, Uniforms {
+            transform : down_size_m4(self.camera.ui_projection().into()),
+            color: color::WHITE,
+        }, Blend::Alpha);
+
+        frame.finish();
        
-
-        opaque_commands.push(DrawNew {
-            key: None, 
-            vertices: opaque.tesselator.vertices, 
-            uniforms: Uniforms {
-                transform : down_size_m4(self.camera.view_projection().into()),
-                color: color::WHITE,
-            }
-        });
-
-        translucent_commands.push(DrawNew {
-            key: None, 
-            vertices: trans.tesselator.vertices, 
-            uniforms: Uniforms {
-                transform : down_size_m4(self.camera.view_projection().into()),
-                color: color::WHITE,
-            }
-        });
-
-        ui_commands.push(DrawNew {
-            key: None, 
-            vertices: ui.tesselator.vertices, 
-            uniforms: Uniforms {
-                transform : down_size_m4(self.camera.ui_projection().into()),
-                color: color::WHITE,
-            }
-        });
-
-        vec![Pass {
-            blend: Blend::None,
-            commands: opaque_commands,
-            clear_depth: false,
-        }, Pass {
-            blend: Blend::Alpha,
-            commands: translucent_commands,
-            clear_depth: false,
-        }, Pass {
-            blend: Blend::Alpha,
-            commands: ui_commands,
-            clear_depth: true,
-        }]
+        Ok(())
     }
 }
 
