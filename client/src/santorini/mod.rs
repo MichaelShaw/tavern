@@ -396,55 +396,20 @@ impl SantoriniClient {
         }
     }
 
-    pub fn render_ui(&self, ui: &mut GeometryTesselator, font: &BitmapFont, font_layer: u32, dimensions: Dimensions) {
-//        let scale = 1.0 / dimensions.scale as f64;
-//        let scaled_font_size = (font.description.pixel_size as f64) * scale;
-//
-//        ui.color = color::BLACK.float_raw();
-//
-//        let (p_x, p_y) = dimensions.points();
-//
-//        let progress_text = format!("Depth {}\nWins {}/{}", self.profile.progress.level, self.profile.progress.wins, wins_to_pass_for_level(self.profile.progress.level));
-//
-//        let at = Vec2::new(20.0,  p_y - scaled_font_size - 20.0);
-//
-//        text::render_text(
-//            &progress_text,
-//            font,
-//            font_layer,
-//            at,
-//            -1.0, // i assume this is because our coordinate system is hosed ...
-//            scale,
-//            ui,
-//            Some(300.0)
-//        );
-//
-//        let status : &str = match self.game.interactivity {
-//            InteractionState::AwaitingInput { player: Player::AI, .. } => "Waiting on AI Opponent ...",
-//            InteractionState::AwaitingInput { player: Player::Human(_), .. } => "Your move.",
-//            InteractionState::WaitingVictory { ref player, .. } => {
-//                match player {
-//                    &Player::Human(_) => "Victory!",
-//                    &Player::AI =>  "Defeat!",
-//                }
-//            },
-//            InteractionState::AnimatingMove { .. } => "Moving ...",
-//        };
-//
-//        let status_size = text::measure(status, font, scale, None);
-//
-//        let status_at = Vec2::new(p_x / 2.0 - status_size.x / 2.0, 20.0);
-//
-//        text::render_text(
-//            &status,
-//            font,
-//            font_layer,
-//            status_at,
-//            -1.0, // i assume this is because our coordinate system is hosed ...
-//            scale,
-//            ui,
-//            None
-//        );
+    pub fn ui_status(&self) -> (String, String) {
+        let progress = format!("Depth {} - Wins {}/{}", self.profile.progress.level, self.profile.progress.wins, wins_to_pass_for_level(self.profile.progress.level));
+        let status : String = match self.game.interactivity {
+            InteractionState::AwaitingInput { player: Player::AI, .. } => "Waiting on AI Opponent ...".into(),
+            InteractionState::AwaitingInput { player: Player::Human(_), .. } => "Your move.".into(),
+            InteractionState::WaitingVictory { ref player, .. } => {
+                match player {
+                    &Player::Human(_) => "Victory!".into(),
+                    &Player::AI =>  "Defeat!".into(),
+                }
+            },
+            InteractionState::AnimatingMove { .. } => "Moving ...".into(),
+        };
+        (progress, status)
     }
 
     pub fn render(&self, tesselator: &mut GeometryTesselator, opaque: &mut Vec<Vertex>, trans: &mut Vec<Vertex>, units_per_point: f64) {

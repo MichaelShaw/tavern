@@ -3,12 +3,14 @@
 use jam::*;
 use jam::render::*;
 use jam::render::gfx::{Renderer, OpenGLRenderer, GeometryBuffer, construct_opengl_renderer};
+use jam::ui::*;
+
 
 use std::f64::consts::PI;
 
 use time;
 
-use cgmath::{Rad, Zero};
+use cgmath::{Rad, Zero, vec2};
 
 use aphid;
 use aphid::{HashMap, HashSet, Seconds};
@@ -136,15 +138,17 @@ pub fn run_app() -> TavernResult<()> {
 
     let renderer = construct_opengl_renderer(file_resources, (800, 600), true, "tavern".into()).expect("a renderer");
 
+    let dimensions = Dimensions {
+        pixels: (800,600),
+        points: (800, 600),
+    };
+
     let mut app = App {
         name: "mixalot".into(),
         camera: Camera {
             at: Vec3::new(0.0, 0.0, 0.0),
             pitch: Rad(PI / 4.0_f64),
-            viewport: Dimensions { 
-                pixels: (800,600),
-                points: (800, 600),
-            },
+            viewport: dimensions,
             points_per_unit: 16.0 * 1.0,
         },
         zoom: 4.0,
@@ -153,6 +157,7 @@ pub fn run_app() -> TavernResult<()> {
         renderer: renderer,
         sound_worker: sound_worker, 
         client: santorini::SantoriniClient::new(paths.profile),
+        ui: WidgetRunner::new(SantoriniUI {}, SantoriniUIState::empty(), dimensions),
     };
 
     app.run();
@@ -171,6 +176,7 @@ struct App {
     renderer: OpenGLRenderer,
     sound_worker: SoundWorker,
     client: santorini::SantoriniClient,
+    ui: WidgetRunner<SantoriniUI>,
 }
 
 impl App {
@@ -229,6 +235,22 @@ impl App {
         use howl::engine::SoundEngineUpdate;
         use howl::engine::SoundRender;
 
+        let mut external_events = Vec::new();
+
+        let (progress, status) = self.client.ui_status();
+
+        let ui_state = SantoriniUIState {
+            progress : progress,
+            status: status,
+        };
+
+        if ui_state != self.ui.state {
+            external_events.push(ui_state);
+        }
+
+
+        self.ui.run(input_state.clone(), external_events, dimensions);
+
         // "song".into() => song()
         let engine_update = SoundEngineUpdate::Render(SoundRender { master_gain: 1.0, sounds:sound_events, persistent_sounds: HashMap::default(), listener: Listener::default() });
         self.sound_worker.send(engine_update).expect("the sound worker to be alive");
@@ -244,24 +266,19 @@ impl App {
 
         self.client.render(&mut tesselator, &mut opaque_vertices, &mut trans_vertices, upp);
 
-        // self.client.render_ui(&mut ui, font, layer, dimensions);
-
         self.renderer.draw_vertices(&opaque_vertices, Uniforms {
             transform : down_size_m4(self.camera.view_projection().into()),
             color: color::WHITE,
-        }, Blend::None);
+        }, Blend::None).unwrap();
 
         self.renderer.draw_vertices(&trans_vertices, Uniforms {
             transform : down_size_m4(self.camera.view_projection().into()),
             color: color::WHITE,
-        }, Blend::Alpha);
+        }, Blend::Alpha).unwrap();
 
         self.renderer.clear_depth();
 
-//        self.renderer.draw_vertices(&trans.tesselator.vertices, Uniforms {
-//            transform : down_size_m4(self.camera.ui_projection().into()),
-//            color: color::WHITE,
-//        }, Blend::Alpha);
+        self.renderer.draw_view(&self.ui.view());
 
         self.renderer.finish_frame().expect("frame went ok");
        
@@ -277,5 +294,53 @@ pub fn song() -> SoundEvent {
         pitch: 1.0,
         attenuation:1.0,
         loop_sound: false,
+    }
+}
+
+#[derive(Clone,Eq, PartialEq, Debug)]
+pub struct SantoriniUIState {
+    pub progress: String,
+    pub status: String,
+}
+
+impl SantoriniUIState {
+    pub fn empty() -> SantoriniUIState {
+        SantoriniUIState {
+            progress: "".into(),
+            status: "".into(),
+        }
+    }
+}
+
+pub struct SantoriniUI {
+
+}
+
+impl Widget for SantoriniUI {
+    type State = SantoriniUIState;
+    type Event = SantoriniUIState;
+
+    fn update(&self, state:&SantoriniUIState, ev:&SantoriniUIState) -> SantoriniUIState {
+        ev.clone()
+    }
+
+    fn view(&self, state:&SantoriniUIState, dimensions:Dimensions) -> View<SantoriniUIState> {
+        let mut view = empty_view(RectI::new(vec2(20, 20), vec2(300, 140)));
+
+        let black_text = rgb(0, 0, 0);
+
+        println!("generating view for state -> {:?} dimensions -> {:?}", state, dimensions);
+
+        let padded_screen = dimensions.points_rect().padded(40);
+
+        let top = padded_screen.top(60);
+
+        let bottom = padded_screen.bottom(60);
+
+
+        view.sub_views.push(label_view(top, state.progress.clone(), black_text, None, None));
+        view.sub_views.push(label_view(bottom, state.status.clone(), black_text, None, None));
+
+        view
     }
 }

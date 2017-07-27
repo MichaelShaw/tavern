@@ -19,6 +19,9 @@ Perhaps we should reward faster victories than slower ones? Basically add remain
 
 The problem with this is it murders the transpotition table, as various states will be evaluated differently based on how far they are away .... the effects of which I'm not confident in.
 
+
+jam = { path = "../../jam" }
+
 ## AI 
 
 ### Naive Move Counting
