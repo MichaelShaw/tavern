@@ -160,7 +160,7 @@ impl SantoriniClient {
 
                         self.sound_events.push(SoundEvent {
                             name: "place_tile".into(),
-                            position: Vec3f::zero(),
+                            position: [0.0; 3],
                             gain: 1.0,
                             pitch: 1.0,
                             attenuation:1.0,
@@ -187,7 +187,7 @@ impl SantoriniClient {
                     if update {
                         self.sound_events.push(SoundEvent {
                              name: "select".into(),
-                             position: Vec3f::zero(),
+                             position: [0.0; 3],
                              gain: 1.0,
                              pitch: 1.0,
                              attenuation:1.0,
@@ -397,87 +397,87 @@ impl SantoriniClient {
     }
 
     pub fn render_ui(&self, ui: &mut GeometryTesselator, font: &BitmapFont, font_layer: u32, dimensions: Dimensions) {
-        let scale = 1.0 / dimensions.scale as f64;
-        let scaled_font_size = (font.description.pixel_size as f64) * scale;
-
-        ui.color = color::BLACK.float_raw();
-
-        let (p_x, p_y) = dimensions.points();
-
-        let progress_text = format!("Depth {}\nWins {}/{}", self.profile.progress.level, self.profile.progress.wins, wins_to_pass_for_level(self.profile.progress.level));
-
-        let at = Vec2::new(20.0,  p_y - scaled_font_size - 20.0);
-
-        text::render_text(
-            &progress_text, 
-            font, 
-            font_layer,
-            at,
-            -1.0, // i assume this is because our coordinate system is hosed ... 
-            scale,
-            ui, 
-            Some(300.0)
-        );
-
-        let status : &str = match self.game.interactivity {
-            InteractionState::AwaitingInput { player: Player::AI, .. } => "Waiting on AI Opponent ...",
-            InteractionState::AwaitingInput { player: Player::Human(_), .. } => "Your move.",
-            InteractionState::WaitingVictory { ref player, .. } => {
-                match player {
-                    &Player::Human(_) => "Victory!",
-                    &Player::AI =>  "Defeat!",
-                }
-            },
-            InteractionState::AnimatingMove { .. } => "Moving ...",
-        };
-
-        let status_size = text::measure(status, font, scale, None);
-
-        let status_at = Vec2::new(p_x / 2.0 - status_size.x / 2.0, 20.0);
-
-        text::render_text(
-            &status, 
-            font, 
-            font_layer,
-            status_at,
-            -1.0, // i assume this is because our coordinate system is hosed ... 
-            scale,
-            ui, 
-            None
-        );
+//        let scale = 1.0 / dimensions.scale as f64;
+//        let scaled_font_size = (font.description.pixel_size as f64) * scale;
+//
+//        ui.color = color::BLACK.float_raw();
+//
+//        let (p_x, p_y) = dimensions.points();
+//
+//        let progress_text = format!("Depth {}\nWins {}/{}", self.profile.progress.level, self.profile.progress.wins, wins_to_pass_for_level(self.profile.progress.level));
+//
+//        let at = Vec2::new(20.0,  p_y - scaled_font_size - 20.0);
+//
+//        text::render_text(
+//            &progress_text,
+//            font,
+//            font_layer,
+//            at,
+//            -1.0, // i assume this is because our coordinate system is hosed ...
+//            scale,
+//            ui,
+//            Some(300.0)
+//        );
+//
+//        let status : &str = match self.game.interactivity {
+//            InteractionState::AwaitingInput { player: Player::AI, .. } => "Waiting on AI Opponent ...",
+//            InteractionState::AwaitingInput { player: Player::Human(_), .. } => "Your move.",
+//            InteractionState::WaitingVictory { ref player, .. } => {
+//                match player {
+//                    &Player::Human(_) => "Victory!",
+//                    &Player::AI =>  "Defeat!",
+//                }
+//            },
+//            InteractionState::AnimatingMove { .. } => "Moving ...",
+//        };
+//
+//        let status_size = text::measure(status, font, scale, None);
+//
+//        let status_at = Vec2::new(p_x / 2.0 - status_size.x / 2.0, 20.0);
+//
+//        text::render_text(
+//            &status,
+//            font,
+//            font_layer,
+//            status_at,
+//            -1.0, // i assume this is because our coordinate system is hosed ...
+//            scale,
+//            ui,
+//            None
+//        );
     }
 
-    pub fn render(&self, opaque: &mut GeometryTesselator, trans: &mut GeometryTesselator, units_per_point: f64) {
-    	opaque.draw_floor_tile(&self.atlas.background, 0, 0.0, 0.0, 0.0, 0.0, false);
+    pub fn render(&self, tesselator: &mut GeometryTesselator, opaque: &mut Vec<Vertex>, trans: &mut Vec<Vertex>, units_per_point: f64) {
+    	tesselator.draw_floor_tile(opaque, &self.atlas.background, 0.0, 0.0, 0.0, 0.0);
 
         let next_player_color = PLAYER_COLORS[self.game.board.state().player().0 as usize];
 
         match &self.game.interactivity {
             &InteractionState::AnimatingMove { player: Player::Human(_), .. } => {
-                 self.draw_opaques(&self.game.board.state(), opaque, units_per_point)
+                 self.draw_opaques(&self.game.board.state(), tesselator, opaque, units_per_point)
             }
             &InteractionState::AnimatingMove { ref prior_state, mve, player:Player::AI, elapsed, .. } => {
                 let subtracted_state = subtract(prior_state, mve);
-                self.draw_opaques(&subtracted_state, opaque, units_per_point);
+                self.draw_opaques(&subtracted_state, tesselator, opaque, units_per_point);
 
                 let progress = clamp((elapsed as f64) / (ANIMATION_WAIT as f64), 0.0, 1.0);
                 match mve {
                     Move::PlaceBuilders { a, b } => {
                         for slot in vec![a, b] {
                             let v = Self::exact_position(&subtracted_state, slot, units_per_point);
-                            trans.color = [1.0, 1.0, 1.0, progress as f32];
-                            trans.draw_floor_tile_at(&self.atlas.players[subtracted_state.to_move.0 as usize], 0, v, 0.15, false );
+                            tesselator.color = [1.0, 1.0, 1.0, progress as f32];
+                            tesselator.draw_floor_tile_at(trans, &self.atlas.players[subtracted_state.to_move.0 as usize], v, 0.15);
                         }
                     },
                     Move::Move { from, to, build } => {
                         let from_position = Self::exact_position(&subtracted_state, from, units_per_point);
                         let to_position = Self::exact_position(&subtracted_state, to, units_per_point);
                         let exact_position = from_position.lerp(to_position, progress);
-                        trans.color = WHITE.float_raw();
-                        trans.draw_floor_tile_at(&self.atlas.players[subtracted_state.to_move.0 as usize], 0, exact_position, 0.15, false );
+                        tesselator.color = WHITE.float_raw();
+                        tesselator.draw_floor_tile_at(trans, &self.atlas.players[subtracted_state.to_move.0 as usize], exact_position, 0.15);
 
                         // progress for fading in building
-                        trans.color = [1.0, 1.0, 1.0, progress as f32];
+                        tesselator.color = [1.0, 1.0, 1.0, progress as f32];
                         let building_height = subtracted_state.get_building_height(build);
                         let is_dome = building_height == 3;
 
@@ -487,41 +487,41 @@ impl SantoriniClient {
                         if is_dome {
                             let mut v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
                             v.y += (BUILDING_PIXEL_OFFSETS[3] as f64) * units_per_point;
-                            trans.draw_floor_tile_at(&self.atlas.dome, 0, v, 0.10, false)
+                            tesselator.draw_floor_tile_at(trans, &self.atlas.dome, v, 0.10);
                         } else {
                             let mut v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
                             v.y += (BUILDING_PIXEL_OFFSETS[building_height as usize] as f64) * units_per_point;
-                            trans.draw_floor_tile_at(&self.atlas.buildings[building_height as usize], 0, v, 0.10, false)
+                            tesselator.draw_floor_tile_at(trans, &self.atlas.buildings[building_height as usize], v, 0.10);
                         }
                     },
                 }
             },
             &InteractionState::AwaitingInput { player: Player::AI, .. } => {
-                self.draw_opaques(&self.game.board.state(), opaque, units_per_point);
+                self.draw_opaques(&self.game.board.state(), tesselator, opaque, units_per_point);
             },
             &InteractionState::AwaitingInput { player: Player::Human(_), ..  } => {
                 if let Some(ref tentative) = self.game.tentative {
-                    self.draw_opaques(&tentative.proposed_state, opaque, units_per_point);    
+                    self.draw_opaques(&tentative.proposed_state, tesselator, opaque, units_per_point);
                     for slot in &tentative.matching_slots {
                         let pos = StandardBoard::position(*slot);
                         let v = Vec3::new(pos.x as f64, 0.0, pos.y as f64) + BOARD_OFFSET;
-                        trans.color = next_player_color.float_raw();
-                        trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.1, false);
+                        tesselator.color = next_player_color.float_raw();
+                        tesselator.draw_floor_tile_at(trans, &self.atlas.indicator, v, 0.1);
                     }
                 } else {
-                    self.draw_opaques(&self.game.board.state(), opaque, units_per_point);    
+                    self.draw_opaques(&self.game.board.state(), tesselator, opaque, units_per_point);
                 }
             },
             &InteractionState::WaitingVictory { .. } => {
-                self.draw_opaques(&self.game.board.state(), opaque, units_per_point);
+                self.draw_opaques(&self.game.board.state(), tesselator, opaque, units_per_point);
             },
         }
 
         
 
         // map(|t| t.proposed_state.clone() )
-        
-        trans.color = WHITE.float_raw();
+
+        tesselator.color = WHITE.float_raw();
 
          // DRAW MOUSE OVER
 
@@ -529,8 +529,8 @@ impl SantoriniClient {
             if let Some(slot) = ui.tentative_slot {
                 let position = StandardBoard::position(slot);
                 let v = Vec3::new(position.x as f64, 0.0, position.y as f64) + BOARD_OFFSET;
-                trans.color = color::WHITE.float_raw();
-                trans.draw_floor_tile_at(&self.atlas.indicator, 0, v, 0.12, false);
+                tesselator.color = color::WHITE.float_raw();
+                tesselator.draw_floor_tile_at(opaque, &self.atlas.indicator, v, 0.12);
             }
         }
     }
@@ -543,7 +543,7 @@ impl SantoriniClient {
         v
     }
 
-    pub fn draw_opaques(&self, state: &State, opaque: &mut GeometryTesselator, units_per_point: f64) {
+    pub fn draw_opaques(&self, state: &State, tesselator: &GeometryTesselator, vertices: &mut Vec<Vertex>, units_per_point: f64) {
         // DRAW BOARD CONTENTS
         for &slot in &self.board.slots {
             let pos = StandardBoard::position(slot);
@@ -555,12 +555,12 @@ impl SantoriniClient {
             // RENDER THE BUILDING
             for i in 0..building_height {
                 let vert_offset = (BUILDING_PIXEL_OFFSETS[i as usize] as f64) * units_per_point;
-                opaque.draw_floor_tile_at(&self.atlas.buildings[i as usize], 0, v + Vec3::new(0.0, vert_offset, 0.0), 0.10, false)
+                tesselator.draw_floor_tile_at(vertices, &self.atlas.buildings[i as usize], v + Vec3::new(0.0, vert_offset, 0.0), 0.10)
             }
             // RENDER THE DOME
             if dome {
                 let vert_offset = (BUILDING_PIXEL_OFFSETS[3] as f64) * units_per_point;
-                opaque.draw_floor_tile_at(&self.atlas.dome, 0, v + Vec3::new(0.0, vert_offset, 0.0), 0.10, false)
+                tesselator.draw_floor_tile_at(vertices, &self.atlas.dome, v + Vec3::new(0.0, vert_offset, 0.0), 0.10)
             }
         }
 
@@ -569,7 +569,7 @@ impl SantoriniClient {
             for slot in builders.iter() {
                 if slot != UNPLACED_BUILDER {
                     let v = Self::exact_position(state, slot, units_per_point);
-                    opaque.draw_floor_tile_at(&self.atlas.players[player_id as usize], 0, v, 0.15, false );
+                    tesselator.draw_floor_tile_at(vertices, &self.atlas.players[player_id as usize],  v, 0.15);
                 }
             }
         }
@@ -598,7 +598,7 @@ pub struct SantoriniAtlas {
 
 impl SantoriniAtlas {
     pub fn build() -> SantoriniAtlas {
-        let grid = TextureAtlas { texture_size: 512, tiles_wide: 32, tiles_high: 32 };
+        let grid = TextureAtlas { texture_size: 512, tile_size: 16 };
 
         SantoriniAtlas {
             background: grid.get(0, 0, 7, 8),

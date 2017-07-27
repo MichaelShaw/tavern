@@ -1,16 +1,10 @@
 
 
-use jam::camera::Camera;
-use jam::render::glium::renderer::Renderer;
-
 use jam::*;
 use jam::render::*;
-
-
+use jam::render::gfx::{Renderer, OpenGLRenderer, GeometryBuffer, construct_opengl_renderer};
 
 use std::f64::consts::PI;
-
-use jam::color::rgb;
 
 use time;
 
@@ -19,7 +13,7 @@ use cgmath::{Rad, Zero};
 use aphid;
 use aphid::{HashMap, HashSet, Seconds};
 
-use howl::{Listener, SoundEvent, Vec3f};
+use howl::{Listener, SoundEvent};
 use howl::worker::SoundWorker;
 use howl::engine::SoundEngineUpdate::*;
 
@@ -110,6 +104,7 @@ pub fn get_paths() -> TavernResult<TavernPaths> {
     }
 }
 
+use rand::XorShiftRng;
 
 pub fn run_app() -> TavernResult<()> {
     let paths = try!(get_paths());
@@ -122,15 +117,24 @@ pub fn run_app() -> TavernResult<()> {
     let texture_path = format!("{}/textures", paths.resources);
     let fonts_path = format!("{}/fonts", paths.resources);
 
+    let rng = XorShiftRng::new_unseeded();
 
-    let sound_worker = SoundWorker::create(paths.openal, sound_path, "ogg".into(), 1_000_000, 5.0);
+    let sound_worker = SoundWorker::create(paths.openal, sound_path, "ogg".into(), rng, 1_000_000, 5.0);
     sound_worker.send(Preload(vec![("place_tile".into(), 1.0), ("select".into(), 1.0)])).unwrap();
 
     let shader_pair = ShaderPair::for_paths(&vertex_shader_path, &fragment_shader_path);
     let texture_dir = TextureDirectory::for_path(&texture_path, hashset!["png".into()]);
     let font_dir = FontDirectory::for_path(&fonts_path);
 
-    let renderer = Renderer::new(shader_pair, texture_dir, font_dir, (800, 600), "tavern".into()).expect("a renderer");
+    let file_resources = FileResources {
+        resources: PathBuf::from(paths.resources),
+        shader_pair: shader_pair,
+        texture_directory: texture_dir,
+        font_directory: font_dir,
+    };
+
+
+    let renderer = construct_opengl_renderer(file_resources, (800, 600), true, "tavern".into()).expect("a renderer");
 
     let mut app = App {
         name: "mixalot".into(),
@@ -139,7 +143,7 @@ pub fn run_app() -> TavernResult<()> {
             pitch: Rad(PI / 4.0_f64),
             viewport: Dimensions { 
                 pixels: (800,600),
-                scale: 1.0,
+                points: (800, 600),
             },
             points_per_unit: 16.0 * 1.0,
         },
@@ -164,7 +168,7 @@ struct App {
     zoom : f64,
     points_per_unit : f64,
     n : u64,
-    renderer:Renderer,
+    renderer: OpenGLRenderer,
     sound_worker: SoundWorker,
     client: santorini::SantoriniClient,
 }
@@ -189,7 +193,7 @@ impl App {
         let mut last_time = start_time;
         
         'main: loop {
-            let (dimensions, input_state) = self.renderer.begin();
+            let (dimensions, input_state) = self.renderer.begin_frame(rgb(116, 181, 231));
 
             let time = time::precise_time_ns();
             let delta_time = ((time - last_time) as f64) / 1_000_000_000.0;
@@ -222,51 +226,44 @@ impl App {
         self.camera.points_per_unit = self.points_per_unit * self.zoom;
         self.camera.viewport = dimensions;
 
+        use howl::engine::SoundEngineUpdate;
+        use howl::engine::SoundRender;
 
         // "song".into() => song()
-        self.sound_worker.send(Render { master_gain: 1.0, sounds:sound_events, persistent_sounds: HashMap::default(), listener: Listener::default() }).unwrap();
+        let engine_update = SoundEngineUpdate::Render(SoundRender { master_gain: 1.0, sounds:sound_events, persistent_sounds: HashMap::default(), listener: Listener::default() });
+        self.sound_worker.send(engine_update).expect("the sound worker to be alive");
     }
 
     fn render(&mut self, dimensions:Dimensions) -> JamResult<()> {
-        use jam::font::FontDescription;
+        let mut tesselator = self.tesselator();
 
-        let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: (32f64 * self.camera.viewport.scale) as u32 };
-        match self.renderer.load_font(&font_description) {
-            Ok(_) => (),
-            Err(e) => println!("Error loading font -> {:?}", e),
-        }
-
-        let mut opaque = self.tesselator();
-        let mut trans = self.tesselator();
-        let mut ui = self.ui_tesselator();
+        let mut opaque_vertices = Vec::new();
+        let mut trans_vertices = Vec::new();
 
         let upp = self.units_per_point();
 
-        self.client.render(&mut opaque, &mut trans, upp);
-        if let Some((font, layer)) = self.renderer.get_font(&font_description) {
-            self.client.render_ui(&mut ui, font, layer, dimensions);
-        }
+        self.client.render(&mut tesselator, &mut opaque_vertices, &mut trans_vertices, upp);
 
-        let mut frame = self.renderer.render(rgb(116, 181, 231))?;
+        // self.client.render_ui(&mut ui, font, layer, dimensions);
 
-        frame.draw_vertices(&opaque.tesselator.vertices, Uniforms {
+        self.renderer.draw_vertices(&opaque_vertices, Uniforms {
             transform : down_size_m4(self.camera.view_projection().into()),
             color: color::WHITE,
         }, Blend::None);
 
-        frame.draw_vertices(&trans.tesselator.vertices, Uniforms {
+        self.renderer.draw_vertices(&trans_vertices, Uniforms {
             transform : down_size_m4(self.camera.view_projection().into()),
             color: color::WHITE,
         }, Blend::Alpha);
 
-        frame.clear_depth();
+        self.renderer.clear_depth();
 
-        frame.draw_vertices(&trans.tesselator.vertices, Uniforms {
-            transform : down_size_m4(self.camera.ui_projection().into()),
-            color: color::WHITE,
-        }, Blend::Alpha);
+//        self.renderer.draw_vertices(&trans.tesselator.vertices, Uniforms {
+//            transform : down_size_m4(self.camera.ui_projection().into()),
+//            color: color::WHITE,
+//        }, Blend::Alpha);
 
-        frame.finish();
+        self.renderer.finish_frame().expect("frame went ok");
        
         Ok(())
     }
@@ -275,7 +272,7 @@ impl App {
 pub fn song() -> SoundEvent {
     SoundEvent {
         name: "hollow_wanderer".into(),
-        position: Vec3f::zero(),
+        position: [0.0, 0.0, 0.0],
         gain: 1.0,
         pitch: 1.0,
         attenuation:1.0,
