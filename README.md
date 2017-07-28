@@ -21,7 +21,7 @@ The problem with this is it murders the transpotition table, as various states w
 
 
 jam = { path = "../../jam" }
-
+jam = { git = "https://github.com/michaelshaw/jam" }
 ## AI 
 
 ### Naive Move Counting
