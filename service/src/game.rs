@@ -25,38 +25,32 @@ pub enum PlayerState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Players(pub Vec<(Player, PlayerState)>);
+pub struct Players {
+    pub players: Vec<(Player, PlayerState)>,
+    pub ai: AIProfile,
+}
 
 impl Players {
     pub fn for_player<'a>(&'a self, player:PlayerSlot) -> &'a Player {
-        &self.0[player.0 as usize].0
+        &self.players[player.0 as usize].0
     }
 
     pub fn index_of(&self, player:&Player) -> Option<usize> {
-        self.0.iter().position(|&(ref pl, _)| { pl == player })
+        self.players.iter().position(|&(ref pl, _)| { pl == player })
     }
 
     pub fn first_ai(&self) -> Option<AIProfile> {
-        for &(ref player, _) in &self.0 {
+        for &(ref player, _) in &self.players {
             match player {
                 &Player::Human(_) => (),
-                &Player::AI => {
-                    return Some( 
-                        AIProfile {
-                            depth: 2 as Depth,
-                            heuristic: HeuristicName::AdjustedNeighbour,
-                            time_limit: Some(15_000),
-                        }
-                    );
-                    
-                }
+                &Player::AI => return Some(self.ai),
             }
         }
         None
     }
 
     pub fn index_of_human(&self, player:&Human) -> Option<usize> {
-        self.0.iter().position(|&(ref pl, _)| {
+        self.players.iter().position(|&(ref pl, _)| {
             match pl {
                 &Player::Human(ref play) => play == player,
                 &Player::AI { .. } => false,
@@ -66,7 +60,7 @@ impl Players {
 
     pub fn mut_human_ui_state<'a>(&'a mut self, player:&Human) -> Option<&'a mut UIState> {
         if let Some(idx) = self.index_of_human(player) {
-            match self.0[idx].1 {
+            match self.players[idx].1 {
                 PlayerState::Connected(ref mut ui) => Some(ui),
                 PlayerState::Disconnected | PlayerState::Abandoned => None,
             }
@@ -77,7 +71,7 @@ impl Players {
 
     pub fn human_ui_state<'a>(&'a self, player:&Human) -> Option<&'a UIState> {
         if let Some(idx) = self.index_of_human(player) {
-            match self.0[idx].1 {
+            match self.players[idx].1 {
                 PlayerState::Connected(ref ui) => Some(ui),
                 PlayerState::Disconnected | PlayerState::Abandoned => None,
             }
@@ -88,7 +82,7 @@ impl Players {
 
     pub fn mut_ui_state<'a>(&'a mut self, player:&Player) -> Option<&'a mut UIState> {
         if let Some(idx) = self.index_of(player) {
-            match self.0[idx].1 {
+            match self.players[idx].1 {
                 PlayerState::Connected(ref mut ui) => Some(ui),
                 PlayerState::Disconnected | PlayerState::Abandoned => None,
             }
@@ -215,7 +209,7 @@ pub enum InteractionState {
 impl InteractionState {
     pub fn awaiting_input(state:&State, players:&Players) -> InteractionState {
         let player_idx = state.to_move.0 as usize;
-        let player_actual = players.0[player_idx].0.clone();
+        let player_actual = players.players[player_idx].0.clone();
 
         InteractionState::AwaitingInput { player: player_actual }
     }
@@ -239,13 +233,12 @@ impl Progress {
 
         let cpu_opponent = Player::AI;
 
-        /*( 
-            AIProfile {
-                depth: self.level as Depth,
-                heuristic: HeuristicName::AdjustedNeighbour,
-                time_limit: Some(15_000),
-            }
-        );*/
+
+        let ai = AIProfile {
+            depth: self.level as Depth,
+            heuristic: HeuristicName::AdjustedNeighbour,
+            time_limit: Some(10_000),
+        };
 
         let mut players = vec![ 
             (human_player, PlayerState::Connected(UIState::empty())),
@@ -256,7 +249,10 @@ impl Progress {
             players.reverse();
         } 
 
-        Players(players)
+        Players {
+            players,
+            ai,
+        }
     }
 
     pub fn win(&mut self) {

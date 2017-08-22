@@ -147,7 +147,7 @@ impl SantoriniClient {
         events.push(event);
 
         while let Some(ev) = events.pop() {
-            println!("processing -> {:?}", ev);
+//            println!("processing -> {:?}", ev);
             match ev {
                 UpdateTentativeSlot(slot) => {
                     if let Some(ui_state) = self.game.players.mut_human_ui_state(&self.profile.player) {
@@ -350,7 +350,7 @@ impl SantoriniClient {
         let match_status = self.game.board.match_status(&self.board);
         
         let winning_player : Option<Player> = match match_status {
-            MatchStatus::Won(ref player) => Some(self.game.players.0[player.0 as usize].0.clone()),
+            MatchStatus::Won(ref player) => Some(self.game.players.players[player.0 as usize].0.clone()),
             MatchStatus::ToMove(_) => None,
         };
 

@@ -93,7 +93,7 @@ impl AIService {
         E::new_search(evaluator_state);
 
         let score = H::evaluate(board, state);
-        println!("AI :: Asked for analysis, current score {:?} with {:?} to move", score, state.to_move);
+        println!("AI :: Asked for analysis max depth {:?} time limit {:?}, current score {:?} with {:?} to move", max_depth, time_limit, score, state.to_move);
         
         for depth in 1..(max_depth+1) {
             let (best_move, info) = E::evaluate_moves::<H>(evaluator_state, board, state, depth);  
@@ -127,9 +127,11 @@ impl AIService {
                 }
                 break;
             } else {
+                println!("info -> {:?}", info);
                 let next_timing_calc = (info.time * (info.average_branch_factor() as f64) * 1000.0) as u64; 
                 println!("we're at depth {} time was {:.3} next timing calc is {:.3}", depth, info.time, next_timing_calc);
-                let terminate = depth >= 2 && (depth >= max_depth || contains(time_limit, |&tl| next_timing_calc > tl));
+                let timing_bad = info.move_count > 1_000_000 && contains(time_limit, |&tl| next_timing_calc > tl);
+                let terminate = depth >= 2 && (depth >= max_depth || timing_bad);
                 println!("depth is {:?} max {} terminate? {:?}", depth, max_depth, terminate);
                 send.send(StateAnalysis {
                     state: state.clone(),

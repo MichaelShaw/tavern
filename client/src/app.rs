@@ -329,7 +329,7 @@ impl Widget for SantoriniUI {
 
         let black_text = rgb(0, 0, 0);
 
-        println!("generating view for state -> {:?} dimensions -> {:?}", state, dimensions);
+//        println!("generating view for state -> {:?} dimensions -> {:?}", state, dimensions);
 
         let padded_screen = dimensions.points_rect().padded(40);
 
