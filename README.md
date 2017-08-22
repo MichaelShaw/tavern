@@ -38,8 +38,3 @@ The problem with this is it murders the transpotition table, as various states w
 	NegaMax_AlphaBeta took 0.74 seconds 2,096,447 moves (2.8M/second) 20.9 avg branch
 	NegaMax_AlphaBeta_Exp took 0.67 seconds 2,096,447 moves (3.1M/second) 20.9 avg branch
 
-## Licensing
-
-Chip tune "hollow wanderer" is from 
-
-https://www.youtube.com/watch?v=ajSIro2Kiug&index=22&list=PLye9mcKwe2zy3KW8uK_3F7HVMjJjdqSqU
