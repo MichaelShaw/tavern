@@ -1,27 +1,10 @@
 # tavern
 Board game engine
 
-Check repeated hit rate for a given depth, how many exacts do we get.
-Check if iterative deepending helps.
-
-# Other
-- Move Jam + Howl to use Aphid (for HashMap etc.).
-
-# Santorini
-- Play sound effect when you win?
-- Termination Cell + request tracking (seriously)
-- Better move ordering (domes adjacent to enemies etc.)
-- Heuristic tuning?
-- Split off productivity library with group_by, pairs, contains etc? Hard to tell if this is a good idea or not.
-
-## Value sooner victories more valuable
 Perhaps we should reward faster victories than slower ones? Basically add remaining depth from to show how great it is?
 
 The problem with this is it murders the transpotition table, as various states will be evaluated differently based on how far they are away .... the effects of which I'm not confident in.
 
-
-jam = { path = "../../jam" }
-jam = { git = "https://github.com/michaelshaw/jam" }
 ## AI 
 
 ### Naive Move Counting
@@ -55,7 +38,7 @@ jam = { git = "https://github.com/michaelshaw/jam" }
 	NegaMax_AlphaBeta took 0.74 seconds 2,096,447 moves (2.8M/second) 20.9 avg branch
 	NegaMax_AlphaBeta_Exp took 0.67 seconds 2,096,447 moves (3.1M/second) 20.9 avg branch
 
-## Licensing Reminders
+## Licensing
 
 Chip tune "hollow wanderer" is from 
 
