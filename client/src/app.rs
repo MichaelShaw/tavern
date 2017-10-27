@@ -59,44 +59,44 @@ pub type TavernResult<T> = Result<T, TavernError>;
 
 pub fn get_paths() -> TavernResult<TavernPaths> {
     if cfg!(all(target_os = "macos")) { // -- mac release
-        if cfg!(debug_assertions) { //
+//        if cfg!(debug_assertions) { //
             Ok((TavernPaths {
                 resources: "./resources".into(),
                 openal: "./native/openal.dylib".into(),
                 profile: PathBuf::from("./tavern.profile.txt"), // ~/Library/Application Support/tavern
             }))
-        } else {
-            // mac in a .app
-            let mut resources_path = env::current_exe().unwrap();
-            resources_path.pop();
-            resources_path.pop();
-            resources_path.push("Resources");
-            // let mut f = File::create(resources_path.with_file_name("my_paths.txt")).unwrap();  
-
-            let r_path = resources_path.to_str().unwrap().into();
-
-            let mut alpth = resources_path.clone();
-            alpth.push("openal.dylib");
-
-            let al_path = alpth.to_str().unwrap().into();
-
-            // SAVE PROFILE IN APP SUPPORT
-            let mut home_dir = try!(env::home_dir().ok_or(TavernError::NoHomeDir));
-            home_dir.push("Library");
-            home_dir.push("Application Support");
-            home_dir.push("Tavern");
-
-            if !home_dir.exists() {
-                fs::create_dir(&home_dir)?;
-            } 
-            home_dir.push("tavern.profile.txt");
-            
-            Ok((TavernPaths {
-                resources: r_path,
-                openal: al_path,
-                profile: home_dir, 
-            }))
-        }
+//        } else {
+//            // mac in a .app
+//            let mut resources_path = env::current_exe().unwrap();
+//            resources_path.pop();
+//            resources_path.pop();
+//            resources_path.push("Resources");
+//            // let mut f = File::create(resources_path.with_file_name("my_paths.txt")).unwrap();
+//
+//            let r_path = resources_path.to_str().unwrap().into();
+//
+//            let mut alpth = resources_path.clone();
+//            alpth.push("openal.dylib");
+//
+//            let al_path = alpth.to_str().unwrap().into();
+//
+//            // SAVE PROFILE IN APP SUPPORT
+//            let mut home_dir = try!(env::home_dir().ok_or(TavernError::NoHomeDir));
+//            home_dir.push("Library");
+//            home_dir.push("Application Support");
+//            home_dir.push("Tavern");
+//
+//            if !home_dir.exists() {
+//                fs::create_dir(&home_dir)?;
+//            }
+//            home_dir.push("tavern.profile.txt");
+//
+//            Ok((TavernPaths {
+//                resources: r_path,
+//                openal: al_path,
+//                profile: home_dir,
+//            }))
+//        }
     } else  {
         Ok((TavernPaths {
             resources: "./resources".into(),
