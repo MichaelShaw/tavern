@@ -29,12 +29,9 @@ impl Evaluator for NegaMaxAlphaBetaExp {
     }
 
     fn new_state() -> EvState {
-        let state = EvState {
+        EvState {
             transposition : TranspositionTable::new(22),
-            // pv_nodes : Vec::new(),
-        };
-        // println!("constructed state with size -> {} ({} bytes)", state.transposition.entries.len(), state.transposition.size_bytes());
-        state
+        }
     }
 
     fn reset(evaluator_state: &mut EvState) {
@@ -63,9 +60,6 @@ impl Evaluator for NegaMaxAlphaBetaExp {
 
         let hash = board.hash(state);
 
-        // println!("== starting depth {:?}", depth);
-
-        // TT TABLE READ
         let mut tt_best_move : Option<Move> = None;
 
         let (tt_idx, found) = evaluator_state.transposition.probe(hash);
@@ -76,13 +70,9 @@ impl Evaluator for NegaMaxAlphaBetaExp {
                 info.tt_valid += 1;
                 match entry.entry_type {
                     EntryType::Exact => {
-                        // println!("valid exact!");
                         if let Some(mv) = entry.best_move {
-                            // println!("it has a best move ... returning");
-                            return (Some((mv, entry.value)), info)  // unsure about this negation   
+                            return (Some((mv, entry.value)), info)  // unsure about this negation
                         } 
-                        // return (Some((entry.best_move.unwrap(), entry.value)), info)
-                        // return (entry.value, 0)
                     },
                     EntryType::Lower => {
                         alpha = max(alpha, entry.value);
@@ -104,21 +94,11 @@ impl Evaluator for NegaMaxAlphaBetaExp {
             info.tt_miss += 1;
         }
 
+        // if we have a best move, order it first
         if let Some(mve) = tt_best_move {
-            // println!("we have a best move {:?} stack begin {} end {}", mve, stack_begin, stack_end);
             for idx in stack_begin..stack_end {
                 if move_stack.moves[idx] == mve {
-                    // println!("PREEEEE");
-                    // println!("ok we're at {} move is {:?}", idx, move_stack.moves[idx]);
-                    // println!("start is {:?}", move_stack.moves[stack_begin]);
-
                     move_stack.moves.swap(stack_begin, idx);
-                    // move_stack.moves.swap(stack_begin, idx);
-
-                    // println!("POST");
-                    // println!("ok we're at {} move is {:?}", idx, move_stack.moves[idx]);
-                    // println!("start is {:?}", move_stack.moves[stack_begin]);
-
                     break;
                 }
             }    
@@ -129,7 +109,6 @@ impl Evaluator for NegaMaxAlphaBetaExp {
 
         for idx in stack_begin..stack_end {
             let mve = move_stack.moves[idx];
-            // get the fuckin move
             let (v, count) = if board.ascension_winning_move(state, mve) {
                 let av = BEST * color;
                 if av > alpha {
@@ -138,30 +117,20 @@ impl Evaluator for NegaMaxAlphaBetaExp {
                     best_observed = av;
                     info.pv_count += 1;
                 }
-                // info.move_count += 1;
                 (av, 1)
             } else {
                 let new_state = board.apply(mve, state);
                 let delta_hash = board.delta_hash(state, mve);
                 let (v, move_count) = Self::eval::<H>(board, &new_state, hash ^ delta_hash, depth - 1, -beta, -alpha, -color, &mut move_stack, &mut info, evaluator_state); // 
 
-                // println!("move has value {:?}", v);
                 let av = v * -color;
                 if -v > alpha {
-
                     alpha = -v;
-                    // println!("its better! alpha is now {:?}", alpha);
                     best_move = Some(mve);
-                    best_observed = av; // FUCK, WHAT DO WE DO HERE
+                    best_observed = av;
                     info.pv_count += 1;
                 }
-                // if av > alpha {
-                //     alpha = av;
-                //     best_move = Some(mve);
-                //     best_observed = av; // FUCK, WHAT DO WE DO HERE
-                //     info.pv_count += 1;
-                // }
-                // alpha = max(alpha, -v);
+
                 (av, move_count)
             };
             info.move_count += count;
@@ -185,7 +154,7 @@ impl NegaMaxAlphaBetaExp {
         let mut new_alpha = alpha;
         let mut new_beta = beta;
 
-
+        // lookup transposition table
         let mut tt_best_move : Option<Move> = None;
         let (tt_idx, found) = ev_state.transposition.probe(hash);
         if found {
@@ -215,13 +184,7 @@ impl NegaMaxAlphaBetaExp {
         }
 
         if depth == 0 {
-            // let v = if stack_begin == stack_end {
-            //    WORST
-            // } else {
-            //    H::evaluate(board, state) * color
-            // };
             let v = H::evaluate(board, state) * color;
-            // move_stack.next = stack_begin;
             return (v, 1);
         }
 
@@ -233,10 +196,9 @@ impl NegaMaxAlphaBetaExp {
         let mut best_observed = WORST;
         let mut best_move : Option<Move> = None;
 
-
         // WE NEED TO ORDER THE MOVES
 
-        // find the best move and swap it to first?!
+        // find the best move and swap it to first
         if let Some(mve) = tt_best_move {
             for idx in stack_begin..stack_end {
                 if move_stack.moves[idx] == mve {
@@ -264,7 +226,6 @@ impl NegaMaxAlphaBetaExp {
                 best_observed = score;
             }
 
-            // best_observed = max(score, best_observed);
             new_alpha = max(new_alpha, score);
             total_moves += count;
             if new_beta <= new_alpha {
@@ -278,24 +239,10 @@ impl NegaMaxAlphaBetaExp {
             EntryType::Lower
         } else {
             info.pv_count += 1;
-            // println!("PV NODE mve {:?} depth {:?}", best_move,  depth);
             EntryType::Exact
         };
 
         ev_state.transposition.store(tt_idx, hash, best_observed, depth, score_type, best_move);
-
-        // let entry = TranspositionEntry {
-        //     // state: state.clone(),
-        //     hash: hash,
-        //     value: best_observed,
-        //     entry_type: score_type,
-        //     depth: depth,
-        //     best_move: best_move,
-        // };
-        // if score_type == EntryType::Exact {
-        //     ev_state.pv_nodes.push(entry.clone());
-        // }
-        // ev_state.transposition.put(entry);
 
         move_stack.next = stack_begin;
         (best_observed, total_moves)
