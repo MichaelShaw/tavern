@@ -13,7 +13,7 @@ impl BoardState {
     pub fn new(state: State) -> BoardState {
         BoardState { // this is the core
             moves: Vec::new(),
-            state: state,
+            state,
         }
     }
 }

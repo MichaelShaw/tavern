@@ -4,8 +4,8 @@
 extern crate time;
 extern crate cgmath;
 extern crate rand;
-#[macro_use]
-extern crate serde_derive;
+//#[macro_use]
+//extern crate serde_derive;
 
 #[macro_use]
 extern crate aphid;

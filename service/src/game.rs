@@ -144,7 +144,7 @@ impl BoardWithMoves { /// ARRRRGH java style encapsulation to ensure legal_moves
 
     pub fn for_board(board:BoardState, standard_board:&StandardBoard) -> BoardWithMoves {
         let mut moves = Vec::new();
-        standard_board.next_moves(&board.state, &mut moves);
+        standard_board.next_moves_for_player(&board.state, &mut moves);
         BoardWithMoves {
             state: board,
             legal_moves: moves,

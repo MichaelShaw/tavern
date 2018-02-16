@@ -2,7 +2,7 @@
 
 use jam::*;
 use jam::render::*;
-use jam::render::gfx::{Renderer, OpenGLRenderer, GeometryBuffer, construct_opengl_renderer};
+use jam::render::gfx::{OpenGLRenderer, construct_opengl_renderer};
 use jam::ui::*;
 
 
@@ -21,8 +21,8 @@ use howl::engine::SoundEngineUpdate::*;
 
 use santorini;
 
-use std::env;
-use std::fs;
+//use std::env;
+//use std::fs;
 
 use std::path::PathBuf;
 
@@ -130,7 +130,7 @@ pub fn run_app() -> TavernResult<()> {
 
     let file_resources = FileResources {
         resources: PathBuf::from(paths.resources),
-        shader_pair: shader_pair,
+        shader_pair,
         texture_directory: texture_dir,
         font_directory: font_dir,
     };
@@ -154,8 +154,8 @@ pub fn run_app() -> TavernResult<()> {
         zoom: 4.0,
         points_per_unit: 16.0,
         n: 0, // frame counter
-        renderer: renderer,
-        sound_worker: sound_worker, 
+        renderer,
+        sound_worker,
         client: santorini::SantoriniClient::new(paths.profile),
         ui: WidgetRunner::new(SantoriniUI {}, SantoriniUIState::empty(), dimensions),
     };
@@ -207,9 +207,7 @@ impl App {
 
             self.update(&input_state, dimensions, since_start, delta_time);  
 
-            let ok = self.render(dimensions);
-
-            
+            self.render(dimensions).expect("rendering to work");
 
             last_time = time;
             if input_state.close {
@@ -240,8 +238,8 @@ impl App {
         let (progress, status) = self.client.ui_status();
 
         let ui_state = SantoriniUIState {
-            progress : progress,
-            status: status,
+            progress,
+            status,
         };
 
         if ui_state != self.ui.state {
@@ -256,7 +254,7 @@ impl App {
         self.sound_worker.send(engine_update).expect("the sound worker to be alive");
     }
 
-    fn render(&mut self, dimensions:Dimensions) -> JamResult<()> {
+    fn render(&mut self, _dimensions:Dimensions) -> JamResult<()> {
         let mut tesselator = self.tesselator();
 
         let mut opaque_vertices = Vec::new();
@@ -269,18 +267,18 @@ impl App {
         self.renderer.draw_vertices(&opaque_vertices, Uniforms {
             transform : down_size_m4(self.camera.view_projection().into()),
             color: color::WHITE,
-        }, Blend::None).unwrap();
+        }, Blend::None)?;
 
         self.renderer.draw_vertices(&trans_vertices, Uniforms {
             transform : down_size_m4(self.camera.view_projection().into()),
             color: color::WHITE,
-        }, Blend::Alpha).unwrap();
+        }, Blend::Alpha)?;
 
         self.renderer.clear_depth();
 
-        self.renderer.draw_view(&self.ui.view());
+        self.renderer.draw_view(&self.ui.view())?;
 
-        self.renderer.finish_frame().expect("frame went ok");
+        self.renderer.finish_frame()?;
        
         Ok(())
     }
@@ -320,6 +318,7 @@ impl Widget for SantoriniUI {
     type State = SantoriniUIState;
     type Event = SantoriniUIState;
 
+    #[allow(unused_variables)]
     fn update(&self, state:&SantoriniUIState, ev:&SantoriniUIState) -> SantoriniUIState {
         ev.clone()
     }

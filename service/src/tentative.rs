@@ -6,6 +6,7 @@ use game::{BoardWithMoves, UIState};
 use aphid::HashSet;
 
 
+#[derive(Debug)]
 pub struct TentativeState {
     pub matching_slots : HashSet<Slot>, // matching positions for highlights
     pub move_count : usize,
@@ -42,7 +43,7 @@ impl TentativeState {
 
         TentativeState {
             proposed_state: new_state,
-            matching_slots: matching_slots,
+            matching_slots,
             move_count: tentative_move_count,
         }
     }

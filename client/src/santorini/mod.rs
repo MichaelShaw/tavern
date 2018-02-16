@@ -7,16 +7,14 @@ use rand;
 use rand::{Rng, XorShiftRng, SeedableRng};
 
 use cgmath::InnerSpace;
-use cgmath::{Zero, Vector3};
+use cgmath::{Vector3};
 
 use aphid;
-use aphid::{Seconds, HashSet, Milliseconds};
+use aphid::{Seconds, Milliseconds};
 
-use jam::BitmapFont;
-use jam::{Vec2,Vec3, Vec3f, InputState, Color, clamp};
+use jam::{Vec3, InputState, Color, clamp};
 use jam::color::*;
 use jam::color;
-use jam::Dimensions;
 use jam::render::*;
 
 use howl::SoundEvent;
@@ -92,6 +90,7 @@ fn game_for(standard_board: &StandardBoard, players:Players) -> ClientGame {
 }
 
 impl SantoriniClient {
+    #[allow(unused_variables)]
     pub fn new_profile<R : Rng>(rng: &mut R) -> PlayerProfile {
         PlayerProfile {
             player: Human { id: 12, name: "Steve".into() },
@@ -113,14 +112,14 @@ impl SantoriniClient {
         let ai_service = AIService::new();
         
         let client = SantoriniClient {
-            profile : profile,
-            profile_path: profile_path,
+            profile,
+            profile_path,
 
-            game : game, // should the core game have AI state?
+            game, // should the core game have AI state?
             board : standard_board,
 
             rand: rng, // unsure why we need this .... for new games I guess ..... for now
-            ai_service : ai_service,
+            ai_service,
 
             atlas: SantoriniAtlas::build(), 
 
@@ -195,7 +194,7 @@ impl SantoriniClient {
                         });
                     }
                 },
-                PlayMove(mve, h) => {
+                PlayMove(mve, _) => {
                     self.play_move(mve);
                 },
                 NewInteractionState(is) => self.game.interactivity = is,
@@ -276,7 +275,7 @@ impl SantoriniClient {
                 // if we have ui state
                 if let Some(ui) = self.game.players.human_ui_state(&self.profile.player) {
                     let tentative = TentativeState::from(&self.game.board, ui);
-                    
+
                     if input_state.mouse.left_released() { // if user clicked on tentative slot
                         if let Some(sl) = ui.tentative_slot {
                             if tentative.move_count > 0 {
